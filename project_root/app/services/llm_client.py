@@ -39,17 +39,6 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-
-DEFAULT_MODEL_NAME = "openai/gpt-oss-120b:free"
-DEFAULT_FALLBACK_MODEL_NAME = "meta-llama/llama-3.3-70b-instruct:free"
-
-REQUEST_TIMEOUT_SECONDS = 20.0
-RETRY_ATTEMPTS = 2
-DEFAULT_TEMPERATURE = 0.2
-DEFAULT_MAX_TOKENS = 1000
-
-
 class LLMClientError(Exception):
     """Base exception for LLM client errors."""
 
@@ -71,13 +60,16 @@ def _get_required_env(name: str) -> str:
     return value.strip()
 
 
-def _get_optional_env(name: str, default: str) -> str:
-    value = os.getenv(name)
+OPENROUTER_API_KEY = _get_required_env("OPENROUTER_API_KEY")
+MODEL_NAME = _get_required_env("MODEL_NAME")
+FALLBACK_MODEL_NAME = _get_required_env("FALLBACK_MODEL_NAME")
 
-    if value is None or not value.strip():
-        return default
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-    return value.strip()
+REQUEST_TIMEOUT_SECONDS = 20.0
+RETRY_ATTEMPTS = 2
+DEFAULT_TEMPERATURE = 0.2
+DEFAULT_MAX_TOKENS = 1000
 
 
 class LLMClient:
@@ -92,18 +84,9 @@ class LLMClient:
         temperature: float | None = None,
         max_tokens: int | None = None,
     ) -> None:
-        self.api_key = api_key or _get_required_env("OPENROUTER_API_KEY")
-
-        self.model_name = (
-            model_name
-            or _get_optional_env("MODEL_NAME", DEFAULT_MODEL_NAME)
-        )
-
-        self.fallback_model_name = (
-            fallback_model_name
-            or _get_optional_env("FALLBACK_MODEL_NAME", DEFAULT_FALLBACK_MODEL_NAME)
-        )
-
+        self.api_key = api_key or OPENROUTER_API_KEY
+        self.model_name = model_name or MODEL_NAME
+        self.fallback_model_name = fallback_model_name or FALLBACK_MODEL_NAME
         self.openrouter_url = openrouter_url or OPENROUTER_URL
 
         self.request_timeout_seconds = (
