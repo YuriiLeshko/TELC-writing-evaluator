@@ -293,6 +293,36 @@ class WordCountCheck(BaseModel):
     meets_requirement: bool = Field(...)
 
 
+class ImprovedTextResult(BaseModel):
+    """Improved version of the candidate text and short summary of changes."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        str_strip_whitespace=True,
+        json_schema_extra={
+            "example": {
+                "improved_text": "Betreff: Beschädigte Lieferung ...",
+                "changes_summary": [
+                    "Grammatik und Satzbau verbessert",
+                    "Formellen Stil verstärkt",
+                ],
+            }
+        },
+    )
+
+    improved_text: str = Field(..., min_length=1)
+    changes_summary: list[str] = Field(default_factory=list)
+
+    @field_validator("changes_summary")
+    @classmethod
+    def validate_changes_summary(cls, value: list[str]) -> list[str]:
+        """Ensure summary entries are non-empty strings."""
+        cleaned = [item.strip() for item in value]
+        if any(not item for item in cleaned):
+            raise ValueError("changes_summary must not contain empty strings")
+        return cleaned
+
+
 class WritingEvaluationResult(BaseModel):
     """Final JSON-serializable result returned by the writing evaluation pipeline."""
 
@@ -310,6 +340,13 @@ class WritingEvaluationResult(BaseModel):
                     "minimum_required": 150,
                     "meets_requirement": False,
                 },
+                "improved_text": {
+                    "improved_text": "Betreff: Beschädigte Lieferung ...",
+                    "changes_summary": [
+                        "Grammatik und Satzbau verbessert",
+                        "Formellen Stil verstärkt",
+                    ],
+                },
                 "raw_score": 9,
                 "final_score": 27,
                 "max_score": 45,
@@ -323,6 +360,7 @@ class WritingEvaluationResult(BaseModel):
     criterion_II: CriterionScore = Field(...)
     criterion_III: CriterionScore = Field(...)
     word_count: WordCountCheck | None = Field(default=None)
+    improved_text: ImprovedTextResult = Field(...)
     raw_score: int = Field(..., ge=0)
     final_score: int = Field(..., ge=0)
     max_score: int = Field(..., ge=1)

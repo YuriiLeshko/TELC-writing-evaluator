@@ -10,6 +10,7 @@ from backend.evaluation.schemas import (
     KeyPointCheckResult,
     RelevanceCheckResult,
     WordCountCheck,
+    ImprovedTextResult,
     WritingEvaluationResult,
 )
 
@@ -92,6 +93,7 @@ def build_final_result(
     criterion_iii: CriterionScore,
     final_score: FinalScore,
     word_count: WordCountCheck | None = None,
+    improved_text: ImprovedTextResult,
 ) -> WritingEvaluationResult:
     """Build final result with concise criterion-level comments."""
     criterion_i.comment = _build_criterion_i_comment(key_points)
@@ -110,6 +112,7 @@ def build_final_result(
         criterion_II=criterion_ii,
         criterion_III=criterion_iii,
         word_count=word_count,
+        improved_text=improved_text,
         raw_score=final_score.raw_score,
         final_score=final_score.final_score,
         max_score=final_score.max_score,
