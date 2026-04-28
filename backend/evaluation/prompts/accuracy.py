@@ -21,7 +21,11 @@ Output requirements:
   "spelling_quality": "good | acceptable | poor",
   "punctuation_quality": "good | acceptable | poor",
   "comprehension_affected": boolean,
-  "explanation": "string"
+  "explanation": "string",
+  "positive_feedback": ["string"],
+  "improvement_feedback": ["string"],
+  "example_errors": ["string"],
+  "technical_notes": ["string"]
 }
 
 Scope restrictions:
@@ -30,6 +34,18 @@ Scope restrictions:
 - Do NOT evaluate communicative design.
 - Do NOT assign grades or points.
 - Do NOT calculate final score.
+- Feedback must be balanced and evidence-based:
+  - always include positive_feedback and improvement_feedback
+  - if no major weakness is found, still include one realistic improvement suggestion
+  - do not invent mistakes or examples
+  - return at most 2 items in positive_feedback
+  - return at most 2 items in improvement_feedback
+  - each feedback item must be <= 120 characters
+You must write all explanations, feedback, and comments strictly in German (Deutsch).
+Do not use English words or sentences.
+Do not mix German and English.
+Your output must be entirely in German except for JSON field names.
+If any part of the explanation is in English, the response is invalid.
 """
 
 
@@ -109,6 +125,10 @@ Important constraints:
 - Do not calculate points.
 - Be strict for TELC B2, but do not punish content issues here.
 - Grammar mistakes should be evaluated here, not in Criterion II.
+- Keep feedback balanced and technical:
+  - include strengths and improvements
+  - base all feedback on actual text evidence
+  - keep feedback concise (max 2 items per list, max 120 chars per item)
 
 Required output JSON structure:
 {{
@@ -117,9 +137,26 @@ Required output JSON structure:
   "spelling_quality": "good | acceptable | poor",
   "punctuation_quality": "good | acceptable | poor",
   "comprehension_affected": boolean,
-  "explanation": "string"
+  "explanation": "Kurze Erklärung auf Deutsch (1–2 Sätze)",
+  "positive_feedback": ["string"],
+  "improvement_feedback": ["string"],
+  "example_errors": ["string"],
+  "technical_notes": ["string"]
 }}
 
 The explanation must be short and mention only formal accuracy.
+example_errors:
+- include only short examples of actual errors or problematic patterns
+- if no clear errors are present, return an empty list
+Feedback limits:
+- positive_feedback: max 2 items, each <= 120 chars
+- improvement_feedback: max 2 items, each <= 120 chars
+Language requirements:
+- All explanations must be written in German.
+- Use clear and simple German sentences suitable for B2 learners.
+- Maximum 1–2 sentences per explanation.
+- Do not include English words.
+- Each feedback item must be in German.
+- Maximum 1 sentence per feedback item.
 Return JSON only.
 """

@@ -20,7 +20,9 @@ Output requirements:
 {
   "topic_mismatch": boolean,
   "situation_mismatch": boolean,
-  "explanation": "string"
+  "explanation": "string",
+  "positive_feedback": ["string"],
+  "improvement_feedback": ["string"]
 }
 
 Scope restrictions:
@@ -30,6 +32,18 @@ Scope restrictions:
 - Do NOT evaluate key-point fulfillment (Leitpunkte).
 - Do NOT assign criterion grades or points.
 - Do NOT calculate final score.
+- Feedback must be balanced and evidence-based:
+  - always include positive_feedback and improvement_feedback
+  - if there are no major weaknesses, still include one realistic improvement suggestion
+  - do not invent mistakes or unsupported claims
+  - return at most 2 items in positive_feedback
+  - return at most 2 items in improvement_feedback
+  - each feedback item must be <= 120 characters
+You must write all explanations, feedback, and comments strictly in German (Deutsch).
+Do not use English words or sentences.
+Do not mix German and English.
+Your output must be entirely in German except for JSON field names.
+If any part of the explanation is in English, the response is invalid.
 """
 
 
@@ -80,9 +94,24 @@ Required output JSON structure:
 {{
   "topic_mismatch": boolean,
   "situation_mismatch": boolean,
-  "explanation": "string"
+  "explanation": "Kurze Erklärung auf Deutsch (1–2 Sätze)",
+  "positive_feedback": ["string"],
+  "improvement_feedback": ["string"]
 }}
 
 The explanation must be short and mention only topic/situation relevance.
+Feedback focus:
+- what matches topic and communicative situation
+- what would make task/situation match clearer
+Feedback limits:
+- positive_feedback: max 2 items, each <= 120 chars
+- improvement_feedback: max 2 items, each <= 120 chars
+Language requirements:
+- All explanations must be written in German.
+- Use clear and simple German sentences suitable for B2 learners.
+- Maximum 1–2 sentences per explanation.
+- Do not include English words.
+- Each feedback item must be in German.
+- Maximum 1 sentence per feedback item.
 Return JSON only.
 """

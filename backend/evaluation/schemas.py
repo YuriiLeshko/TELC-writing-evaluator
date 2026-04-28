@@ -64,6 +64,8 @@ class RelevanceCheckResult(BaseModel):
                 "topic_mismatch": False,
                 "situation_mismatch": False,
                 "explanation": "The response matches the requested complaint email scenario.",
+                "positive_feedback": ["The response addresses the product delivery complaint scenario."],
+                "improvement_feedback": ["State the recipient role even more explicitly in the opening line."],
             }
         },
     )
@@ -71,6 +73,8 @@ class RelevanceCheckResult(BaseModel):
     topic_mismatch: bool = Field(...)
     situation_mismatch: bool = Field(...)
     explanation: str = Field(..., min_length=1)
+    positive_feedback: list[str] = Field(default_factory=list)
+    improvement_feedback: list[str] = Field(default_factory=list)
 
 
 class KeyPointCheckResult(BaseModel):
@@ -85,6 +89,8 @@ class KeyPointCheckResult(BaseModel):
                 "own_ideas": ["Gutschein als Kompensation vorschlagen"],
                 "invalid_points": ["Über Wetter sprechen"],
                 "explanation": "Two required key points are present and one additional idea is valid.",
+                "positive_feedback": ["The damage problem is clearly developed with concrete detail."],
+                "improvement_feedback": ["Explain expectations with more specific conditions or deadlines."],
             }
         },
     )
@@ -93,8 +99,16 @@ class KeyPointCheckResult(BaseModel):
     own_ideas: list[str] = Field(default_factory=list)
     invalid_points: list[str] = Field(default_factory=list)
     explanation: str = Field(..., min_length=1)
+    positive_feedback: list[str] = Field(default_factory=list)
+    improvement_feedback: list[str] = Field(default_factory=list)
 
-    @field_validator("fulfilled_key_points", "own_ideas", "invalid_points")
+    @field_validator(
+        "fulfilled_key_points",
+        "own_ideas",
+        "invalid_points",
+        "positive_feedback",
+        "improvement_feedback",
+    )
     @classmethod
     def validate_string_lists(cls, value: list[str]) -> list[str]:
         """Ensure all list entries are non-empty strings."""
@@ -123,6 +137,11 @@ class CommunicationCheckResult(BaseModel):
                 "vocabulary_level": "B2",
                 "sentence_variety": "some_variety",
                 "explanation": "The email has the expected structure and appropriate register.",
+                "positive_feedback": ["The structure is complete and easy to follow."],
+                "improvement_feedback": ["Use more complex connectors to improve textual flow."],
+                "linking_devices": ["leider", "deshalb"],
+                "complex_connectors": ["dass", "entweder ... oder"],
+                "language_level_comment": "Lexis is mostly precise and functionally close to B2.",
             }
         },
     )
@@ -138,6 +157,25 @@ class CommunicationCheckResult(BaseModel):
     vocabulary_level: Literal["B2", "B1+", "B1", "A2"] = Field(...)
     sentence_variety: Literal["varied", "some_variety", "simple"] = Field(...)
     explanation: str = Field(..., min_length=1)
+    positive_feedback: list[str] = Field(default_factory=list)
+    improvement_feedback: list[str] = Field(default_factory=list)
+    linking_devices: list[str] = Field(default_factory=list)
+    complex_connectors: list[str] = Field(default_factory=list)
+    language_level_comment: str = Field(default="")
+
+    @field_validator(
+        "positive_feedback",
+        "improvement_feedback",
+        "linking_devices",
+        "complex_connectors",
+    )
+    @classmethod
+    def validate_communication_lists(cls, value: list[str]) -> list[str]:
+        """Ensure communication feedback and connector lists are clean strings."""
+        cleaned = [item.strip() for item in value]
+        if any(not item for item in cleaned):
+            raise ValueError("communication list fields must not contain empty strings")
+        return cleaned
 
 
 class AccuracyCheckResult(BaseModel):
@@ -154,6 +192,10 @@ class AccuracyCheckResult(BaseModel):
                 "punctuation_quality": "acceptable",
                 "comprehension_affected": False,
                 "explanation": "There are recurring grammar issues, but meaning remains clear.",
+                "positive_feedback": ["Sentence boundaries are generally clear."],
+                "improvement_feedback": ["Case marking is inconsistent in subordinate clauses."],
+                "example_errors": ["Incorrect verb position after connector 'weil' in one sentence."],
+                "technical_notes": ["Verb placement is mostly stable but occasionally inconsistent."],
             }
         },
     )
@@ -164,8 +206,18 @@ class AccuracyCheckResult(BaseModel):
     punctuation_quality: Literal["good", "acceptable", "poor"] = Field(...)
     comprehension_affected: bool = Field(...)
     explanation: str = Field(..., min_length=1)
+    positive_feedback: list[str] = Field(default_factory=list)
+    improvement_feedback: list[str] = Field(default_factory=list)
+    example_errors: list[str] = Field(default_factory=list)
+    technical_notes: list[str] = Field(default_factory=list)
 
-    @field_validator("systematic_errors")
+    @field_validator(
+        "systematic_errors",
+        "positive_feedback",
+        "improvement_feedback",
+        "example_errors",
+        "technical_notes",
+    )
     @classmethod
     def validate_systematic_errors(cls, value: list[str]) -> list[str]:
         """Ensure systematic error labels are non-empty strings."""
@@ -190,6 +242,7 @@ class CriterionScore(BaseModel):
 
     grade: Literal["A", "B", "C", "D"] = Field(...)
     points: int = Field(..., ge=0, le=5)
+    comment: str | None = Field(default=None)
 
     @model_validator(mode="after")
     def validate_grade_points_mapping(self) -> CriterionScore:
@@ -221,6 +274,25 @@ class FinalScore(BaseModel):
     max_score: int = Field(default=45, ge=1)
 
 
+class WordCountCheck(BaseModel):
+    """Deterministic word count precheck metadata."""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "value": 132,
+                "minimum_required": 150,
+                "meets_requirement": False,
+            }
+        },
+    )
+
+    value: int = Field(..., ge=0)
+    minimum_required: int = Field(default=150, ge=1)
+    meets_requirement: bool = Field(...)
+
+
 class WritingEvaluationResult(BaseModel):
     """Final JSON-serializable result returned by the writing evaluation pipeline."""
 
@@ -233,15 +305,14 @@ class WritingEvaluationResult(BaseModel):
                 "criterion_I": {"grade": "B", "points": 3},
                 "criterion_II": {"grade": "A", "points": 5},
                 "criterion_III": {"grade": "C", "points": 1},
+                "word_count": {
+                    "value": 132,
+                    "minimum_required": 150,
+                    "meets_requirement": False,
+                },
                 "raw_score": 9,
                 "final_score": 27,
                 "max_score": 45,
-                "explanations": {
-                    "relevance": "The text matches the task and the intended situation.",
-                    "criterion_I": "Most key points are fulfilled.",
-                    "criterion_II": "The email structure is complete and register is appropriate.",
-                    "criterion_III": "Errors are present but do not significantly hinder comprehension.",
-                },
             }
         },
     )
@@ -251,22 +322,7 @@ class WritingEvaluationResult(BaseModel):
     criterion_I: CriterionScore = Field(...)
     criterion_II: CriterionScore = Field(...)
     criterion_III: CriterionScore = Field(...)
+    word_count: WordCountCheck | None = Field(default=None)
     raw_score: int = Field(..., ge=0)
     final_score: int = Field(..., ge=0)
     max_score: int = Field(..., ge=1)
-    explanations: dict[str, str] = Field(...)
-
-    @field_validator("explanations")
-    @classmethod
-    def validate_explanations(cls, value: dict[str, str]) -> dict[str, str]:
-        """Ensure explanation keys and values are non-empty strings."""
-        if not value:
-            raise ValueError("explanations must not be empty")
-        cleaned: dict[str, str] = {}
-        for key, item in value.items():
-            normalized_key = key.strip()
-            normalized_value = item.strip()
-            if not normalized_key or not normalized_value:
-                raise ValueError("explanations must not contain empty keys or values")
-            cleaned[normalized_key] = normalized_value
-        return cleaned

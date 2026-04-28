@@ -26,7 +26,12 @@ Output requirements:
   "coherence_quality": "strong | good | acceptable | weak | incoherent",
   "vocabulary_level": "B2 | B1+ | B1 | A2",
   "sentence_variety": "varied | some_variety | simple",
-  "explanation": "string"
+  "explanation": "string",
+  "positive_feedback": ["string"],
+  "improvement_feedback": ["string"],
+  "linking_devices": ["string"],
+  "complex_connectors": ["string"],
+  "language_level_comment": "string"
 }
 
 Scope restrictions:
@@ -34,6 +39,18 @@ Scope restrictions:
 - Do NOT evaluate formal accuracy.
 - Do NOT assign grades or points.
 - Do NOT calculate final score.
+- Feedback must be balanced and evidence-based:
+  - always include positive_feedback and improvement_feedback
+  - if weaknesses are minor, still include one realistic improvement suggestion
+  - do not invent missing features or connectors
+  - return at most 2 items in positive_feedback
+  - return at most 2 items in improvement_feedback
+  - each feedback item must be <= 120 characters
+You must write all explanations, feedback, and comments strictly in German (Deutsch).
+Do not use English words or sentences.
+Do not mix German and English.
+Your output must be entirely in German except for JSON field names.
+If any part of the explanation is in English, the response is invalid.
 """
 
 
@@ -126,6 +143,10 @@ Important constraints:
 - Do not assign grades.
 - Do not calculate points.
 - Be strict but fair.
+- Feedback must be balanced:
+  - include strengths and improvements
+  - base feedback only on observable text evidence
+  - keep feedback short (max 2 items per list, max 120 chars per item)
 
 Required output JSON structure:
 {{
@@ -139,9 +160,30 @@ Required output JSON structure:
   "coherence_quality": "strong | good | acceptable | weak | incoherent",
   "vocabulary_level": "B2 | B1+ | B1 | A2",
   "sentence_variety": "varied | some_variety | simple",
-  "explanation": "string"
+  "explanation": "Kurze Erklärung auf Deutsch (1–2 Sätze)",
+  "positive_feedback": ["string"],
+  "improvement_feedback": ["string"],
+  "linking_devices": ["string"],
+  "complex_connectors": ["string"],
+  "language_level_comment": "Kurzer Kommentar auf Deutsch"
 }}
 
 The explanation must be short and mention only communicative design.
+linking_devices:
+- list only linking words or phrases actually present in the text
+complex_connectors:
+- list only complex connectors actually present in the text
+language_level_comment:
+- short technical comment why the language appears closer to B2, B1+, B1, or A2
+Feedback limits:
+- positive_feedback: max 2 items, each <= 120 chars
+- improvement_feedback: max 2 items, each <= 120 chars
+Language requirements:
+- All explanations must be written in German.
+- Use clear and simple German sentences suitable for B2 learners.
+- Maximum 1–2 sentences per explanation.
+- Do not include English words.
+- Each feedback item must be in German.
+- Maximum 1 sentence per feedback item.
 Return JSON only.
 """

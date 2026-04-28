@@ -39,6 +39,7 @@ from backend.evaluation.schemas import (
     CommunicationCheckResult,
     KeyPointCheckResult,
     RelevanceCheckResult,
+    WordCountCheck,
     WritingEvaluationInput,
     WritingEvaluationResult,
 )
@@ -48,13 +49,8 @@ from backend.evaluation.checks.key_points import check_key_points
 from backend.evaluation.checks.communication import check_communication
 from backend.evaluation.checks.accuracy import check_accuracy
 
-from backend.evaluation.scoring import (
-    apply_word_count_override,
-    calculate_final_score,
-    make_score,
-    score_all_criteria
-)
-import backend.evaluation.result_builder as result_builder_module
+from backend.evaluation.scoring import apply_word_count_override, calculate_final_score, make_score, score_all_criteria
+from backend.evaluation.result_builder import build_final_result
 
 MINIMUM_WORD_COUNT = 150
 
@@ -67,93 +63,12 @@ def count_words(text: str) -> int:
     return sum(1 for token in stripped.split() if token)
 
 
-def _word_count_explanation(word_count: int) -> str:
-    """Build stable explanation string for word count requirement."""
-    return (
-        f"Word count: {word_count}/{MINIMUM_WORD_COUNT}. "
-        f"Meets requirement: {word_count >= MINIMUM_WORD_COUNT}. "
-        "If below minimum, final score is overridden to 0."
-    )
-
-
-def _attach_word_count_explanation(
-    result: WritingEvaluationResult,
-    word_count: int,
-) -> WritingEvaluationResult:
-    """Attach deterministic word-count metadata via explanations field."""
-    updated_explanations = dict(result.explanations)
-    updated_explanations["word_count"] = _word_count_explanation(word_count)
-    return result.model_copy(update={"explanations": updated_explanations})
-
-
-def _build_result_fallback(
-    *,
-    relevance: RelevanceCheckResult,
-    key_points: KeyPointCheckResult,
-    communication: CommunicationCheckResult,
-    accuracy: AccuracyCheckResult,
-    criterion_i,
-    criterion_ii,
-    criterion_iii,
-    final_score,
-    word_count: int,
-) -> WritingEvaluationResult:
-    """Build final result locally when result_builder has no builder function."""
-    return WritingEvaluationResult(
-        topic_mismatch=relevance.topic_mismatch,
-        situation_mismatch=relevance.situation_mismatch,
-        criterion_I=criterion_i,
-        criterion_II=criterion_ii,
-        criterion_III=criterion_iii,
-        raw_score=final_score.raw_score,
-        final_score=final_score.final_score,
-        max_score=final_score.max_score,
-        explanations={
-            "relevance": relevance.explanation,
-            "criterion_I": key_points.explanation,
-            "criterion_II": communication.explanation,
-            "criterion_III": accuracy.explanation,
-            "word_count": _word_count_explanation(word_count),
-        },
-    )
-
-
-def _build_final_result(
-    *,
-    relevance: RelevanceCheckResult,
-    key_points: KeyPointCheckResult,
-    communication: CommunicationCheckResult,
-    accuracy: AccuracyCheckResult,
-    criterion_i,
-    criterion_ii,
-    criterion_iii,
-    final_score,
-    word_count: int,
-) -> WritingEvaluationResult:
-    """Call project result builder if available, else use local fallback."""
-    builder = getattr(result_builder_module, "build_final_result", None)
-    if callable(builder):
-        built_result = builder(
-            relevance=relevance,
-            key_points=key_points,
-            communication=communication,
-            accuracy=accuracy,
-            criterion_i=criterion_i,
-            criterion_ii=criterion_ii,
-            criterion_iii=criterion_iii,
-            final_score=final_score,
-        )
-        return _attach_word_count_explanation(built_result, word_count)
-    return _build_result_fallback(
-        relevance=relevance,
-        key_points=key_points,
-        communication=communication,
-        accuracy=accuracy,
-        criterion_i=criterion_i,
-        criterion_ii=criterion_ii,
-        criterion_iii=criterion_iii,
-        final_score=final_score,
-        word_count=word_count,
+def _build_word_count_check(word_count: int) -> WordCountCheck:
+    """Build structured word count metadata for final output."""
+    return WordCountCheck(
+        value=word_count,
+        minimum_required=MINIMUM_WORD_COUNT,
+        meets_requirement=word_count >= MINIMUM_WORD_COUNT,
     )
 
 
@@ -166,6 +81,7 @@ async def evaluate_writing(
         llm_client = LLMClient()
 
     word_count = count_words(input_data.candidate_text)
+    word_count_check = _build_word_count_check(word_count)
     relevance = await check_relevance(llm_client, input_data)
 
     if relevance.topic_mismatch:
@@ -206,7 +122,7 @@ async def evaluate_writing(
             explanation="Skipped due to topic mismatch.",
         )
 
-        return _build_final_result(
+        return build_final_result(
             relevance=relevance,
             key_points=key_points,
             communication=communication,
@@ -215,7 +131,7 @@ async def evaluate_writing(
             criterion_ii=criterion_ii,
             criterion_iii=criterion_iii,
             final_score=final_score,
-            word_count=word_count,
+            word_count=word_count_check,
         )
 
     key_points, communication, accuracy = await asyncio.gather(
@@ -243,7 +159,7 @@ async def evaluate_writing(
         criterion_iii,
     )
 
-    return _build_final_result(
+    return build_final_result(
         relevance=relevance,
         key_points=key_points,
         communication=communication,
@@ -252,7 +168,7 @@ async def evaluate_writing(
         criterion_ii=criterion_ii,
         criterion_iii=criterion_iii,
         final_score=final_score,
-        word_count=word_count,
+        word_count=word_count_check,
     )
 
 

@@ -15,6 +15,16 @@ from backend.evaluation.schemas import KeyPointCheckResult, WritingEvaluationInp
 from backend.services.llm_client import LLMClient
 
 
+def _ensure_string_list(value: object) -> list[str]:
+    """Normalize possible LLM list-like outputs to list[str]."""
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    if isinstance(value, str):
+        stripped = value.strip()
+        return [stripped] if stripped else []
+    return []
+
+
 async def check_key_points(
     llm_client: LLMClient,
     input_data: WritingEvaluationInput,
@@ -31,6 +41,17 @@ async def check_key_points(
         user_prompt=user_prompt,
         temperature=0.0,
         max_tokens=900,
+    )
+    raw_result["fulfilled_key_points"] = _ensure_string_list(
+        raw_result.get("fulfilled_key_points")
+    )
+    raw_result["own_ideas"] = _ensure_string_list(raw_result.get("own_ideas"))
+    raw_result["invalid_points"] = _ensure_string_list(raw_result.get("invalid_points"))
+    raw_result["positive_feedback"] = _ensure_string_list(
+        raw_result.get("positive_feedback")
+    )
+    raw_result["improvement_feedback"] = _ensure_string_list(
+        raw_result.get("improvement_feedback")
     )
 
     return KeyPointCheckResult.model_validate(raw_result)
