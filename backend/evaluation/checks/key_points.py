@@ -1,0 +1,1 @@
+"""Key points check logic."""

@@ -1,0 +1,1 @@
+"""Communication check logic."""
