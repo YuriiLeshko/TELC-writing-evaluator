@@ -6,7 +6,7 @@ import unittest
 
 from pydantic import ValidationError
 
-from backend.evaluation.schemas import (
+from app.evaluation.schemas import (
     CriterionScore,
     WritingEvaluationInput,
     WritingEvaluationResult,

@@ -1,7 +1,7 @@
 """Pydantic schemas for TELC B2 writing evaluation.
 
-    Dependencies:
-    pip install pydantic
+Dependencies:
+pip install pydantic
 
 """
 
