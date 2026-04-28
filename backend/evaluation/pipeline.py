@@ -49,11 +49,41 @@ from backend.evaluation.checks.communication import check_communication
 from backend.evaluation.checks.accuracy import check_accuracy
 
 from backend.evaluation.scoring import (
+    apply_word_count_override,
     calculate_final_score,
     make_score,
-    score_all_criteria,
+    score_all_criteria
 )
 import backend.evaluation.result_builder as result_builder_module
+
+MINIMUM_WORD_COUNT = 150
+
+
+def count_words(text: str) -> int:
+    """Count words in candidate text deterministically."""
+    stripped = text.strip()
+    if not stripped:
+        return 0
+    return sum(1 for token in stripped.split() if token)
+
+
+def _word_count_explanation(word_count: int) -> str:
+    """Build stable explanation string for word count requirement."""
+    return (
+        f"Word count: {word_count}/{MINIMUM_WORD_COUNT}. "
+        f"Meets requirement: {word_count >= MINIMUM_WORD_COUNT}. "
+        "If below minimum, final score is overridden to 0."
+    )
+
+
+def _attach_word_count_explanation(
+    result: WritingEvaluationResult,
+    word_count: int,
+) -> WritingEvaluationResult:
+    """Attach deterministic word-count metadata via explanations field."""
+    updated_explanations = dict(result.explanations)
+    updated_explanations["word_count"] = _word_count_explanation(word_count)
+    return result.model_copy(update={"explanations": updated_explanations})
 
 
 def _build_result_fallback(
@@ -66,6 +96,7 @@ def _build_result_fallback(
     criterion_ii,
     criterion_iii,
     final_score,
+    word_count: int,
 ) -> WritingEvaluationResult:
     """Build final result locally when result_builder has no builder function."""
     return WritingEvaluationResult(
@@ -82,6 +113,7 @@ def _build_result_fallback(
             "criterion_I": key_points.explanation,
             "criterion_II": communication.explanation,
             "criterion_III": accuracy.explanation,
+            "word_count": _word_count_explanation(word_count),
         },
     )
 
@@ -96,11 +128,12 @@ def _build_final_result(
     criterion_ii,
     criterion_iii,
     final_score,
+    word_count: int,
 ) -> WritingEvaluationResult:
     """Call project result builder if available, else use local fallback."""
     builder = getattr(result_builder_module, "build_final_result", None)
     if callable(builder):
-        return builder(
+        built_result = builder(
             relevance=relevance,
             key_points=key_points,
             communication=communication,
@@ -110,6 +143,7 @@ def _build_final_result(
             criterion_iii=criterion_iii,
             final_score=final_score,
         )
+        return _attach_word_count_explanation(built_result, word_count)
     return _build_result_fallback(
         relevance=relevance,
         key_points=key_points,
@@ -119,6 +153,7 @@ def _build_final_result(
         criterion_ii=criterion_ii,
         criterion_iii=criterion_iii,
         final_score=final_score,
+        word_count=word_count,
     )
 
 
@@ -130,6 +165,7 @@ async def evaluate_writing(
     if llm_client is None:
         llm_client = LLMClient()
 
+    word_count = count_words(input_data.candidate_text)
     relevance = await check_relevance(llm_client, input_data)
 
     if relevance.topic_mismatch:
@@ -179,6 +215,7 @@ async def evaluate_writing(
             criterion_ii=criterion_ii,
             criterion_iii=criterion_iii,
             final_score=final_score,
+            word_count=word_count,
         )
 
     key_points, communication, accuracy = await asyncio.gather(
@@ -193,6 +230,18 @@ async def evaluate_writing(
         communication=communication,
         accuracy=accuracy,
     )
+    criterion_i, criterion_ii, criterion_iii = apply_word_count_override(
+        word_count=word_count,
+        minimum_required=MINIMUM_WORD_COUNT,
+        criterion_i=criterion_i,
+        criterion_ii=criterion_ii,
+        criterion_iii=criterion_iii,
+    )
+    final_score = calculate_final_score(
+        criterion_i,
+        criterion_ii,
+        criterion_iii,
+    )
 
     return _build_final_result(
         relevance=relevance,
@@ -203,13 +252,14 @@ async def evaluate_writing(
         criterion_ii=criterion_ii,
         criterion_iii=criterion_iii,
         final_score=final_score,
+        word_count=word_count,
     )
 
 
 if __name__ == "__main__":
     async def _smoke_test() -> None:
         llm_client = LLMClient()
-        input_data = WritingEvaluationInput(
+        short_input_data = WritingEvaluationInput(
             task_text=(
                 "Sie haben online ein Produkt gekauft, aber es wurde beschädigt geliefert. "
                 "Schreiben Sie eine formelle E-Mail an den Kundenservice. "
@@ -233,7 +283,43 @@ if __name__ == "__main__":
             ),
         )
 
-        result = await evaluate_writing(input_data=input_data, llm_client=llm_client)
-        print(result.model_dump_json(indent=2))
+        short_result = await evaluate_writing(
+            input_data=short_input_data,
+            llm_client=llm_client,
+        )
+        print("SHORT TEXT RESULT (<150 words):")
+        print(short_result.model_dump_json(indent=2))
+
+        long_candidate_text = (
+            "Betreff: Beschädigte Lieferung und Bitte um Lösung\n\n"
+            "Sehr geehrte Damen und Herren,\n\n"
+            "ich wende mich heute an Sie, weil ich mit meiner letzten Bestellung ein ernstes Problem habe. "
+            "Vor einigen Tagen habe ich in Ihrem Onlineshop einen Kopfhörer bestellt, den ich beruflich und "
+            "privat regelmäßig nutzen wollte. Das Paket kam zwar pünktlich an, war aber von außen deutlich "
+            "beschädigt. Beim Öffnen habe ich gesehen, dass auch die Verpackung des Geräts eingedrückt war. "
+            "Nach einem kurzen Test musste ich feststellen, dass der Kopfhörer nur auf einer Seite Ton wiedergibt "
+            "und zudem ein störendes Rauschen verursacht.\n\n"
+            "Ich habe mich bewusst für Ihr Produkt entschieden, weil ich bisher gute Erfahrungen mit Ihrem "
+            "Kundenservice gemacht habe und auf Qualität vertraut habe. Umso enttäuschter bin ich jetzt über den "
+            "aktuellen Zustand der Lieferung. Da ich das Gerät zeitnah brauche, erwarte ich eine schnelle und "
+            "kundenorientierte Lösung. Aus meiner Sicht wäre entweder ein umgehender Ersatzversand oder eine "
+            "vollständige Rückerstattung des Kaufpreises angemessen.\n\n"
+            "Bitte teilen Sie mir mit, welche Schritte ich als Nächstes durchführen soll und an welche Adresse "
+            "ich das defekte Produkt zurücksenden kann. Ich wäre Ihnen dankbar, wenn Sie meine Anfrage zeitnah "
+            "bearbeiten könnten, damit das Problem möglichst schnell geklärt wird.\n\n"
+            "Mit freundlichen Grüßen\n"
+            "Max Müller"
+        )
+        long_input_data = WritingEvaluationInput(
+            task_text=short_input_data.task_text,
+            expected_key_points=short_input_data.expected_key_points,
+            candidate_text=long_candidate_text,
+        )
+        long_result = await evaluate_writing(
+            input_data=long_input_data,
+            llm_client=llm_client,
+        )
+        print("\nLONG TEXT RESULT (>150 words):")
+        print(long_result.model_dump_json(indent=2))
 
     asyncio.run(_smoke_test())

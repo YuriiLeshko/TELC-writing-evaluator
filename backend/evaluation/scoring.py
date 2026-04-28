@@ -21,6 +21,8 @@ from backend.evaluation.schemas import (
     RelevanceCheckResult,
 )
 
+MINIMUM_WORD_COUNT = 150
+
 GRADE_POINTS = {
     "A": 5,
     "B": 3,
@@ -153,6 +155,24 @@ def calculate_final_score(
     raw_score = criterion_i.points + criterion_ii.points + criterion_iii.points
     final_score = raw_score * 3
     return FinalScore(raw_score=raw_score, final_score=final_score, max_score=45)
+
+
+def apply_word_count_override(
+    word_count: int,
+    minimum_required: int,
+    criterion_i: CriterionScore,
+    criterion_ii: CriterionScore,
+    criterion_iii: CriterionScore,
+) -> tuple[CriterionScore, CriterionScore, CriterionScore]:
+    """Apply TELC minimum word count hard override to criterion scores.
+
+    If word count is below required minimum:
+    - override all criteria to D
+    - otherwise return original scores unchanged
+    """
+    if word_count < minimum_required:
+        return make_score("D"), make_score("D"), make_score("D")
+    return criterion_i, criterion_ii, criterion_iii
 
 
 def score_all_criteria(
