@@ -40,6 +40,8 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(20), default="user", nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    available_sessions: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
+    available_submissions: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
     next_info_task_index: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     next_complaint_task_index: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     created_at: Mapped[datetime] = mapped_column(

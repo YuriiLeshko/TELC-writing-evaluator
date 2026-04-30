@@ -33,6 +33,9 @@ class UserSeed:
     role: str
     hashed_password: str = "demo"
     username: str | None = None
+    is_active: bool = True
+    available_sessions: int = 5
+    available_submissions: int = 5
 
 
 @dataclass(frozen=True)
@@ -45,8 +48,22 @@ class TaskSeed:
 
 
 USER_SEEDS: Sequence[UserSeed] = (
-    UserSeed(email="admin@example.com", role="admin", username="admin"),
-    UserSeed(email="user@example.com", role="user", username="user"),
+    UserSeed(
+        email="admin@example.com",
+        role="admin",
+        username="admin",
+        is_active=True,
+        available_sessions=999,
+        available_submissions=999,
+    ),
+    UserSeed(
+        email="user@example.com",
+        role="user",
+        username="user",
+        is_active=True,
+        available_sessions=5,
+        available_submissions=5,
+    ),
 )
 
 INFO_TASK_SEEDS: Sequence[TaskSeed] = (
@@ -133,7 +150,9 @@ def seed_users(db: Session) -> None:
                     username=seed.username,
                     hashed_password=seed.hashed_password,
                     role=seed.role,
-                    is_active=True,
+                    is_active=seed.is_active,
+                    available_sessions=seed.available_sessions,
+                    available_submissions=seed.available_submissions,
                 )
             )
 
