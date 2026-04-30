@@ -122,7 +122,10 @@ async def evaluate_submission(
     try:
         result = await evaluate_writing(input_data)
         submitted_at = datetime.now(timezone.utc)
-        duration_seconds = int((submitted_at - session.started_at).total_seconds())
+        started_at = session.started_at
+        if started_at.tzinfo is None:
+            started_at = started_at.replace(tzinfo=timezone.utc)
+        duration_seconds = int((submitted_at - started_at).total_seconds())
         duration_seconds = max(duration_seconds, 0)
 
         session.submitted_at = submitted_at

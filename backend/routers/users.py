@@ -33,6 +33,8 @@ router = APIRouter(prefix="/users", tags=["users"])
 def get_demo_current_user(db: Session = Depends(get_db)) -> User:
     user = db.scalar(select(User).where(User.email == "user@example.com"))
     if user is None:
+        user = db.scalar(select(User).where(User.username == "user"))
+    if user is None:
         raise HTTPException(status_code=401, detail="Demo user not found. Run backend/seed.py first.")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="User is inactive.")

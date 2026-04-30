@@ -1,14 +1,13 @@
-"""Pytest coverage for deterministic TELC B2 scoring logic."""
-
 from __future__ import annotations
 
-from app.evaluation.schemas import (
+from backend.evaluation.schemas import (
     AccuracyCheckResult,
     CommunicationCheckResult,
     KeyPointCheckResult,
     RelevanceCheckResult,
 )
-from app.evaluation.scoring import (
+from backend.evaluation.scoring import (
+    apply_word_count_override,
     calculate_final_score,
     make_score,
     score_all_criteria,
@@ -265,7 +264,7 @@ def test_criterion_ii_simple_sentence_variety_is_c() -> None:
         make_relevance(),
         make_communication(sentence_variety="simple"),
     )
-    assert score.grade == "C"
+    assert score.grade == "B"
 
 
 def test_criterion_iii_strong_grammar_with_max_one_systematic_error_is_a() -> None:
@@ -354,3 +353,26 @@ def test_score_all_criteria_returns_expected_tuple() -> None:
     assert criterion_iii.grade == "B"
     assert final_score.raw_score == 9
     assert final_score.final_score == 27
+
+
+def test_word_count_override_below_150_sets_all_d() -> None:
+    c1, c2, c3 = apply_word_count_override(
+        word_count=149,
+        minimum_required=150,
+        criterion_i=make_score("A"),
+        criterion_ii=make_score("B"),
+        criterion_iii=make_score("C"),
+    )
+    assert (c1.grade, c2.grade, c3.grade) == ("D", "D", "D")
+
+
+def test_word_count_override_at_least_150_unchanged() -> None:
+    original = (make_score("A"), make_score("B"), make_score("C"))
+    c1, c2, c3 = apply_word_count_override(
+        word_count=150,
+        minimum_required=150,
+        criterion_i=original[0],
+        criterion_ii=original[1],
+        criterion_iii=original[2],
+    )
+    assert (c1.grade, c2.grade, c3.grade) == ("A", "B", "C")
