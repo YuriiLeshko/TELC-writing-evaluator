@@ -199,7 +199,13 @@ async def evaluate_writing(
             explanation="Skipped due to topic mismatch.",
         )
         try:
-            improved_text = await generate_improved_text(llm_client=llm_client, input_data=input_data)
+            improved_text = await generate_improved_text(
+                llm_client=llm_client,
+                input_data=input_data,
+                key_points_result=key_points,
+                communication_result=communication,
+                accuracy_result=accuracy,
+            )
         except Exception:
             logger.exception("Improved text generation failed, using fallback improved text.")
             improved_text = ImprovedTextResult(
@@ -267,7 +273,13 @@ async def evaluate_writing(
         criterion_iii,
     )
     try:
-        improved_text = await generate_improved_text(llm_client=llm_client, input_data=input_data)
+        improved_text = await generate_improved_text(
+            llm_client=llm_client,
+            input_data=input_data,
+            key_points_result=key_points,
+            communication_result=communication,
+            accuracy_result=accuracy,
+        )
     except Exception:
         logger.exception("Improved text generation failed, using fallback improved text.")
         improved_text = ImprovedTextResult(

@@ -18,15 +18,29 @@ from backend.evaluation.prompts.improvement import (
     SYSTEM_PROMPT,
     build_improvement_user_prompt,
 )
-from backend.evaluation.schemas import ImprovedTextResult, WritingEvaluationInput
+from backend.evaluation.schemas import (
+    AccuracyCheckResult,
+    CommunicationCheckResult,
+    ImprovedTextResult,
+    KeyPointCheckResult,
+    WritingEvaluationInput,
+)
 
 
 async def generate_improved_text(
     llm_client: LLMClient,
     input_data: WritingEvaluationInput,
+    key_points_result: KeyPointCheckResult | None = None,
+    communication_result: CommunicationCheckResult | None = None,
+    accuracy_result: AccuracyCheckResult | None = None,
 ) -> ImprovedTextResult:
     """Generate and validate an improved German candidate text."""
-    user_prompt = build_improvement_user_prompt(input_data)
+    user_prompt = build_improvement_user_prompt(
+        input_data=input_data,
+        key_points_result=key_points_result,
+        communication_result=communication_result,
+        accuracy_result=accuracy_result,
+    )
     raw_result = await llm_client.call_llm_json(
         system_prompt=SYSTEM_PROMPT,
         user_prompt=user_prompt,
