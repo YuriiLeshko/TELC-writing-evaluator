@@ -52,8 +52,8 @@ if __name__ == "__main__":
             candidate_text=(
                 "Betreff: Beschädigte Lieferung\n\n"
                 "Sehr geehrte Damen und Herren,\n\n"
-                "ich habe letzte Woche bei Ihnen einen Kopfhörer bestellt. Leider ist das Paket "
-                "beschädigt angekommen, und der Kopfhörer funktioniert nicht richtig. Deshalb bin ich "
+                "ich habe letzte Woche bei Ihnen ein Kopfhörer gekauft. Leider ist das Paket "
+                "beschädigt angekommen, und es funktioniert nicht richtig. Deshalb bin ich "
                 "mit der Lieferung nicht zufrieden.\n\n"
                 "Ich erwarte, dass Sie mir entweder ein neues Gerät schicken oder den Kaufpreis "
                 "zurückerstatten. Bitte informieren Sie mich, wie wir dieses Problem lösen können.\n\n"

@@ -25,7 +25,15 @@ Output requirements:
   "positive_feedback": ["string"],
   "improvement_feedback": ["string"],
   "example_errors": ["string"],
-  "technical_notes": ["string"]
+  "technical_notes": ["string"],
+  "highlighted_errors": [
+    {
+      "text": "exakter fehlerhafter Ausschnitt aus dem Originaltext",
+      "correction": "korrigierte Version",
+      "error_type": "kurzer Fehlertyp auf Deutsch",
+      "explanation": "kurze Erklärung auf Deutsch"
+    }
+  ]
 }
 
 Scope restrictions:
@@ -41,6 +49,19 @@ Scope restrictions:
   - return at most 2 items in positive_feedback
   - return at most 2 items in improvement_feedback
   - each feedback item must be <= 120 characters
+- Return highlighted_errors with grammar, spelling, punctuation,
+  capitalization, or word-order errors.
+- For highlighted_errors:
+  - include only real errors from the original candidate text
+  - each "text" must be copied exactly from candidate_text
+  - do not invent errors
+  - do not include stylistic improvements as errors
+  - do not include whole paragraphs
+  - prefer short fragments (usually 1-8 words)
+  - maximum 10 errors
+  - if there are no clear errors, return []
+  - explanations must be in German
+  - corrections must be in German
 You must write all explanations, feedback, and comments strictly in German (Deutsch).
 Do not use English words or sentences.
 Do not mix German and English.
@@ -141,7 +162,15 @@ Required output JSON structure:
   "positive_feedback": ["string"],
   "improvement_feedback": ["string"],
   "example_errors": ["string"],
-  "technical_notes": ["string"]
+  "technical_notes": ["string"],
+  "highlighted_errors": [
+    {{
+      "text": "exakter fehlerhafter Ausschnitt aus dem Originaltext",
+      "correction": "korrigierte Version",
+      "error_type": "kurzer Fehlertyp auf Deutsch",
+      "explanation": "kurze Erklärung auf Deutsch"
+    }}
+  ]
 }}
 
 The explanation must be short and mention only formal accuracy.
@@ -151,6 +180,13 @@ example_errors:
 Feedback limits:
 - positive_feedback: max 2 items, each <= 120 chars
 - improvement_feedback: max 2 items, each <= 120 chars
+highlighted_errors rules:
+- include only grammar, spelling, punctuation, capitalization, or word-order errors
+- each "text" value must be an exact fragment copied from candidate_text
+- do not invent errors or add stylistic suggestions
+- use short fragments, usually 1-8 words (never whole paragraphs)
+- maximum 10 items; if no clear errors, return []
+- corrections and explanations must be in German
 Language requirements:
 - All explanations must be written in German.
 - Use clear and simple German sentences suitable for B2 learners.

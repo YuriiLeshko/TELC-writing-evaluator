@@ -178,6 +178,17 @@ class CommunicationCheckResult(BaseModel):
         return cleaned
 
 
+class GrammarErrorSpan(BaseModel):
+    """A grammar, spelling, or punctuation error found in the original text."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(..., min_length=1)
+    correction: str = Field(..., min_length=1)
+    error_type: str = Field(..., min_length=1)
+    explanation: str = Field(..., min_length=1)
+
+
 class AccuracyCheckResult(BaseModel):
     """Structured LLM output for language accuracy and error impact."""
 
@@ -196,6 +207,14 @@ class AccuracyCheckResult(BaseModel):
                 "improvement_feedback": ["Case marking is inconsistent in subordinate clauses."],
                 "example_errors": ["Incorrect verb position after connector 'weil' in one sentence."],
                 "technical_notes": ["Verb placement is mostly stable but occasionally inconsistent."],
+                "highlighted_errors": [
+                    {
+                        "text": "ein Kopfhörer",
+                        "correction": "einen Kopfhörer",
+                        "error_type": "Kasusfehler",
+                        "explanation": "Nach dem Verb steht hier der Akkusativ.",
+                    }
+                ],
             }
         },
     )
@@ -210,6 +229,7 @@ class AccuracyCheckResult(BaseModel):
     improvement_feedback: list[str] = Field(default_factory=list)
     example_errors: list[str] = Field(default_factory=list)
     technical_notes: list[str] = Field(default_factory=list)
+    highlighted_errors: list[GrammarErrorSpan] = Field(default_factory=list)
 
     @field_validator(
         "systematic_errors",
@@ -243,6 +263,7 @@ class CriterionScore(BaseModel):
     grade: Literal["A", "B", "C", "D"] = Field(...)
     points: int = Field(..., ge=0, le=5)
     comment: str | None = Field(default=None)
+    highlighted_errors: list[GrammarErrorSpan] | None = Field(default=None)
 
     @model_validator(mode="after")
     def validate_grade_points_mapping(self) -> CriterionScore:

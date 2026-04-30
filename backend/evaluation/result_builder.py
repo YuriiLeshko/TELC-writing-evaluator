@@ -82,6 +82,15 @@ def _build_criterion_iii_comment(accuracy: AccuracyCheckResult) -> str:
     return f"{positive} {improvement}"
 
 
+def _attach_accuracy_errors(
+    criterion_score: CriterionScore,
+    accuracy: AccuracyCheckResult,
+) -> CriterionScore:
+    """Attach structured accuracy error spans to Criterion III only."""
+    criterion_score.highlighted_errors = accuracy.highlighted_errors
+    return criterion_score
+
+
 def build_final_result(
     *,
     relevance: RelevanceCheckResult,
@@ -99,6 +108,7 @@ def build_final_result(
     criterion_i.comment = _build_criterion_i_comment(key_points)
     criterion_ii.comment = _build_criterion_ii_comment(communication)
     criterion_iii.comment = _build_criterion_iii_comment(accuracy)
+    criterion_iii = _attach_accuracy_errors(criterion_iii, accuracy)
     if word_count is not None and not word_count.meets_requirement:
         note = " Die Endpunktzahl ist jedoch 0, weil der Text unter 150 Wörtern liegt."
         criterion_i.comment += note
