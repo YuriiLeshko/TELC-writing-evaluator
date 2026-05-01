@@ -12,8 +12,6 @@ def test_start_task_session_updates_counters(test_client, seeded_users, seeded_t
     user = seeded_users["user"]
     db_session.refresh(user)
     assert user.available_sessions == 4
-    assert user.next_info_task_index == 2
-    assert user.next_complaint_task_index == 2
 
 
 def test_start_task_session_no_available_sessions(test_client, seeded_users, seeded_tasks, db_session) -> None:

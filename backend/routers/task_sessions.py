@@ -1,14 +1,15 @@
 from __future__ import annotations
 """
-Task session router for deterministic TELC model-test session creation.
+Task session router for TELC model-test session creation.
 
 Purpose:
 - Start and read task sessions for the demo current user.
-- Enforce sequential task selection based on user task indices.
+- Pick a random active info task and complaint task the user has not yet
+  received (not present in any prior TaskSession for that user).
 
 Structure:
 - Utility helpers to parse key points and map ORM objects to API schemas.
-- `POST /task-sessions/start` to create a new session and advance user indices.
+- `POST /task-sessions/start` to create a new session and decrement session counter.
 - `GET /task-sessions/my` and `GET /task-sessions/{session_id}` to read sessions.
 
 Dependencies:
@@ -34,6 +35,10 @@ from backend.api_schemas import (
 from backend.database import get_db
 from backend.models import ComplaintTask, InfoTask, TaskSession, User
 from backend.routers.users import get_demo_current_user
+from backend.services.task_selection import (
+    pick_random_unseen_complaint_task,
+    pick_random_unseen_info_task,
+)
 
 router = APIRouter(prefix="/task-sessions", tags=["task-sessions"])
 
@@ -98,20 +103,13 @@ def start_task_session(
     if current_user.available_sessions <= 0:
         raise HTTPException(status_code=403, detail="No available task sessions left.")
 
-    info_task = db.scalar(
-        select(InfoTask).where(
-            InfoTask.task_number == current_user.next_info_task_index,
-            InfoTask.is_active.is_(True),
-        )
-    )
-    complaint_task = db.scalar(
-        select(ComplaintTask).where(
-            ComplaintTask.task_number == current_user.next_complaint_task_index,
-            ComplaintTask.is_active.is_(True),
-        )
-    )
+    info_task = pick_random_unseen_info_task(db, current_user.id)
+    complaint_task = pick_random_unseen_complaint_task(db, current_user.id)
     if info_task is None or complaint_task is None:
-        raise HTTPException(status_code=404, detail="No more tasks available for this user.")
+        raise HTTPException(
+            status_code=404,
+            detail="No unused tasks available for this user (all active tasks were already used).",
+        )
 
     session = TaskSession(
         user_id=current_user.id,
@@ -122,8 +120,6 @@ def start_task_session(
     )
     db.add(session)
     current_user.available_sessions -= 1
-    current_user.next_info_task_index += 1
-    current_user.next_complaint_task_index += 1
     db.commit()
 
     reloaded_session = db.scalar(

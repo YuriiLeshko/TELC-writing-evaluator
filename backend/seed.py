@@ -6,12 +6,12 @@ Purpose:
 - Initialize schema and insert minimal MVP demo data (users + tasks).
 - Load task definitions from JSON under backend/seed_data/tasks/.
 - Keep seeding idempotent for repeated local runs.
-- Provide task-pair helper logic for deterministic next-task selection.
+- Provide task-pair helper using random unseen tasks (`get_next_task_pair_for_user`).
 
 Structure:
 - Seed dataclass (`UserSeed`) for static user payloads.
 - Task loading helpers and upsert by task_number.
-- Task selection helpers (`get_next_task_pair_for_user`, `advance_user_task_indices`).
+- Task selection helper (`get_next_task_pair_for_user`) delegating to `backend.services.task_selection`.
 - `seed()` entrypoint used by IDE terminal run: `PYTHONPATH=. python backend/seed.py`.
 
 Dependencies:
@@ -29,6 +29,10 @@ from sqlalchemy.orm import Session
 
 from backend.database import SessionLocal, init_db
 from backend.models import ComplaintTask, InfoTask, User
+from backend.services.task_selection import (
+    pick_random_unseen_complaint_task,
+    pick_random_unseen_info_task,
+)
 
 # During development, if database schema changed, reset DB manually:
 # rm -f telc_evaluator.db
@@ -48,8 +52,6 @@ class UserSeed:
     is_active: bool = True
     available_sessions: int = 5
     available_submissions: int = 5
-    next_info_task_index: int = 1
-    next_complaint_task_index: int = 1
 
 
 USER_SEEDS: Sequence[UserSeed] = (
@@ -68,8 +70,6 @@ USER_SEEDS: Sequence[UserSeed] = (
         is_active=True,
         available_sessions=5,
         available_submissions=5,
-        next_info_task_index=1,
-        next_complaint_task_index=1,
     ),
 )
 
@@ -190,29 +190,14 @@ def upsert_complaint_task(db: Session, data: dict) -> ComplaintTask:
 
 def get_next_task_pair_for_user(db: Session, user: User) -> tuple[InfoTask, ComplaintTask] | None:
     """
-    Returns the active task pair based on user's next indices.
-    Later session creation should increment both indices after showing tasks.
+    Returns a random pair of active tasks the user has not yet received
+    (no matching TaskSession rows). Mirrors `/task-sessions/start` selection.
     """
-    info_task = db.scalar(
-        select(InfoTask).where(
-            InfoTask.task_number == user.next_info_task_index,
-            InfoTask.is_active.is_(True),
-        )
-    )
-    complaint_task = db.scalar(
-        select(ComplaintTask).where(
-            ComplaintTask.task_number == user.next_complaint_task_index,
-            ComplaintTask.is_active.is_(True),
-        )
-    )
+    info_task = pick_random_unseen_info_task(db, user.id)
+    complaint_task = pick_random_unseen_complaint_task(db, user.id)
     if info_task is None or complaint_task is None:
         return None
     return info_task, complaint_task
-
-
-def advance_user_task_indices(user: User) -> None:
-    user.next_info_task_index += 1
-    user.next_complaint_task_index += 1
 
 
 def seed_users(db: Session) -> None:
@@ -228,8 +213,6 @@ def seed_users(db: Session) -> None:
                     is_active=seed.is_active,
                     available_sessions=seed.available_sessions,
                     available_submissions=seed.available_submissions,
-                    next_info_task_index=seed.next_info_task_index,
-                    next_complaint_task_index=seed.next_complaint_task_index,
                 )
             )
 
@@ -264,8 +247,6 @@ def print_summary(db: Session, info_files_loaded: int, complaint_files_loaded: i
     if demo_user is not None:
         print(f"demo user available_sessions: {demo_user.available_sessions}")
         print(f"demo user available_submissions: {demo_user.available_submissions}")
-        print(f"demo user next_info_task_index: {demo_user.next_info_task_index}")
-        print(f"demo user next_complaint_task_index: {demo_user.next_complaint_task_index}")
 
 
 def seed() -> None:

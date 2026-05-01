@@ -12,8 +12,6 @@ def test_user_defaults_and_counters(db_session) -> None:
     assert user.is_active is True
     assert user.available_sessions == 5
     assert user.available_submissions == 5
-    assert user.next_info_task_index == 1
-    assert user.next_complaint_task_index == 1
 
 
 def test_task_and_session_and_submission_relationships(db_session) -> None:

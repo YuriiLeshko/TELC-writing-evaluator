@@ -7,7 +7,7 @@ Purpose:
 - Keep data structure ready for FastAPI service layer without routes in this module.
 
 Structure:
-- `User`: account and sequential task pointers.
+- `User`: account and usage counters (sessions / submissions).
 - `InfoTask` / `ComplaintTask`: task banks for both TELC task types.
 - `TaskSession`: per-attempt pairing and timing metadata.
 - `Submission`: saved candidate text and evaluation result payload.
@@ -42,8 +42,6 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     available_sessions: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
     available_submissions: Mapped[int] = mapped_column(Integer, default=5, nullable=False)
-    next_info_task_index: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
-    next_complaint_task_index: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

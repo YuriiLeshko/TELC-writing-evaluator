@@ -33,9 +33,7 @@ Because of this, frontend does not send tokens yet.
   "role": "user",
   "is_active": true,
   "available_sessions": 5,
-  "available_submissions": 5,
-  "next_info_task_index": 1,
-  "next_complaint_task_index": 1
+  "available_submissions": 5
 }
 ```
 
@@ -184,16 +182,13 @@ Prefix: `/task-sessions`
 
 ### POST `/task-sessions/start`
 
-Starts a new session for current user using:
+Starts a new session for the current user:
 
-- `InfoTask.task_number == user.next_info_task_index`
-- `ComplaintTask.task_number == user.next_complaint_task_index`
+- Picks one **random** active `InfoTask` the user has not yet received (not referenced by any existing `TaskSession` for that user).
+- Picks one **random** active `ComplaintTask` under the same rule (independent draw).
+- Updates `available_sessions -= 1`.
 
-Also updates:
-
-- `available_sessions -= 1`
-- `next_info_task_index += 1`
-- `next_complaint_task_index += 1`
+If every active info task (or every active complaint task) already appears in some session for this user, the request fails with `404`.
 
 Response `200`:
 
@@ -208,7 +203,7 @@ Errors:
 
 - `403`: `"User is inactive."`
 - `403`: `"No available task sessions left."`
-- `404`: `"No more tasks available for this user."`
+- `404`: `"No unused tasks available for this user (all active tasks were already used)."`
 
 ### GET `/task-sessions/my`
 
@@ -377,8 +372,6 @@ Partial update supported for:
 - `is_active`
 - `available_sessions`
 - `available_submissions`
-- `next_info_task_index`
-- `next_complaint_task_index`
 
 - `200`: `UserRead`
 - `404`: `"User not found."`

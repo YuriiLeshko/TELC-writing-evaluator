@@ -418,7 +418,7 @@ def render_profile() -> None:
     except ApiError as exc:
         st.error(f"Profil konnte nicht geladen werden: {exc}")
         return
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
     with col1:
         render_metric_card("Email", user.get("email", "-"))
         render_metric_card("Role", user.get("role", "-"))
@@ -426,9 +426,6 @@ def render_profile() -> None:
     with col2:
         render_metric_card("Available sessions", user.get("available_sessions", "-"))
         render_metric_card("Available submissions", user.get("available_submissions", "-"))
-    with col3:
-        render_metric_card("Next info task index", user.get("next_info_task_index", "-"))
-        render_metric_card("Next complaint task index", user.get("next_complaint_task_index", "-"))
 
 
 def render_task_admin(

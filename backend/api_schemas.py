@@ -32,8 +32,6 @@ class UserRead(BaseModel):
     is_active: bool
     available_sessions: int
     available_submissions: int
-    next_info_task_index: int
-    next_complaint_task_index: int
 
 
 class UserCreate(BaseModel):
@@ -64,8 +62,6 @@ class UserUpdate(BaseModel):
     is_active: bool | None = None
     available_sessions: int | None = None
     available_submissions: int | None = None
-    next_info_task_index: int | None = None
-    next_complaint_task_index: int | None = None
 
 
 class CounterUpdate(BaseModel):
