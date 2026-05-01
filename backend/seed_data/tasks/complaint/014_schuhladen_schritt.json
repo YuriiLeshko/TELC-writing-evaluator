@@ -1,0 +1,13 @@
+{
+  "task_number": 14,
+  "source_text": "Schuhladen Schritt\n\nMarkenschuhe, Weiteberatung, Umtausch innerhalb von 14 Tagen bei ungetragenen Schuhen.\n\nReparaturservice für Sohlen.",
+  "situation_text": "Sie kauften Wanderschuhe. Nach wenigen Tagen löste sich die Sohle, der Laden verweigerte den Umtausch mit Verweis auf äußere Einwirkung.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an den Schuhladen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Kauf und Produkt",
+    "Erklären Sie den Mangel und die Reaktion im Laden",
+    "Legen Sie dar, was Sie erwarten",
+    "Beschreiben Sie weitere Schritte"
+  ],
+  "is_active": true
+}

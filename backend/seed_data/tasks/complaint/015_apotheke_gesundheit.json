@@ -1,0 +1,13 @@
+{
+  "task_number": 15,
+  "source_text": "Apotheke Zur Gesundheit\n\nRezepte, Beratung, Lieferdienst für immobile Kunden innerhalb des Stadtgebiets.\n\nNotdiensthinweise am Eingang.",
+  "situation_text": "Ihre Lieferung kam einen Tag zu spät, ein Medikament fehlte, und die Telefonhotline war mehrfach nicht erreichbar.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an die Apotheke. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie die Bestellung und den Liefertermin",
+    "Erklären Sie, was fehlte oder falsch war",
+    "Legen Sie dar, was Sie nun erwarten",
+    "Beschreiben Sie Ihr Vorgehen bei wiederholten Problemen"
+  ],
+  "is_active": true
+}

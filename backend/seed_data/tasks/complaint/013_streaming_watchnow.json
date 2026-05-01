@@ -1,0 +1,13 @@
+{
+  "task_number": 13,
+  "source_text": "Streaming-Dienst WatchNow\n\nFilme, Serien, Kindermodus, monatlich kündbar. HD und 4K je nach Tarif.\n\nTechnischer Support 7 Tage die Woche.",
+  "situation_text": "Trotz bezahlten Premium-Tarifs ruckeln Streams, Untertitel fehlen oft, und doppelt abbuchte Beträge wurden nicht erstattet.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an den Kundenservice. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihr Abo und die technischen Probleme",
+    "Erklären Sie das Problem mit der Abbuchung",
+    "Legen Sie dar, was Sie erwarten",
+    "Beschreiben Sie Ihr Vorgehen bei ausbleibender Hilfe"
+  ],
+  "is_active": true
+}

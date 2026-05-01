@@ -1,0 +1,13 @@
+{
+  "task_number": 11,
+  "source_text": "Nachbarschaftshilfe Quartier Ost\n\nWir organisieren Einkaufshilfe, Technikberatung für Senioren und Nachbarschaftsfeste.\n\nMitmachen als Helfer oder Nutzer möglich.\n\nKontakt: [quartier@mail.de](mailto:quartier@mail.de)",
+  "situation_text": "Sie sind in ein neues Viertel gezogen und möchten sich engagieren oder Hilfe in Anspruch nehmen.",
+  "instruction_text": "Schreiben Sie an die Nachbarschaftshilfe und bitten Sie um Informationen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihre Situation im Quartier",
+    "Stellen Sie Fragen zu Angeboten und Zeiten",
+    "Erklären Sie, ob Sie helfen oder Unterstützung brauchen",
+    "Beschreiben Sie Ihre Erwartungen"
+  ],
+  "is_active": true
+}

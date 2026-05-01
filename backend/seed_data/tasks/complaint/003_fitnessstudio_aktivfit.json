@@ -1,0 +1,13 @@
+{
+  "task_number": 3,
+  "source_text": "Fitnessstudio AktivFit\n\nUnser modernes Fitnessstudio bietet Trainingsgeräte, Kurse, persönliche Beratung und flexible Öffnungszeiten. Wir legen Wert auf Sauberkeit, Service und gute Betreuung.",
+  "situation_text": "Sie haben sich vor einem Monat im Fitnessstudio AktivFit angemeldet. Leider sind mehrere Geräte oft defekt, Kurse fallen aus und die Umkleideräume sind nicht sauber.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an das Fitnessstudio. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie, welche Probleme Sie im Fitnessstudio erlebt haben",
+    "Erklären Sie, warum Sie mit dem Service unzufrieden sind",
+    "Legen Sie dar, was Sie vom Fitnessstudio erwarten",
+    "Beschreiben Sie, was Sie tun, wenn sich die Situation nicht verbessert"
+  ],
+  "is_active": true
+}

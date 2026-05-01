@@ -1,0 +1,13 @@
+{
+  "task_number": 3,
+  "source_text": "Fahrradwerkstatt am Bahnhof\n\nWir bieten Reparaturen, Wartung und Beratung rund um Fahrräder an. Außerdem organisieren wir kleine Kurse, in denen man lernt, einfache Reparaturen selbst durchzuführen.\n\nÖffnungszeiten: Montag bis Samstag\nKontakt: [fahrrad@mail.de](mailto:fahrrad@mail.de)",
+  "situation_text": "Sie fahren oft mit dem Fahrrad und möchten mehr über Reparaturen und Wartung lernen.",
+  "instruction_text": "Sie interessieren sich für die Fahrradwerkstatt und die angebotenen Kurse. Schreiben Sie eine E-Mail und bitten Sie um weitere Informationen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihre Erfahrungen mit dem Fahrradfahren",
+    "Stellen Sie Fragen zu den Reparaturkursen",
+    "Erklären Sie, warum Sie einfache Reparaturen selbst lernen möchten",
+    "Beschreiben Sie Ihre Wünsche bezüglich Terminen oder Kursinhalten"
+  ],
+  "is_active": true
+}

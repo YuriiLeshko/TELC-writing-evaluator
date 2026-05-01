@@ -1,0 +1,13 @@
+{
+  "task_number": 13,
+  "source_text": "Carsharing MobilPlus\n\nFahrzeuge in Ihrer Nähe buchen, Minute oder Tagestarif. App für iOS und Android.\n\nVersicherung inklusive.\n\nKontakt: [mobil@mail.de](mailto:mobil@mail.de)",
+  "situation_text": "Sie besitzen kein Auto, brauchen aber gelegentlich ein Fahrzeug.",
+  "instruction_text": "Schreiben Sie an den Anbieter und bitten Sie um weitere Informationen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihr Nutzungsbedürfnis",
+    "Stellen Sie Fragen zu Tarifen und Buchung",
+    "Fragen Sie nach Fahrzeugtypen in Ihrer Gegend",
+    "Erklären Sie, was Sie bei der Anmeldung wissen müssen"
+  ],
+  "is_active": true
+}

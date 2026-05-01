@@ -1,0 +1,13 @@
+{
+  "task_number": 10,
+  "source_text": "Sprachtandem Verein\n\nWir vermitteln Tandempartner für Deutsch, Englisch, Spanisch und weitere Sprachen. Treffen in Cafés oder online.\n\nRegistrierung über Formular.\n\nKontakt: [tandem@mail.de](mailto:tandem@mail.de)",
+  "situation_text": "Sie möchten Ihre Deutschkenntnisse im Gespräch verbessern.",
+  "instruction_text": "Schreiben Sie an den Verein und bitten Sie um Informationen zum Sprachtandem. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihr Sprachniveau",
+    "Stellen Sie Fragen zur Organisation der Treffen",
+    "Erklären Sie, welche Sprache Sie anbieten können",
+    "Beschreiben Sie Ihre Verfügbarkeit"
+  ],
+  "is_active": true
+}

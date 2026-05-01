@@ -1,0 +1,13 @@
+{
+  "task_number": 11,
+  "source_text": "Fluggesellschaft SkyLines\n\nEuropaweite Verbindungen, Gepäckoptionen, Miles & Bonusprogramm.\n\nKundenservice per E-Mail und Telefon.",
+  "situation_text": "Ihr Flug hatte mehrere Stunden Verspätung, Gepäck kam einen Tag später, und Sie erhielten keine angemessene Information am Flughafen.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an die Fluggesellschaft. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Flugnummer und Datum",
+    "Erklären Sie, was schiefgelaufen ist",
+    "Legen Sie dar, was Sie erwarten",
+    "Beschreiben Sie Ihr Vorgehen bei Ablehnung"
+  ],
+  "is_active": true
+}

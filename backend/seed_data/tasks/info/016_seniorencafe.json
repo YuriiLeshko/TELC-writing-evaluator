@@ -1,0 +1,13 @@
+{
+  "task_number": 16,
+  "source_text": "Seniorencafé Sonnentag\n\nKaffee, Gesellschaftsspiele, Vorträge und Ausflüge. Offen für alle ab 60 Jahren.\n\nEintritt frei, Spenden willkommen.\n\nKontakt: [sonnentag@mail.de](mailto:sonnentag@mail.de)",
+  "situation_text": "Ihre Nachbarin hat das Seniorencafé empfohlen; Sie möchten mehr erfahren.",
+  "instruction_text": "Schreiben Sie an das Seniorencafé und bitten Sie um Informationen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihr Interesse am Angebot",
+    "Stellen Sie Fragen zu Öffnungszeiten und Programm",
+    "Erklären Sie, wie Sie teilnehmen möchten",
+    "Fragen Sie nach Ausflügen oder Veranstaltungen"
+  ],
+  "is_active": true
+}

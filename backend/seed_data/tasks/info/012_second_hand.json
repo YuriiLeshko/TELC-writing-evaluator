@@ -1,0 +1,13 @@
+{
+  "task_number": 12,
+  "source_text": "Second-Hand-Laden Kreislauf\n\nKleidung, Bücher und Haushalt in gutem Zustand. Ankauf nach Termin.\n\nSpendenannahme samstags.\n\nKontakt: [kreislauf@mail.de](mailto:kreislauf@mail.de)",
+  "situation_text": "Sie möchten nachhaltig einkaufen und haben den Laden online entdeckt.",
+  "instruction_text": "Schreiben Sie an den Laden und bitten Sie um Informationen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie, wonach Sie suchen",
+    "Stellen Sie Fragen zu Öffnungszeiten und Ankauf",
+    "Fragen Sie nach Sortiment und Größen",
+    "Erklären Sie, warum Second-Hand für Sie wichtig ist"
+  ],
+  "is_active": true
+}

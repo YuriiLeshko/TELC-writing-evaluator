@@ -1,0 +1,13 @@
+{
+  "task_number": 6,
+  "source_text": "Tierheim Hoffnung\n\nWir vermitteln Hunde und Katzen aus dem Tierschutz. Ehrenamtliche Spaziergänge und Patenschaften sind willkommen.\n\nBesichtigung nach Terminvereinbarung.\n\nKontakt: [tierheim@mail.de](mailto:tierheim@mail.de)",
+  "situation_text": "Sie überlegen, ein Haustier bei sich aufzunehmen, und haben das Tierheim entdeckt.",
+  "instruction_text": "Schreiben Sie an das Tierheim und bitten Sie um Informationen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihre Wohnsituation und Ihre Wünsche",
+    "Stellen Sie Fragen zum Vermittlungsablauf",
+    "Erklären Sie, warum Sie ein Tier adoptieren möchten",
+    "Fragen Sie nach Unterstützung nach der Adoption"
+  ],
+  "is_active": true
+}

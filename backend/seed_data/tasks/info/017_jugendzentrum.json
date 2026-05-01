@@ -1,0 +1,13 @@
+{
+  "task_number": 17,
+  "source_text": "Jugendzentrum Westend\n\nOffene Treffs, Musikraum, Hausaufgabenhilfe, Projektwochen.\n\nFür Jugendliche von 12 bis 21 Jahren.\n\nKontakt: [jz@mail.de](mailto:jz@mail.de)",
+  "situation_text": "Sie sind für einen Jugendlichen in Ihrer Familie auf der Suche nach Freizeitangeboten.",
+  "instruction_text": "Schreiben Sie an das Jugendzentrum und bitten Sie um Informationen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie die Situation des Jugendlichen",
+    "Stellen Sie Fragen zu Angeboten und Zeiten",
+    "Fragen Sie nach Anmeldung oder Probemonaten",
+    "Erklären Sie, welche Aktivitäten besonders interessieren"
+  ],
+  "is_active": true
+}

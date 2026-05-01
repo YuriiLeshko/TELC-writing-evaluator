@@ -1,0 +1,13 @@
+{
+  "task_number": 2,
+  "source_text": "Deutschclub Basel\n\nWir organisieren regelmäßige Treffen für Menschen, die Deutsch lernen und ihre Sprachkenntnisse verbessern möchten. Es gibt Gesprächsrunden, kleine Präsentationen, gemeinsame Ausflüge und Hilfe beim Lernen.\n\nDie Treffen finden meistens am Freitagabend statt. Neue Teilnehmerinnen und Teilnehmer sind herzlich willkommen.\n\nKontakt: [deutschclub@mail.de](mailto:deutschclub@mail.de)",
+  "situation_text": "Sie möchten Ihr Deutsch verbessern und suchen eine Möglichkeit, regelmäßig mit anderen Menschen Deutsch zu sprechen.",
+  "instruction_text": "Sie interessieren sich für den Deutschclub und möchten weitere Informationen erhalten. Schreiben Sie eine E-Mail an den Deutschclub. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie, warum Sie Ihr Deutsch verbessern möchten",
+    "Stellen Sie Fragen zu den Treffen",
+    "Erklären Sie Ihre bisherigen Erfahrungen beim Deutschlernen",
+    "Beschreiben Sie, was Sie sich von dem Deutschclub wünschen"
+  ],
+  "is_active": true
+}

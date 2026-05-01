@@ -1,0 +1,13 @@
+{
+  "task_number": 20,
+  "source_text": "Café Kirschbaum\n\nFrühstück, hausgemachte Kuchen, Catering für kleine Feiern.\n\nReservierung für Gruppen ab sechs Personen.",
+  "situation_text": "Sie haben ein Catering für einen Geburtstag bestellt. Die Lieferung kam zwei Stunden zu spät, ein Teil der Bestellung fehlte, und die Qualität entsprach nicht der Verkostung.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an das Café. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Bestellung und Termin",
+    "Legen Sie dar, was schiefgelaufen ist",
+    "Erklären Sie, was Sie als Lösung erwarten",
+    "Beschreiben Sie Konsequenzen ohne Einigung"
+  ],
+  "is_active": true
+}

@@ -1,0 +1,13 @@
+{
+  "task_number": 9,
+  "source_text": "Kochschule Genuss\n\nInternationale Küche, kleine Gruppen, inklusive Zutaten. Geschenkgutscheine erhältlich.\n\nTermine am Wochenende.\n\nKontakt: [kochschule@mail.de](mailto:kochschule@mail.de)",
+  "situation_text": "Sie möchten kochen lernen und suchen einen passenden Kurs.",
+  "instruction_text": "Schreiben Sie an die Kochschule und bitten Sie um Informationen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihre Kochkenntnisse",
+    "Stellen Sie Fragen zu Kursinhalten",
+    "Fragen Sie nach Terminen und Teilnehmerzahl",
+    "Erklären Sie, welche Küche Sie besonders interessiert"
+  ],
+  "is_active": true
+}

@@ -1,0 +1,13 @@
+{
+  "task_number": 4,
+  "source_text": "Musikschule Harmonie\n\nWir unterrichten Klavier, Gitarre, Geige und Gesang für Kinder und Erwachsene. Einzel- und Gruppenunterricht ist möglich.\n\nProbestunde kostenlos. Anmeldung laufend.\n\nKontakt: [musik@mail.de](mailto:musik@mail.de)",
+  "situation_text": "Sie möchten ein Instrument lernen und suchen eine Musikschule in Ihrer Nähe.",
+  "instruction_text": "Sie interessieren sich für die Musikschule. Schreiben Sie eine E-Mail und bitten Sie um weitere Informationen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie, welches Instrument Sie lernen möchten",
+    "Stellen Sie Fragen zu Unterrichtszeiten und Preisen",
+    "Erklären Sie Ihre bisherigen musikalischen Erfahrungen",
+    "Beschreiben Sie Ihre Erwartungen an die Musikschule"
+  ],
+  "is_active": true
+}

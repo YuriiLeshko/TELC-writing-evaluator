@@ -1,0 +1,13 @@
+{
+  "task_number": 9,
+  "source_text": "Reinigungsfirma Glanz\n\nBüro- und Wohnungsreinigung, Fensterreinigung, regelmäßige Termine. Umweltfreundliche Mittel.",
+  "situation_text": "Die Firma sollte Ihre Wohnung gründlich reinigen. Badezimmer und Küche wurden oberflächlich behandelt, Staub blieb unter den Möbeln.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an die Reinigungsfirma. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie, welche Leistung vereinbart war",
+    "Legen Sie dar, wie die Wohnung nach der Reinigung aussah",
+    "Erklären Sie, was Sie nun erwarten",
+    "Beschreiben Sie Ihr Vorgehen bei Nichtreaktion"
+  ],
+  "is_active": true
+}

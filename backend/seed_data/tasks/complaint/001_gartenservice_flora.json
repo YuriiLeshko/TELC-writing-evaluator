@@ -1,0 +1,13 @@
+{
+  "task_number": 1,
+  "source_text": "Gartenservice Flora\n\nUnser Gartenservice bietet eine breite Palette an Leistungen im Bereich der Gartenpflege. Unser Team pflegt und verschönert Gärten zuverlässig und professionell.\n\nUnsere Leistungen:\nRasen mähen\nUnkraut entfernen\nBlumen pflanzen\nSträucher und Büsche schneiden\nGartenabfälle entsorgen\nTerrassen reinigen",
+  "situation_text": "Sie waren eine Woche verreist. Während dieser Zeit sollte der Gartenservice Flora einige Arbeiten in Ihrem Garten durchführen. Leider sind Sie mit dem Ergebnis überhaupt nicht zufrieden.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an den Gartenservice. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie, welche Arbeiten der Gartenservice durchführen sollte",
+    "Legen Sie dar, wie Ihr Garten jetzt aussieht",
+    "Erklären Sie, was Sie nun vom Gartenservice erwarten",
+    "Beschreiben Sie, was Sie tun, falls der Gartenservice nicht auf Ihre Beschwerde reagiert"
+  ],
+  "is_active": true
+}

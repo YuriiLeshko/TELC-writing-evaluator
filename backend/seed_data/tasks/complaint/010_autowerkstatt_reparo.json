@@ -1,0 +1,13 @@
+{
+  "task_number": 10,
+  "source_text": "Autowerkstatt Reparo\n\nInspektion, Bremsen, Klimaanlage, Unfallinstandsetzung. Leihwagen auf Anfrage.\n\nTermin online buchen.",
+  "situation_text": "Nach der Reparatur leuchtet die Warnlampe weiter. Zudem war die Rechnung deutlich höher als das Kostenvoranschlag.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an die Werkstatt. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie die durchgeführten Arbeiten",
+    "Erklären Sie die verbleibenden Probleme mit der Rechnung",
+    "Legen Sie dar, was Sie erwarten",
+    "Beschreiben Sie weitere Schritte"
+  ],
+  "is_active": true
+}

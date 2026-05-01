@@ -1,0 +1,13 @@
+{
+  "task_number": 17,
+  "source_text": "Handwerksbetrieb FixPro\n\nElektrik, Sanitär, kleinere Renovierungen. Festpreis nach Besichtigung.\n\nGewährleistung nach VOB.",
+  "situation_text": "Die Reparatur am Waschbecken war nach einer Woche wieder undicht. Der Handwerker reagiert nicht auf Nachrichten.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an den Betrieb. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie die ursprüngliche Reparatur",
+    "Legen Sie dar, wie der Mangel jetzt aussieht",
+    "Erklären Sie, was Sie erwarten",
+    "Beschreiben Sie Ihr Vorgehen bei ausbleibender Reaktion"
+  ],
+  "is_active": true
+}

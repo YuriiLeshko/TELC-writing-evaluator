@@ -1,0 +1,13 @@
+{
+  "task_number": 7,
+  "source_text": "Stadtbibliothek Zentrum\n\nAusleihe, Lesecafé, Veranstaltungen für Kinder und Erwachsene. Digitale Medien über die App.\n\nÖffnungszeiten: Di–Sa\n\nKontakt: [bibliothek@mail.de](mailto:bibliothek@mail.de)",
+  "situation_text": "Sie sind neu in der Stadt und lesen gern. Sie haben die Stadtbibliothek im Internet gefunden.",
+  "instruction_text": "Schreiben Sie an die Bibliothek und bitten Sie um Informationen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihr Leseinteresse",
+    "Stellen Sie Fragen zur Mitgliedschaft",
+    "Fragen Sie nach Veranstaltungen",
+    "Erklären Sie, welche Services Sie nutzen möchten"
+  ],
+  "is_active": true
+}

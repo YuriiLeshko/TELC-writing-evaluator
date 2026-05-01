@@ -1,0 +1,13 @@
+{
+  "task_number": 6,
+  "source_text": "Versicherung SicherPlus\n\nSchutz für Hausrat, Haftpflicht und Rechtsschutz. Schnelle Schadenbearbeitung online.\n\nKundenservice Mo–Fr 8–18 Uhr.",
+  "situation_text": "Sie haben einen Schaden gemeldet. Seit Wochen erhalten Sie keine Entscheidung, Rückrufe wurden nicht eingehalten.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an die Versicherung. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihren Schadenfall und die Schadennummer",
+    "Erklären Sie, warum Sie mit dem Ablauf unzufrieden sind",
+    "Legen Sie dar, was Sie nun erwarten",
+    "Beschreiben Sie weitere Schritte bei Verzögerung"
+  ],
+  "is_active": true
+}

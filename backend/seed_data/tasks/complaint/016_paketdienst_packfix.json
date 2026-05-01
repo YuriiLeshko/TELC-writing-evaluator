@@ -1,0 +1,13 @@
+{
+  "task_number": 16,
+  "source_text": "Paketdienst PackFix\n\nZustellung bundesweit, Sendungsverfolgung, Abholstationen.\n\nKundenservice für Beschwerden.",
+  "situation_text": "Ein wichtiges Paket wurde ohne Unterschrift an eine falsche Adresse zugestellt und ist verschwunden. Die Nachforschung stockt.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an den Paketdienst. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Sendungsnummer und Inhalt",
+    "Erklären Sie, was mit der Zustellung schiefgelaufen ist",
+    "Legen Sie dar, was Sie erwarten",
+    "Beschreiben Sie Konsequenzen ohne Lösung"
+  ],
+  "is_active": true
+}

@@ -1,0 +1,13 @@
+{
+  "task_number": 8,
+  "source_text": "Internetanbieter NetzMax\n\nGlasfaser bis 500 Mbit/s, Router inklusive, Hotline für Technikfragen.\n\nWechselbonus für Neukunden.",
+  "situation_text": "Seit dem Vertragsstart bricht die Verbindung stündlich ab. Der Techniktermin wurde zweimal abgesagt, ohne neuen Termin.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an den Anbieter. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie die technischen Probleme",
+    "Erklären Sie, warum der Service unzureichend ist",
+    "Legen Sie dar, was Sie erwarten (z. B. Termin, Entschädigung)",
+    "Beschreiben Sie Konsequenzen bei weiterem Ausbleiben der Hilfe"
+  ],
+  "is_active": true
+}

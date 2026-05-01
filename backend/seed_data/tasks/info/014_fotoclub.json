@@ -1,0 +1,13 @@
+{
+  "task_number": 14,
+  "source_text": "Fotoclub Linse\n\nMonatliche Treffen, Ausstellungen, Workshops zu Landschaft und Portrait.\n\nMitglieder aller Niveaus willkommen.\n\nKontakt: [fotoclub@mail.de](mailto:fotoclub@mail.de)",
+  "situation_text": "Sie fotografieren als Hobby und möchten sich mit anderen austauschen.",
+  "instruction_text": "Schreiben Sie an den Fotoclub und bitten Sie um Informationen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihre fotografischen Interessen",
+    "Stellen Sie Fragen zu Treffen und Mitgliedschaft",
+    "Erklären Sie Ihre bisherige Erfahrung",
+    "Fragen Sie nach Workshops"
+  ],
+  "is_active": true
+}

@@ -1,0 +1,13 @@
+{
+  "task_number": 1,
+  "source_text": "Wandergruppe\n\nTouren von 15 bis 42 km\nTermine: Wanderungen meistens samstags\n\nWir sind eine bunt gemischte Gruppe von Frauen und Männern, die ein gemeinsames Hobby verbindet: in der Natur an der frischen Luft unterwegs zu sein.\n\nWir unternehmen regelmäßig Wanderungen in den Bergen und Wäldern unserer landschaftlich schönen Region. Neue Mitglieder sind willkommen.\n\nKontakt: [wandern@mail.de](mailto:wandern@mail.de)",
+  "situation_text": "Sie sind neu in der Stadt und verbringen Ihre Freizeit gern draußen in der Natur. Im örtlichen Veranstaltungskalender finden Sie diese Anzeige.",
+  "instruction_text": "Sie interessieren sich für das Angebot und haben noch einige Fragen. Schreiben Sie an die Wandergruppe und bitten Sie um mehr Informationen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihre Wünsche in Bezug auf die Wandergruppe",
+    "Stellen Sie weitere Fragen zur Wandergruppe",
+    "Legen Sie dar, warum Sie gern in der Natur sind",
+    "Beschreiben Sie Ihre bisherigen Erfahrungen mit Wandern"
+  ],
+  "is_active": true
+}

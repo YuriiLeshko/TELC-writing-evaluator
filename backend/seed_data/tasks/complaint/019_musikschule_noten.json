@@ -1,0 +1,13 @@
+{
+  "task_number": 19,
+  "source_text": "Musikschule Notenreich\n\nEinzelunterricht Klavier und Gesang, Aufführungen zweimal im Jahr.\n\nVertragslaufzeit ein Semester.",
+  "situation_text": "Der vereinbarte Lehrer wurde ohne Vorankündigung gewechselt, Termine fielen aus, und die Rechnung enthielt zusätzliche Gebühren.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an die Musikschule. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihren Vertrag und die Probleme",
+    "Erklären Sie, warum Sie unzufrieden sind",
+    "Legen Sie dar, was Sie erwarten",
+    "Beschreiben Sie Ihr Vorgehen bei Ablehnung"
+  ],
+  "is_active": true
+}

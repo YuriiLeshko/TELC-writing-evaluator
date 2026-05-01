@@ -1,0 +1,13 @@
+{
+  "task_number": 20,
+  "source_text": "Theaterwerkstatt Bühne Frei\n\nWorkshops zu Stimme, Bewegung und Improvisation. Offenes Casting für die Herbstproduktion.\n\nKeine Vorerfahrung nötig.\n\nKontakt: [buehnefrei@mail.de](mailto:buehnefrei@mail.de)",
+  "situation_text": "Sie interessieren sich für Theater, haben aber noch nie auf der Bühne gestanden.",
+  "instruction_text": "Schreiben Sie an die Theaterwerkstatt und bitten Sie um Informationen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihr Interesse am Theater",
+    "Stellen Sie Fragen zu Workshops und Terminen",
+    "Erklären Sie Ihre bisherige Erfahrung",
+    "Fragen Sie nach der Herbstproduktion und Casting"
+  ],
+  "is_active": true
+}

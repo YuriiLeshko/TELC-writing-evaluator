@@ -1,0 +1,13 @@
+{
+  "task_number": 19,
+  "source_text": "Buchclub LiteraturNacht\n\nMonatlich ein gemeinsames Buch, Diskussion online oder im Café.\n\nNächstes Treffen: Anfang nächsten Monats.\n\nKontakt: [buchclub@mail.de](mailto:buchclub@mail.de)",
+  "situation_text": "Sie lesen gern und suchen eine Lesegruppe.",
+  "instruction_text": "Schreiben Sie an den Buchclub und bitten Sie um Informationen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihre literarischen Vorlieben",
+    "Stellen Sie Fragen zum Ablauf der Treffen",
+    "Erklären Sie, warum Sie beitreten möchten",
+    "Fragen Sie nach dem aktuellen Buch oder Einstieg"
+  ],
+  "is_active": true
+}

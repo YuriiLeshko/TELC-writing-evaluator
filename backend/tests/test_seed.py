@@ -22,8 +22,8 @@ def test_seed_users_and_tasks_idempotent(db_session) -> None:
     complaint_tasks = db_session.scalars(select(ComplaintTask)).all()
 
     assert len(users) == 2
-    assert len(info_tasks) == 1
-    assert len(complaint_tasks) == 1
+    assert len(info_tasks) == 20
+    assert len(complaint_tasks) == 20
 
     admin = db_session.scalar(select(User).where(User.email == "admin@example.com"))
     demo_user = db_session.scalar(select(User).where(User.email == "user@example.com"))

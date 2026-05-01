@@ -1,0 +1,13 @@
+{
+  "task_number": 7,
+  "source_text": "Umzugsfirma Schnellweg\n\nPrivatumzüge europaweit, Verpackungsservice, Möbelmontage. Festpreisangebot nach Besichtigung.",
+  "situation_text": "Ihr Umzug verzögerte sich um einen Tag, Möbel wurden zerkratzt, und es fehlten zwei beschriftete Kartons.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an die Umzugsfirma. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie den vereinbarten und den tatsächlichen Ablauf",
+    "Legen Sie dar, welcher Schaden entstanden ist",
+    "Erklären Sie, was Sie als Ausgleich erwarten",
+    "Beschreiben Sie, was Sie tun, falls keine Lösung kommt"
+  ],
+  "is_active": true
+}

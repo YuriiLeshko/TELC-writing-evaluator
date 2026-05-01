@@ -1,0 +1,13 @@
+{
+  "task_number": 18,
+  "source_text": "Umweltgruppe GrünStadt\n\nStadtbegrünung, Müllsammelaktionen, Vorträge zu Klima und Mobilität.\n\nNeue Mitglieder sind willkommen.\n\nKontakt: [gruen@mail.de](mailto:gruen@mail.de)",
+  "situation_text": "Sie möchten sich für die Umwelt in Ihrer Stadt engagieren.",
+  "instruction_text": "Schreiben Sie an die Umweltgruppe und bitten Sie um Informationen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihr Engagementinteresse",
+    "Stellen Sie Fragen zu Treffen und Aktionen",
+    "Erklären Sie, welche Themen Sie besonders wichtig finden",
+    "Fragen Sie, wie Sie mitmachen können"
+  ],
+  "is_active": true
+}

@@ -1,0 +1,13 @@
+{
+  "task_number": 5,
+  "source_text": "Volkshochschule Stadtmitte\n\nKurse in Sprachen, IT, Kreativität und Gesundheit. Abende und Wochenendtermine. Zertifikate für Deutschkurse möglich.\n\nProgramm online. Beratung am Infoschalter.\n\nKontakt: [vhs@mail.de](mailto:vhs@mail.de)",
+  "situation_text": "Sie arbeiten tagsüber und möchten abends einen Kurs besuchen.",
+  "instruction_text": "Sie interessieren sich für ein Angebot der Volkshochschule. Schreiben Sie eine E-Mail mit Ihren Fragen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Nennen Sie, welche Kursart Sie suchen",
+    "Fragen Sie nach Terminen und Gebühren",
+    "Erklären Sie, warum Sie weiterlernen möchten",
+    "Beschreiben Sie Ihre Verfügbarkeit"
+  ],
+  "is_active": true
+}

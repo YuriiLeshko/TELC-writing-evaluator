@@ -1,0 +1,13 @@
+{
+  "task_number": 8,
+  "source_text": "Yoga-Studio Balance\n\nKurse für Anfänger und Fortgeschrittene, Meditation, Atemübungen. Probestunde möglich.\n\nMatten und Props vorhanden.\n\nKontakt: [yoga@mail.de](mailto:yoga@mail.de)",
+  "situation_text": "Sie möchten weniger Stress im Alltag und interessieren sich für Yoga.",
+  "instruction_text": "Schreiben Sie an das Yoga-Studio und bitten Sie um weitere Informationen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihre körperliche Vorerfahrung",
+    "Stellen Sie Fragen zu Kursen und Zeiten",
+    "Erklären Sie, was Sie sich von Yoga erhoffen",
+    "Fragen Sie nach Preisen und Ausrüstung"
+  ],
+  "is_active": true
+}

@@ -4,27 +4,39 @@ Seed and smoke-test utilities for TELC evaluator SQLite database.
 
 Purpose:
 - Initialize schema and insert minimal MVP demo data (users + tasks).
+- Load task definitions from JSON under backend/seed_data/tasks/.
 - Keep seeding idempotent for repeated local runs.
 - Provide task-pair helper logic for deterministic next-task selection.
 
 Structure:
-- Seed dataclasses (`UserSeed`, `TaskSeed`) and static seed payloads.
+- Seed dataclass (`UserSeed`) for static user payloads.
+- Task loading helpers and upsert by task_number.
 - Task selection helpers (`get_next_task_pair_for_user`, `advance_user_task_indices`).
-- Insert functions for users/info tasks/complaint tasks.
 - `seed()` entrypoint used by IDE terminal run: `PYTHONPATH=. python backend/seed.py`.
 
 Dependencies:
 pip install sqlalchemy
 """
 
+import json
 from collections.abc import Sequence
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from backend.database import SessionLocal, init_db
 from backend.models import ComplaintTask, InfoTask, User
+
+# During development, if database schema changed, reset DB manually:
+# rm -f telc_evaluator.db
+# PYTHONPATH=. python backend/seed.py
+
+BASE_DIR = Path(__file__).resolve().parent
+INFO_TASKS_DIR = BASE_DIR / "seed_data" / "tasks" / "info"
+COMPLAINT_TASKS_DIR = BASE_DIR / "seed_data" / "tasks" / "complaint"
 
 
 @dataclass(frozen=True)
@@ -36,15 +48,8 @@ class UserSeed:
     is_active: bool = True
     available_sessions: int = 5
     available_submissions: int = 5
-
-
-@dataclass(frozen=True)
-class TaskSeed:
-    task_number: int
-    source_text: str
-    situation_text: str
-    instruction_text: str
-    expected_key_points_json: list[str]
+    next_info_task_index: int = 1
+    next_complaint_task_index: int = 1
 
 
 USER_SEEDS: Sequence[UserSeed] = (
@@ -63,54 +68,124 @@ USER_SEEDS: Sequence[UserSeed] = (
         is_active=True,
         available_sessions=5,
         available_submissions=5,
+        next_info_task_index=1,
+        next_complaint_task_index=1,
     ),
 )
 
-INFO_TASK_SEEDS: Sequence[TaskSeed] = (
-    TaskSeed(
-        task_number=1,
-        source_text=(
-            "Ihre Wandergruppe plant einen Tagesausflug in die Berge. "
-            "Im letzten Rundschreiben wurden Treffpunkt, Ausruestung und Kosten genannt."
-        ),
-        situation_text=(
-            "Ein neues Mitglied konnte am Vorbereitungstreffen nicht teilnehmen und bittet um alle wichtigen Infos."
-        ),
-        instruction_text=(
-            "Schreiben Sie einen Informationsbrief. Gehen Sie auf Treffpunkt und Uhrzeit, noetige Ausruestung, "
-            "Kostenbeitrag und Kontaktmoeglichkeit fuer Rueckfragen ein."
-        ),
-        expected_key_points_json=[
-            "Treffpunkt und genaue Uhrzeit nennen",
-            "Noetige Ausruestung beschreiben",
-            "Kosten oder Beitrag erklaeren",
-            "Kontakt fuer Rueckfragen angeben",
-        ],
-    ),
-)
 
-COMPLAINT_TASK_SEEDS: Sequence[TaskSeed] = (
-    TaskSeed(
-        task_number=1,
-        source_text=(
-            "Sie haben bei Gartenservice Flora einen Fruehjahrsservice bestellt. "
-            "Der Einsatz war verspaetet, einige Beete wurden nicht bearbeitet, und es gab trotzdem die volle Rechnung."
-        ),
-        situation_text=(
-            "Sie moechten sich schriftlich beschweren und eine faire Loesung verlangen."
-        ),
-        instruction_text=(
-            "Schreiben Sie einen Beschwerdebrief an Gartenservice Flora. "
-            "Beschreiben Sie die Probleme konkret, erlaeutern Sie Ihre Erwartung und fordern Sie eine angemessene Reaktion."
-        ),
-        expected_key_points_json=[
-            "Verspaetung oder Terminproblem erwaehnen",
-            "Unvollstaendige Leistung konkret nennen",
-            "Unzufriedenheit mit der Rechnung darstellen",
-            "Konkrete Loesung oder Ausgleich fordern",
-        ],
-    ),
-)
+def load_task_file(path: Path) -> dict:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as e:
+        raise ValueError(f"Cannot read task file {path}: {e}") from e
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in task file {path}: {e}") from e
+    if not isinstance(data, dict):
+        raise ValueError(f"Task file {path} must contain a JSON object, got {type(data).__name__}")
+    return data
+
+
+def load_task_files(directory: Path) -> list[dict]:
+    if not directory.is_dir():
+        return []
+    paths = sorted(directory.glob("*.json"))
+    result: list[dict] = []
+    seen_numbers: dict[int, Path] = {}
+    for path in paths:
+        data = load_task_file(path)
+        validate_task_data(data, path)
+        task_number = data["task_number"]
+        if task_number in seen_numbers:
+            raise ValueError(
+                f"Duplicate task_number {task_number} in {seen_numbers[task_number]} and {path}"
+            )
+        seen_numbers[task_number] = path
+        result.append(data)
+    return result
+
+
+def validate_task_data(data: dict, path: Path) -> None:
+    def err(msg: str) -> ValueError:
+        return ValueError(f"{path}: {msg}")
+
+    if "task_number" not in data:
+        raise err("missing required field 'task_number'")
+    tn = data["task_number"]
+    if not isinstance(tn, int) or isinstance(tn, bool):
+        raise err(f"'task_number' must be an int, got {type(tn).__name__}")
+
+    for key in ("source_text", "situation_text", "instruction_text"):
+        if key not in data:
+            raise err(f"missing required field '{key}'")
+        val = data[key]
+        if not isinstance(val, str) or not val.strip():
+            raise err(f"'{key}' must be a non-empty string")
+
+    if "expected_key_points" not in data:
+        raise err("missing required field 'expected_key_points'")
+    points = data["expected_key_points"]
+    if not isinstance(points, list) or len(points) == 0:
+        raise err("'expected_key_points' must be a non-empty list")
+    for i, p in enumerate(points):
+        if not isinstance(p, str) or not p.strip():
+            raise err(f"'expected_key_points'[{i}] must be a non-empty string")
+
+    if "is_active" in data and not isinstance(data["is_active"], bool):
+        raise err("'is_active' must be a boolean when present")
+
+
+def serialize_key_points(points: list[str]) -> Any:
+    """Return value for JSON column `expected_key_points_json` (list of strings)."""
+    return list(points)
+
+
+def upsert_info_task(db: Session, data: dict) -> InfoTask:
+    is_active = bool(data["is_active"]) if "is_active" in data else True
+    key_payload = serialize_key_points(list(data["expected_key_points"]))
+    existing = db.scalar(select(InfoTask).where(InfoTask.task_number == data["task_number"]))
+    if existing is None:
+        row = InfoTask(
+            task_number=data["task_number"],
+            source_text=data["source_text"],
+            situation_text=data["situation_text"],
+            instruction_text=data["instruction_text"],
+            expected_key_points_json=key_payload,
+            is_active=is_active,
+        )
+        db.add(row)
+        return row
+    existing.source_text = data["source_text"]
+    existing.situation_text = data["situation_text"]
+    existing.instruction_text = data["instruction_text"]
+    existing.expected_key_points_json = key_payload
+    existing.is_active = is_active
+    return existing
+
+
+def upsert_complaint_task(db: Session, data: dict) -> ComplaintTask:
+    is_active = bool(data["is_active"]) if "is_active" in data else True
+    key_payload = serialize_key_points(list(data["expected_key_points"]))
+    existing = db.scalar(select(ComplaintTask).where(ComplaintTask.task_number == data["task_number"]))
+    if existing is None:
+        row = ComplaintTask(
+            task_number=data["task_number"],
+            source_text=data["source_text"],
+            situation_text=data["situation_text"],
+            instruction_text=data["instruction_text"],
+            expected_key_points_json=key_payload,
+            is_active=is_active,
+        )
+        db.add(row)
+        return row
+    existing.source_text = data["source_text"]
+    existing.situation_text = data["situation_text"]
+    existing.instruction_text = data["instruction_text"]
+    existing.expected_key_points_json = key_payload
+    existing.is_active = is_active
+    return existing
 
 
 def get_next_task_pair_for_user(db: Session, user: User) -> tuple[InfoTask, ComplaintTask] | None:
@@ -153,61 +228,54 @@ def seed_users(db: Session) -> None:
                     is_active=seed.is_active,
                     available_sessions=seed.available_sessions,
                     available_submissions=seed.available_submissions,
+                    next_info_task_index=seed.next_info_task_index,
+                    next_complaint_task_index=seed.next_complaint_task_index,
                 )
             )
 
 
-def seed_info_tasks(db: Session) -> None:
-    for seed in INFO_TASK_SEEDS:
-        existing = db.scalar(select(InfoTask).where(InfoTask.task_number == seed.task_number))
-        if existing is None:
-            db.add(
-                InfoTask(
-                    task_number=seed.task_number,
-                    source_text=seed.source_text,
-                    situation_text=seed.situation_text,
-                    instruction_text=seed.instruction_text,
-                    expected_key_points_json=seed.expected_key_points_json,
-                    is_active=True,
-                )
-            )
+def seed_info_tasks(db: Session) -> int:
+    payloads = load_task_files(INFO_TASKS_DIR)
+    for data in payloads:
+        upsert_info_task(db, data)
+    return len(payloads)
 
 
-def seed_complaint_tasks(db: Session) -> None:
-    for seed in COMPLAINT_TASK_SEEDS:
-        existing = db.scalar(select(ComplaintTask).where(ComplaintTask.task_number == seed.task_number))
-        if existing is None:
-            db.add(
-                ComplaintTask(
-                    task_number=seed.task_number,
-                    source_text=seed.source_text,
-                    situation_text=seed.situation_text,
-                    instruction_text=seed.instruction_text,
-                    expected_key_points_json=seed.expected_key_points_json,
-                    is_active=True,
-                )
-            )
+def seed_complaint_tasks(db: Session) -> int:
+    payloads = load_task_files(COMPLAINT_TASKS_DIR)
+    for data in payloads:
+        upsert_complaint_task(db, data)
+    return len(payloads)
 
 
-def print_summary(db: Session) -> None:
+def print_summary(db: Session, info_files_loaded: int, complaint_files_loaded: int) -> None:
     users_count = db.scalar(select(func.count()).select_from(User)) or 0
     info_tasks_count = db.scalar(select(func.count()).select_from(InfoTask)) or 0
     complaint_tasks_count = db.scalar(select(func.count()).select_from(ComplaintTask)) or 0
+
+    demo_user = db.scalar(select(User).where(User.email == "user@example.com"))
 
     print("Seed completed.")
     print(f"users count: {users_count}")
     print(f"info tasks count: {info_tasks_count}")
     print(f"complaint tasks count: {complaint_tasks_count}")
+    print(f"loaded info task files: {info_files_loaded}")
+    print(f"loaded complaint task files: {complaint_files_loaded}")
+    if demo_user is not None:
+        print(f"demo user available_sessions: {demo_user.available_sessions}")
+        print(f"demo user available_submissions: {demo_user.available_submissions}")
+        print(f"demo user next_info_task_index: {demo_user.next_info_task_index}")
+        print(f"demo user next_complaint_task_index: {demo_user.next_complaint_task_index}")
 
 
 def seed() -> None:
     init_db()
     with SessionLocal() as db:
         seed_users(db)
-        seed_info_tasks(db)
-        seed_complaint_tasks(db)
+        info_loaded = seed_info_tasks(db)
+        complaint_loaded = seed_complaint_tasks(db)
         db.commit()
-        print_summary(db)
+        print_summary(db, info_loaded, complaint_loaded)
 
 
 if __name__ == "__main__":

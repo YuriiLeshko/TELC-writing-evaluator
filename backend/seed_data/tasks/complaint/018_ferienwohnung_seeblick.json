@@ -1,0 +1,13 @@
+{
+  "task_number": 18,
+  "source_text": "Ferienwohnung Seeblick\n\nDirekt am See, WLAN, Fahrräder auf Anfrage. Mindestaufenthalt drei Nächte.\n\nAnzahlung bei Buchung.",
+  "situation_text": "Die Wohnung entsprach nicht den Fotos: Schimmel im Bad, defekter Herd, und der vereinbarte Fahrradverleih existierte nicht.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an den Vermieter oder die Agentur. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Buchungszeitraum und erwarteten Standard",
+    "Legen Sie dar, welche Mängel Sie vorfanden",
+    "Erklären Sie, was Sie als Ausgleich erwarten",
+    "Beschreiben Sie weitere Schritte"
+  ],
+  "is_active": true
+}

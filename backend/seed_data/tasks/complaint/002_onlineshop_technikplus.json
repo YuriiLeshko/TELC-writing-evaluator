@@ -1,0 +1,13 @@
+{
+  "task_number": 2,
+  "source_text": "Online-Shop TechnikPlus\n\nWir bieten elektronische Geräte, Zubehör und schnelle Lieferung. Kundenzufriedenheit und Qualität stehen bei uns an erster Stelle. Bei Fragen hilft Ihnen unser Kundenservice gern weiter.",
+  "situation_text": "Sie haben online Kopfhörer bestellt. Die Lieferung kam verspätet an, und das Produkt war beschädigt. Außerdem funktioniert ein Kopfhörer nicht.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an den Kundenservice. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie, welches Produkt Sie bestellt haben",
+    "Erklären Sie, was mit der Lieferung oder dem Produkt nicht in Ordnung war",
+    "Legen Sie dar, was Sie vom Kundenservice erwarten",
+    "Beschreiben Sie, was Sie tun, falls keine Lösung angeboten wird"
+  ],
+  "is_active": true
+}

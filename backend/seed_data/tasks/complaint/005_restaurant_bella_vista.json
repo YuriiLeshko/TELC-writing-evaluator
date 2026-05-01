@@ -1,0 +1,13 @@
+{
+  "task_number": 5,
+  "source_text": "Restaurant Bella Vista\n\nItalienische Küche, frische Zutaten, gemütliche Atmosphäre. Reservierung empfohlen.\n\nGruppenmenüs auf Anfrage.",
+  "situation_text": "Sie haben mit Freunden reserviert. Der Service war langsam, eine Vorspeise kam kalt, und die Rechnung enthielt Positionen, die Sie nicht bestellt hatten.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an das Restaurant. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie den Ablauf des Besuchs",
+    "Erklären Sie, was schiefging",
+    "Legen Sie dar, was Sie vom Restaurant erwarten",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun"
+  ],
+  "is_active": true
+}

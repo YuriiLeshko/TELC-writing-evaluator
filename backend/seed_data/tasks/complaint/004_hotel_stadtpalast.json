@@ -1,0 +1,13 @@
+{
+  "task_number": 4,
+  "source_text": "Hotel Stadtpalast\n\nZentrale Lage, komfortable Zimmer, Frühstücksbuffet und 24h-Rezeption. Parkplätze nach Verfügbarkeit.\n\nBestpreisgarantie bei Direktbuchung.",
+  "situation_text": "Sie haben drei Nächte im Hotel Stadtpalast gebucht. Das Zimmer lag zur Baustelle, der Lärm war nachts extrem, und die Klimaanlage war defekt.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an das Hotel. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie die konkreten Probleme während Ihres Aufenthalts",
+    "Erklären Sie, warum Sie unzufrieden sind",
+    "Legen Sie dar, was Sie als angemessene Lösung erwarten",
+    "Beschreiben Sie, was Sie tun, falls das Hotel nicht reagiert"
+  ],
+  "is_active": true
+}

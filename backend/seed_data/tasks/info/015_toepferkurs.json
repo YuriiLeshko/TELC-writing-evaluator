@@ -1,0 +1,13 @@
+{
+  "task_number": 15,
+  "source_text": "Töpferei Ton & Form\n\nKurse für Anfänger: Tassen, Schalen, Vasen. Brennen und Glasur inklusive.\n\nKleine Gruppen.\n\nKontakt: [tonform@mail.de](mailto:tonform@mail.de)",
+  "situation_text": "Sie möchten kreativ mit Ton arbeiten und haben die Töpferei gefunden.",
+  "instruction_text": "Schreiben Sie an die Töpferei und bitten Sie um Informationen. Behandeln Sie drei der möglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Wörter.",
+  "expected_key_points": [
+    "Beschreiben Sie Ihre künstlerischen Wünsche",
+    "Stellen Sie Fragen zu Kursdauer und Kosten",
+    "Erklären Sie, ob Sie Anfänger sind",
+    "Fragen Sie nach Material und Kleidung"
+  ],
+  "is_active": true
+}
