@@ -1,41 +1,36 @@
-# TELC Writing Evaluator Frontend (Streamlit MVP)
+# TELC Writing Evaluator — React Frontend
 
-This frontend is an MVP UI for the existing FastAPI backend.
-It communicates with backend endpoints only through HTTP requests.
+Vite + React (JavaScript) SPA. Communicates with the FastAPI backend only via HTTP, following `docs/api_contract.md`.
 
-## Prerequisites
+## Lokale Entwicklung
 
-- Python 3.10+
-- Backend running locally
-
-## Run backend
-
-From the project root:
+**Backend:**
 
 ```bash
 PYTHONPATH=. uvicorn backend.main:app --reload
 ```
 
-By default backend is available on `http://127.0.0.1:8000`.
-
-## Install frontend dependencies
-
-From the project root:
+**Frontend:**
 
 ```bash
-pip install -r frontend/requirements.txt
+cd frontend
+npm install
+cp .env.example .env
+npm run dev
 ```
 
-## Run frontend
+Vite läuft standardmäßig unter `http://127.0.0.1:5173`. Die API-URL setzen Sie in `.env` über `VITE_API_BASE_URL` (siehe `.env.example`).
 
-```bash
-API_BASE_URL=http://127.0.0.1:8000 streamlit run frontend/app.py
-```
+## Render Deployment
 
-If `API_BASE_URL` is not set, frontend uses:
+- **Build Command:** `npm install && npm run build`
+- **Publish Directory:** `dist`
+- **Environment:** `VITE_API_BASE_URL=https://your-backend-url.onrender.com`
 
-- `http://127.0.0.1:8000`
+## Skripte
 
-## Demo auth note
-
-Current backend auth is demo-based (no JWT yet). The frontend provides a UI role selector (User/Admin) for MVP navigation, while backend access control still follows backend demo helper logic.
+| Befehl        | Beschreibung        |
+| ------------- | ------------------- |
+| `npm run dev` | Entwicklungsserver  |
+| `npm run build` | Produktions-Build |
+| `npm run preview` | Vorschau des Builds |
