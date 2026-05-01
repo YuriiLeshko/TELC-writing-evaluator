@@ -1,0 +1,13 @@
+{
+  "task_number": 9,
+  "source_text": "Im Internetportal finden Sie eine Anzeige von Kochschule Genusswerk. Dort wird Folgendes angeboten: Internationale Kueche, kleine Gruppen. Kontakt: genusswerk@mail.de.",
+  "situation_text": "Sie kochen gern und wollen Neues lernen.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Kochschule Genusswerk und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Ihre Kochinteressen beschreiben",
+    "Nach Kursinhalten fragen",
+    "Nach Kosten und Anmeldung fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

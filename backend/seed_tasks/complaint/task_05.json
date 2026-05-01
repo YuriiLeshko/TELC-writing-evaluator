@@ -1,0 +1,13 @@
+{
+  "task_number": 5,
+  "source_text": "In einer Hotelanzeige von Hotel Seeblick wird versprochen: ruhige Zimmer und reichhaltiges Fruehstueck. Kontakt fuer Beschwerden: rezeption@seeblick.de.",
+  "situation_text": "Zimmer war laut und nicht sauber, Fruehstueck entsprach nicht der Beschreibung.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Hotel Seeblick. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Aufenthaltsdaten nennen",
+    "Abweichungen von Anzeige darstellen",
+    "Kompensation fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

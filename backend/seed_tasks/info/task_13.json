@@ -1,0 +1,13 @@
+{
+  "task_number": 13,
+  "source_text": "Im Aushang im Hallenbad finden Sie eine Anzeige von Schwimmverein WasserFit. Dort wird Folgendes angeboten: Techniktraining fuer Erwachsene. Kontakt: wasserfit@mail.de.",
+  "situation_text": "Sie moechten Ihre Kondition verbessern.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Schwimmverein WasserFit und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Ihr Trainingsziel erklaeren",
+    "Nach Einstufung fragen",
+    "Nach Zeiten und Gebuehren fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

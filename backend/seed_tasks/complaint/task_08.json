@@ -1,0 +1,13 @@
+{
+  "task_number": 8,
+  "source_text": "In einer Tarifwerbung von Mobilfunkanbieter Connecta wird versprochen: stabiles Netz und schneller Support. Kontakt fuer Beschwerden: support@connecta.de.",
+  "situation_text": "Seit Vertragsbeginn gibt es haeufig Netzausfaelle.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Mobilfunkanbieter Connecta. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Vertragsnummer nennen",
+    "Stoerungen und Folgen beschreiben",
+    "Technische Loesung oder Preisnachlass fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

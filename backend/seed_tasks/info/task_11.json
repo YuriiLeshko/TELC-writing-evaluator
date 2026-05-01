@@ -1,0 +1,13 @@
+{
+  "task_number": 11,
+  "source_text": "Im Newsletter finden Sie eine Anzeige von Tierschutzverein Pfotenhilfe. Dort wird Folgendes angeboten: Pflegefamilien fuer Katzen gesucht. Kontakt: pfotenhilfe@mail.de.",
+  "situation_text": "Sie moechten zeitweise Tiere betreuen.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Tierschutzverein Pfotenhilfe und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Ihre Wohnsituation beschreiben",
+    "Nach Verantwortung fragen",
+    "Nach tieraerztlicher Betreuung fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

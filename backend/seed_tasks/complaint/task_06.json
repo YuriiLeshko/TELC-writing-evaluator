@@ -1,0 +1,13 @@
+{
+  "task_number": 6,
+  "source_text": "In einer Online-Kursanzeige von Sprachschule Global wird versprochen: kleine Gruppen und individuelle Betreuung. Kontakt fuer Beschwerden: global@mail.de.",
+  "situation_text": "Der Kurs ist ueberfuellt und es fallen haeufig Stunden aus.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Sprachschule Global. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Kurs und Zeitraum nennen",
+    "Unterrichtsprobleme schildern",
+    "Korrektur oder Teil-Erstattung fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

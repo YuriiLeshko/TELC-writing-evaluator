@@ -1,0 +1,13 @@
+{
+  "task_number": 7,
+  "source_text": "Im Sportforum finden Sie eine Anzeige von Laufgruppe Morgenrunde. Dort wird Folgendes angeboten: Strecken 5 bis 12 km, zweimal pro Woche. Kontakt: morgenrunde@mail.de.",
+  "situation_text": "Sie wollen regelmaessig trainieren.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Laufgruppe Morgenrunde und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Ihren Trainingsstand erklaeren",
+    "Nach Leistungsgruppen fragen",
+    "Nach Probetraining und Treffpunkt fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

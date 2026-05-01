@@ -1,0 +1,13 @@
+{
+  "task_number": 1,
+  "source_text": "In einer Firmenanzeige von Reinigungsfirma Glanz wird versprochen: puenktlicher und gruendlicher Reinigungsservice. Kontakt fuer Beschwerden: glanz@mail.de.",
+  "situation_text": "Der Termin war verspaetet und die Wohnung wurde nur oberflaechlich gereinigt.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Reinigungsfirma Glanz. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Vereinbarte Leistung und Termin nennen",
+    "Maengel konkret beschreiben",
+    "Loesung und Ausgleich fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

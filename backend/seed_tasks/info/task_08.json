@@ -1,0 +1,13 @@
+{
+  "task_number": 8,
+  "source_text": "Im Kulturhaus finden Sie eine Anzeige von Theatergruppe Buehnenlicht. Dort wird Folgendes angeboten: Neue fuer Herbstprojekt willkommen. Kontakt: buehnenlicht@mail.de.",
+  "situation_text": "Sie interessieren sich fuer Schauspiel.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Theatergruppe Buehnenlicht und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Ihre Motivation darstellen",
+    "Nach Probenzeiten fragen",
+    "Nach Anforderungen fuer Neue fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

@@ -1,0 +1,13 @@
+{
+  "task_number": 10,
+  "source_text": "In einer Unternehmenswebseite von Busunternehmen CityBus wird versprochen: puenktliche Verbindungen und guter Service. Kontakt fuer Beschwerden: citybus@mail.de.",
+  "situation_text": "Ihr Monatsabo wurde mehrfach nicht erkannt und Busse waren stark verspaetet.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Busunternehmen CityBus. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Abo-Daten nennen",
+    "Probleme im Alltag schildern",
+    "Ausgleich oder Korrektur fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

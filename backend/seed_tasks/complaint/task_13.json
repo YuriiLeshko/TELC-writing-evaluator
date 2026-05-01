@@ -1,0 +1,13 @@
+{
+  "task_number": 13,
+  "source_text": "In einer Tarifprospekt von Energieanbieter KlarStrom wird versprochen: faire Tarife und transparente Rechnungen. Kontakt fuer Beschwerden: service@klarstrom.de.",
+  "situation_text": "Ihre Rechnung ist unerwartet hoch und unklar aufgeschluesselt.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Energieanbieter KlarStrom. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Rechnungsnummer nennen",
+    "Unklarheiten erklaeren",
+    "Pruefung und Korrektur fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

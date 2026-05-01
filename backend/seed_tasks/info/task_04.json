@@ -1,0 +1,13 @@
+{
+  "task_number": 4,
+  "source_text": "Im Online-Anzeige finden Sie eine Anzeige von Musikschule Klangpunkt. Dort wird Folgendes angeboten: Abendkurs Gitarre in kleinen Gruppen. Kontakt: klangpunkt@mail.de.",
+  "situation_text": "Sie suchen ein neues Freizeit-Hobby.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Musikschule Klangpunkt und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Bisherige Erfahrung beschreiben",
+    "Nach Kursaufbau und Material fragen",
+    "Nach Preisen und Starttermin fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

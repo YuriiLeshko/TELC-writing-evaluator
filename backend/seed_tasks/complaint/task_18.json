@@ -1,0 +1,13 @@
+{
+  "task_number": 18,
+  "source_text": "In einer Website von Coworking HubSpace wird versprochen: ruhige Arbeitsplaetze und stabiles WLAN. Kontakt fuer Beschwerden: office@hubspace.de.",
+  "situation_text": "WLAN faellt haeufig aus und es ist oft zu laut.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Coworking HubSpace. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Nutzungszeitraum nennen",
+    "Probleme und Folgen erlaeutern",
+    "Verbesserung oder Tarifanpassung fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

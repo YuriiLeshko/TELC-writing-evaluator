@@ -1,0 +1,13 @@
+{
+  "task_number": 6,
+  "source_text": "Im Volkshochschule finden Sie eine Anzeige von Fotokurs Lichtblick. Dort wird Folgendes angeboten: Praxis und Theorie am Wochenende. Kontakt: lichtblick@mail.de.",
+  "situation_text": "Sie fotografieren gern und wollen sich verbessern.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Fotokurs Lichtblick und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Ihre Schwerpunkte nennen",
+    "Nach Kameraanforderungen fragen",
+    "Nach Kursdauer und Zertifikat fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

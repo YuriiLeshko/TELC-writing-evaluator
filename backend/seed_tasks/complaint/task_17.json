@@ -1,0 +1,13 @@
+{
+  "task_number": 17,
+  "source_text": "In einer Prospekt von Haushaltsgeraete EasyHome wird versprochen: schnelle Reparaturgarantie. Kontakt fuer Beschwerden: service@easyhome.de.",
+  "situation_text": "Neues Geraet war schnell defekt, Reparaturtermine wurden verschoben.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Haushaltsgeraete EasyHome. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Kaufdatum nennen",
+    "Defekt und Terminprobleme schildern",
+    "Austausch oder schnelle Reparatur fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

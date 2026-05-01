@@ -1,0 +1,13 @@
+{
+  "task_number": 2,
+  "source_text": "In einer Webshop-Werbung von TechNova Online-Shop wird versprochen: 24h Lieferung und original verpackte Neuware. Kontakt fuer Beschwerden: service@technova.de.",
+  "situation_text": "Die Lieferung kam spaet, Verpackung war beschaedigt und ein Teil fehlte.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an TechNova Online-Shop. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Bestellnummer und Datum nennen",
+    "Probleme bei Lieferung schildern",
+    "Nachlieferung oder Erstattung fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

@@ -1,0 +1,13 @@
+{
+  "task_number": 4,
+  "source_text": "In einer Prospekt von Fitnessstudio FitArena wird versprochen: moderne Geraete und saubere Umkleiden. Kontakt fuer Beschwerden: fitarena@mail.de.",
+  "situation_text": "Mehrere Geraete sind defekt und die Umkleide ist oft verschmutzt.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Fitnessstudio FitArena. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Maengel im Studio beschreiben",
+    "Auswirkungen auf Ihr Training nennen",
+    "Verbesserungen fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

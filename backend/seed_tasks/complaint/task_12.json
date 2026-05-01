@@ -1,0 +1,13 @@
+{
+  "task_number": 12,
+  "source_text": "In einer Anzeigenbanner von Kurierdienst SprintExpress wird versprochen: same-day delivery mit Live-Tracking. Kontakt fuer Beschwerden: kontakt@sprintexpress.de.",
+  "situation_text": "Das Dokument kam einen Tag spaeter an und Tracking war falsch.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Kurierdienst SprintExpress. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Sendungsnummer nennen",
+    "Verspaetung und Trackingfehler erklaeren",
+    "Entschaedigung fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

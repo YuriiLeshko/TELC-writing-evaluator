@@ -1,0 +1,13 @@
+{
+  "task_number": 19,
+  "source_text": "In einer Eventwerbung von Veranstalter KulturLive wird versprochen: nummerierte Sitzplaetze und frueher Einlass. Kontakt fuer Beschwerden: info@kulturlive.de.",
+  "situation_text": "Einlass begann spaet, Sitzplatz war besetzt und Personal half kaum.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Veranstalter KulturLive. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Ticketdaten nennen",
+    "Probleme beim Einlass beschreiben",
+    "Entschaedigung fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

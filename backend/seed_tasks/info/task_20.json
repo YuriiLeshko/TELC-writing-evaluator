@@ -1,0 +1,13 @@
+{
+  "task_number": 20,
+  "source_text": "Im Vereinswebseite finden Sie eine Anzeige von Tandemprogramm Mehrsprachig. Dort wird Folgendes angeboten: Sprachpartnerschaften fuer Deutsch und Fremdsprachen. Kontakt: mehrsprachig@mail.de.",
+  "situation_text": "Sie wollen Deutsch verbessern und Ihre Muttersprache anbieten.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Tandemprogramm Mehrsprachig und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Ihre Sprachkenntnisse beschreiben",
+    "Nach Matching-Prozess fragen",
+    "Nach Haeufigkeit der Treffen fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

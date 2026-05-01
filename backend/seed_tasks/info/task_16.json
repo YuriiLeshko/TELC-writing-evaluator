@@ -1,0 +1,13 @@
+{
+  "task_number": 16,
+  "source_text": "Im Stadtnewsletter finden Sie eine Anzeige von Umweltprojekt Sauberes Ufer. Dort wird Folgendes angeboten: Monatliche Aufraeumaktionen am Fluss. Kontakt: sauberesufer@mail.de.",
+  "situation_text": "Sie moechten Umweltschutz aktiv unterstuetzen.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Umweltprojekt Sauberes Ufer und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Ihre Motivation beschreiben",
+    "Nach Treffpunkt und Dauer fragen",
+    "Nach Ausruestung fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

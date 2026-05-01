@@ -1,0 +1,13 @@
+{
+  "task_number": 3,
+  "source_text": "Im Aushang im Supermarkt finden Sie eine Anzeige von Nachbarschaftshilfe Sonnental. Dort wird Folgendes angeboten: Einkaufshilfe, Begleitung zu Terminen. Kontakt: sonnental@mail.de.",
+  "situation_text": "Sie moechten sich ehrenamtlich engagieren.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Nachbarschaftshilfe Sonnental und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Ihre Motivation darstellen",
+    "Nach Aufgabenbereichen fragen",
+    "Verfuegbare Zeiten nennen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

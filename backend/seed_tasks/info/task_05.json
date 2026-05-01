@@ -1,0 +1,13 @@
+{
+  "task_number": 5,
+  "source_text": "Im Stadtmagazin finden Sie eine Anzeige von Urban Gardening Gruene Ecke. Dort wird Folgendes angeboten: Gemeinschaftsbeete und Wochenend-Workshops. Kontakt: grueneecke@mail.de.",
+  "situation_text": "Sie moechten gaertnern lernen.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Urban Gardening Gruene Ecke und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Interesse und Ziele nennen",
+    "Nach Werkzeug und Einstieg fragen",
+    "Nach Regeln fuer neue Mitglieder fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

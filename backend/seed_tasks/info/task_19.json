@@ -1,0 +1,13 @@
+{
+  "task_number": 19,
+  "source_text": "Im Stadtportal finden Sie eine Anzeige von Kreativwerkstatt MixArt. Dort wird Folgendes angeboten: Wochenendkurse fuer Keramik und Textil. Kontakt: mixart@mail.de.",
+  "situation_text": "Sie wollen kreative Techniken ausprobieren.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Kreativwerkstatt MixArt und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Ihre Interessen nennen",
+    "Nach Materialkosten fragen",
+    "Nach Kursniveau und Anmeldung fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

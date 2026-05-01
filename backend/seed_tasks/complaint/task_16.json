@@ -1,0 +1,13 @@
+{
+  "task_number": 16,
+  "source_text": "In einer Cafe-Anzeige von Cafe Morgenstern wird versprochen: Reservierung ohne Wartezeit. Kontakt fuer Beschwerden: morgenstern@mail.de.",
+  "situation_text": "Trotz Reservierung gab es keinen freien Tisch und Sie mussten lange warten.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Cafe Morgenstern. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Reservierungsdaten nennen",
+    "Ablauf beschreiben",
+    "Wiedergutmachung erbitten",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

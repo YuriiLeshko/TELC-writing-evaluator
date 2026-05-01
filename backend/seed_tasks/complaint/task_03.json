@@ -1,0 +1,13 @@
+{
+  "task_number": 3,
+  "source_text": "In einer Internetanzeige von Fluggesellschaft SkyLines wird versprochen: zuverlaessiger Service und schnelle Hilfe. Kontakt fuer Beschwerden: feedback@skylines.de.",
+  "situation_text": "Ihr Flug hatte mehrere Stunden Verspaetung, Gepaeck kam spaet und Information fehlte.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Fluggesellschaft SkyLines. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Flugdaten nennen",
+    "Ablauf und Probleme erklaeren",
+    "Entschaedigung verlangen",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

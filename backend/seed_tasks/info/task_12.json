@@ -1,0 +1,13 @@
+{
+  "task_number": 12,
+  "source_text": "Im Kulturkalender finden Sie eine Anzeige von Filmforum Treffpunkt. Dort wird Folgendes angeboten: Filmabende mit Diskussion. Kontakt: filmforum@mail.de.",
+  "situation_text": "Sie sehen gern Filme in Originalsprache.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Filmforum Treffpunkt und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Ihre Interessen nennen",
+    "Nach Sprache und Untertiteln fragen",
+    "Nach Mitgliedsbeitrag fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

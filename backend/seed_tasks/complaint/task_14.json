@@ -1,0 +1,13 @@
+{
+  "task_number": 14,
+  "source_text": "In einer Internetanzeige von Mietwagenfirma DriveNow wird versprochen: vollgetankte Fahrzeuge und keine Zusatzkosten. Kontakt fuer Beschwerden: service@drivenow.de.",
+  "situation_text": "Auto war nicht vollgetankt und es wurden unerwartete Gebuehren berechnet.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Mietwagenfirma DriveNow. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Mietzeitraum nennen",
+    "Probleme bei Abholung und Rueckgabe schildern",
+    "Rueckerstattung fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

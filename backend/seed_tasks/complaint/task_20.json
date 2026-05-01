@@ -1,0 +1,13 @@
+{
+  "task_number": 20,
+  "source_text": "In einer Shop-Werbung von Versandhaus HomeLine wird versprochen: Rueckerstattung innerhalb von 5 Tagen. Kontakt fuer Beschwerden: support@homeline.de.",
+  "situation_text": "Ruecksendung wurde bestaetigt, aber Erstattung fehlt seit Wochen.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Versandhaus HomeLine. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Bestell- und Ruecksendedaten nennen",
+    "Verzoegerung erklaeren",
+    "Schnelle Rueckzahlung fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

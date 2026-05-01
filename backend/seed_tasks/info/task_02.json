@@ -1,0 +1,13 @@
+{
+  "task_number": 2,
+  "source_text": "Im Bibliotheksanzeige finden Sie eine Anzeige von Sprachcafe Dialog Plus. Dort wird Folgendes angeboten: Treffen mittwochs 18:30, Tandem-Partner moeglich. Kontakt: dialogplus@mail.de.",
+  "situation_text": "Sie moechten Ihr Deutsch im Alltag verbessern.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Sprachcafe Dialog Plus und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Ihre Sprachziele schildern",
+    "Nach Gruppengroesse und Niveau fragen",
+    "Nach Anmeldung und Kosten fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

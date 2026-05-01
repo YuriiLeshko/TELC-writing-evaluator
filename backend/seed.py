@@ -3,22 +3,15 @@ from __future__ import annotations
 Seed and smoke-test utilities for TELC evaluator SQLite database.
 
 Purpose:
-- Initialize schema and insert minimal MVP demo data (users + tasks).
+- Initialize schema and insert demo users.
+- Load info/complaint tasks from external JSON files.
 - Keep seeding idempotent for repeated local runs.
-- Provide task-pair helper logic for deterministic next-task selection.
-
-Structure:
-- Seed dataclasses (`UserSeed`, `TaskSeed`) and static seed payloads.
-- Task selection helpers (`get_next_task_pair_for_user`, `advance_user_task_indices`).
-- Insert functions for users/info tasks/complaint tasks.
-- `seed()` entrypoint used by IDE terminal run: `PYTHONPATH=. python backend/seed.py`.
-
-Dependencies:
-pip install sqlalchemy
 """
 
 from collections.abc import Sequence
 from dataclasses import dataclass
+from pathlib import Path
+import json
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -45,6 +38,7 @@ class TaskSeed:
     situation_text: str
     instruction_text: str
     expected_key_points_json: list[str]
+    is_active: bool = True
 
 
 USER_SEEDS: Sequence[UserSeed] = (
@@ -61,63 +55,57 @@ USER_SEEDS: Sequence[UserSeed] = (
         role="user",
         username="user",
         is_active=True,
-        available_sessions=5,
-        available_submissions=5,
+        available_sessions=20,
+        available_submissions=20,
     ),
 )
 
-INFO_TASK_SEEDS: Sequence[TaskSeed] = (
-    TaskSeed(
-        task_number=1,
-        source_text=(
-            "Ihre Wandergruppe plant einen Tagesausflug in die Berge. "
-            "Im letzten Rundschreiben wurden Treffpunkt, Ausruestung und Kosten genannt."
-        ),
-        situation_text=(
-            "Ein neues Mitglied konnte am Vorbereitungstreffen nicht teilnehmen und bittet um alle wichtigen Infos."
-        ),
-        instruction_text=(
-            "Schreiben Sie einen Informationsbrief. Gehen Sie auf Treffpunkt und Uhrzeit, noetige Ausruestung, "
-            "Kostenbeitrag und Kontaktmoeglichkeit fuer Rueckfragen ein."
-        ),
-        expected_key_points_json=[
-            "Treffpunkt und genaue Uhrzeit nennen",
-            "Noetige Ausruestung beschreiben",
-            "Kosten oder Beitrag erklaeren",
-            "Kontakt fuer Rueckfragen angeben",
-        ],
-    ),
-)
+TASKS_BASE_DIR = Path(__file__).resolve().parent / "seed_tasks"
+INFO_TASKS_DIR = TASKS_BASE_DIR / "info"
+COMPLAINT_TASKS_DIR = TASKS_BASE_DIR / "complaint"
 
-COMPLAINT_TASK_SEEDS: Sequence[TaskSeed] = (
-    TaskSeed(
-        task_number=1,
-        source_text=(
-            "Sie haben bei Gartenservice Flora einen Fruehjahrsservice bestellt. "
-            "Der Einsatz war verspaetet, einige Beete wurden nicht bearbeitet, und es gab trotzdem die volle Rechnung."
-        ),
-        situation_text=(
-            "Sie moechten sich schriftlich beschweren und eine faire Loesung verlangen."
-        ),
-        instruction_text=(
-            "Schreiben Sie einen Beschwerdebrief an Gartenservice Flora. "
-            "Beschreiben Sie die Probleme konkret, erlaeutern Sie Ihre Erwartung und fordern Sie eine angemessene Reaktion."
-        ),
-        expected_key_points_json=[
-            "Verspaetung oder Terminproblem erwaehnen",
-            "Unvollstaendige Leistung konkret nennen",
-            "Unzufriedenheit mit der Rechnung darstellen",
-            "Konkrete Loesung oder Ausgleich fordern",
-        ],
-    ),
-)
+
+def _read_task_file(path: Path) -> TaskSeed:
+    data = json.loads(path.read_text())
+    for key in (
+        "task_number",
+        "source_text",
+        "situation_text",
+        "instruction_text",
+        "expected_key_points",
+    ):
+        if key not in data:
+            raise ValueError(f"Missing key '{key}' in {path}")
+
+    key_points = data["expected_key_points"]
+    if not isinstance(key_points, list) or any(not isinstance(item, str) for item in key_points):
+        raise ValueError(f"'expected_key_points' must be list[str] in {path}")
+
+    return TaskSeed(
+        task_number=int(data["task_number"]),
+        source_text=str(data["source_text"]),
+        situation_text=str(data["situation_text"]),
+        instruction_text=str(data["instruction_text"]),
+        expected_key_points_json=[item.strip() for item in key_points if item.strip()],
+        is_active=bool(data.get("is_active", True)),
+    )
+
+
+def load_info_task_seeds() -> Sequence[TaskSeed]:
+    files = sorted(INFO_TASKS_DIR.glob("*.json"))
+    if not files:
+        raise FileNotFoundError(f"No info task files found in {INFO_TASKS_DIR}")
+    return tuple(_read_task_file(path) for path in files)
+
+
+def load_complaint_task_seeds() -> Sequence[TaskSeed]:
+    files = sorted(COMPLAINT_TASKS_DIR.glob("*.json"))
+    if not files:
+        raise FileNotFoundError(f"No complaint task files found in {COMPLAINT_TASKS_DIR}")
+    return tuple(_read_task_file(path) for path in files)
 
 
 def get_next_task_pair_for_user(db: Session, user: User) -> tuple[InfoTask, ComplaintTask] | None:
-    """
-    Returns the active task pair based on user's next indices.
-    Later session creation should increment both indices after showing tasks.
-    """
     info_task = db.scalar(
         select(InfoTask).where(
             InfoTask.task_number == user.next_info_task_index,
@@ -158,7 +146,7 @@ def seed_users(db: Session) -> None:
 
 
 def seed_info_tasks(db: Session) -> None:
-    for seed in INFO_TASK_SEEDS:
+    for seed in load_info_task_seeds():
         existing = db.scalar(select(InfoTask).where(InfoTask.task_number == seed.task_number))
         if existing is None:
             db.add(
@@ -168,13 +156,13 @@ def seed_info_tasks(db: Session) -> None:
                     situation_text=seed.situation_text,
                     instruction_text=seed.instruction_text,
                     expected_key_points_json=seed.expected_key_points_json,
-                    is_active=True,
+                    is_active=seed.is_active,
                 )
             )
 
 
 def seed_complaint_tasks(db: Session) -> None:
-    for seed in COMPLAINT_TASK_SEEDS:
+    for seed in load_complaint_task_seeds():
         existing = db.scalar(select(ComplaintTask).where(ComplaintTask.task_number == seed.task_number))
         if existing is None:
             db.add(
@@ -184,7 +172,7 @@ def seed_complaint_tasks(db: Session) -> None:
                     situation_text=seed.situation_text,
                     instruction_text=seed.instruction_text,
                     expected_key_points_json=seed.expected_key_points_json,
-                    is_active=True,
+                    is_active=seed.is_active,
                 )
             )
 
@@ -198,6 +186,8 @@ def print_summary(db: Session) -> None:
     print(f"users count: {users_count}")
     print(f"info tasks count: {info_tasks_count}")
     print(f"complaint tasks count: {complaint_tasks_count}")
+    print(f"info source dir: {INFO_TASKS_DIR}")
+    print(f"complaint source dir: {COMPLAINT_TASKS_DIR}")
 
 
 def seed() -> None:

@@ -1,0 +1,13 @@
+{
+  "task_number": 1,
+  "source_text": "Im Stadtportal finden Sie eine Anzeige von Wandergruppe Naturpfad. Dort wird Folgendes angeboten: 15 bis 35 km, Touren meist samstags. Kontakt: naturpfad@mail.de.",
+  "situation_text": "Sie sind neu in der Stadt und suchen Outdoor-Aktivitaeten.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Wandergruppe Naturpfad und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Ihre Wuensche zur Schwierigkeit beschreiben",
+    "Fragen zu Treffpunkt und Ausruestung stellen",
+    "Erklaeren, warum Sie gern in der Natur sind",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

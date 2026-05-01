@@ -1,0 +1,13 @@
+{
+  "task_number": 14,
+  "source_text": "Im Online-Plattform finden Sie eine Anzeige von Repair-Cafe Nord. Dort wird Folgendes angeboten: Reparaturtreff fuer Elektrogeraete. Kontakt: repairnord@mail.de.",
+  "situation_text": "Sie wollen mithelfen und lernen.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Repair-Cafe Nord und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Vorerfahrung darstellen",
+    "Nach Aufgaben fuer Helfer fragen",
+    "Nach Sicherheit und Organisation fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

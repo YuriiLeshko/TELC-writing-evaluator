@@ -1,0 +1,13 @@
+{
+  "task_number": 17,
+  "source_text": "Im Gemeindezentrum finden Sie eine Anzeige von Lesepatenprojekt Bruecke. Dort wird Folgendes angeboten: Vorlesen fuer Grundschulkinder. Kontakt: lesebruecke@mail.de.",
+  "situation_text": "Sie lesen gern und moechten Kinder foerdern.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Lesepatenprojekt Bruecke und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Ihre Verfuegbarkeit nennen",
+    "Nach Altersgruppen fragen",
+    "Nach Einfuehrung und Betreuung fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

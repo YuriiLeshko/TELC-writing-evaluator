@@ -1,0 +1,13 @@
+{
+  "task_number": 7,
+  "source_text": "In einer Werbebeilage von Moebelhaus Komfort wird versprochen: schnelle Lieferung und professionelle Montage. Kontakt fuer Beschwerden: komfort@mail.de.",
+  "situation_text": "Lieferung verspaetete sich, Teile fehlten und Montage war unvollstaendig.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Moebelhaus Komfort. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Bestelldaten angeben",
+    "Fehlende Teile und Montagefehler nennen",
+    "Nachbesserung fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

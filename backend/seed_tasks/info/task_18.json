@@ -1,0 +1,13 @@
+{
+  "task_number": 18,
+  "source_text": "Im Sportzentrum finden Sie eine Anzeige von Kletterkurs Gipfelpunkt. Dort wird Folgendes angeboten: Indoor-Klettern fuer Erwachsene. Kontakt: gipfelpunkt@mail.de.",
+  "situation_text": "Sie suchen ein aktives Hobby.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Kletterkurs Gipfelpunkt und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Sportlichen Hintergrund schildern",
+    "Nach Sicherheitskonzept fragen",
+    "Nach Kurszeiten und Preisen fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

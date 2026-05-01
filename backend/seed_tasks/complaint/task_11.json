@@ -1,0 +1,13 @@
+{
+  "task_number": 11,
+  "source_text": "In einer Online-Werbung von Buchungsplattform BookFast wird versprochen: verifizierte Ferienwohnungen mit 24h Service. Kontakt fuer Beschwerden: support@bookfast.de.",
+  "situation_text": "Die Wohnung entsprach nicht den Fotos und zugesagte Ausstattung fehlte.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Buchungsplattform BookFast. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Buchung nennen",
+    "Abweichungen detailliert beschreiben",
+    "Rueckerstattung fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

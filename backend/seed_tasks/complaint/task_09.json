@@ -1,0 +1,13 @@
+{
+  "task_number": 9,
+  "source_text": "In einer Serviceanzeige von Apotheke Zur Gesundheit wird versprochen: Lieferung am selben Tag. Kontakt fuer Beschwerden: kontakt@gesundheit.de.",
+  "situation_text": "Die Bestellung kam zu spaet und ein wichtiges Medikament fehlte.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Apotheke Zur Gesundheit. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Bestelldaten nennen",
+    "Fehlende Lieferung erklaeren",
+    "Schnelle Nachlieferung fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}

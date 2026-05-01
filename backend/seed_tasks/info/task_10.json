@@ -1,0 +1,13 @@
+{
+  "task_number": 10,
+  "source_text": "Im Stadtzeitung finden Sie eine Anzeige von Fahrrad-Workshop Radhilfe. Dort wird Folgendes angeboten: Alltagsreparaturen fuer Einsteiger. Kontakt: radhilfe@mail.de.",
+  "situation_text": "Sie fahren taeglich Fahrrad.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Fahrrad-Workshop Radhilfe und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Ihre Vorerfahrung nennen",
+    "Nach Werkzeug fragen",
+    "Nach Terminen und Ablauf fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

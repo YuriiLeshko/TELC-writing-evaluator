@@ -1,0 +1,13 @@
+{
+  "task_number": 15,
+  "source_text": "Im Uni-App finden Sie eine Anzeige von Debattierclub Perspektive. Dort wird Folgendes angeboten: Freitags Diskussionen zu Alltagsthemen. Kontakt: perspektive@mail.de.",
+  "situation_text": "Sie wollen besser argumentieren lernen.",
+  "instruction_text": "Schreiben Sie eine E-Mail an Debattierclub Perspektive und bitten Sie um weitere Informationen. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Ziele fuer Teilnahme nennen",
+    "Nach Ablauf der Treffen fragen",
+    "Nach Sprachniveau fragen",
+    "Nach organisatorischen Details wie Terminen oder Anmeldung fragen"
+  ],
+  "is_active": true
+}

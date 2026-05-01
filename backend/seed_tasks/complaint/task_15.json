@@ -1,0 +1,13 @@
+{
+  "task_number": 15,
+  "source_text": "In einer Webwerbung von Lernplattform LearnUp wird versprochen: 24/7 Zugriff und stabile Plattform. Kontakt fuer Beschwerden: help@learnup.de.",
+  "situation_text": "Die Plattform war nicht erreichbar, deshalb konnten Sie keinen Test ablegen.",
+  "instruction_text": "Schreiben Sie eine Beschwerde an Lernplattform LearnUp. Behandeln Sie drei der moeglichen Punkte oder zwei Punkte und einen weiteren Aspekt Ihrer Wahl. Schreiben Sie mindestens 150 Woerter.",
+  "expected_key_points": [
+    "Zeitpunkt der Stoerung nennen",
+    "Auswirkungen auf Ihren Kurs beschreiben",
+    "Verlaengerung oder Ausgleich fordern",
+    "Beschreiben Sie, was Sie bei ausbleibender Reaktion tun werden"
+  ],
+  "is_active": true
+}
