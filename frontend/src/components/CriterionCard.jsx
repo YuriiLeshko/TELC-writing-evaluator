@@ -5,9 +5,9 @@ const gradeClass = {
   D: "criterion-card--d",
 };
 
-export default function CriterionCard({ title, subtitle, grade, points, comment }) {
+export default function CriterionCard({ title, subtitle, grade, points, comment, useTone = true }) {
   const g = grade && String(grade).toUpperCase();
-  const tone = gradeClass[g] || "";
+  const tone = useTone ? gradeClass[g] || "" : "";
   return (
     <div className={`criterion-card ${tone}`.trim()}>
       <div className="criterion-card__title">{title}</div>

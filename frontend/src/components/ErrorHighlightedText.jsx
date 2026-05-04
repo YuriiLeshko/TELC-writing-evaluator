@@ -129,9 +129,14 @@ export default function ErrorHighlightedText({ text, highlightedErrors }) {
       <>
         <div className="text-panel">{original}</div>
         {missing.length ? (
-          <p className="metric-card__help" style={{ marginTop: "0.5rem" }}>
-            Nicht im Text exakt gefunden: {missing.join(", ")}
-          </p>
+          <div className="missing-markers">
+            <p className="missing-markers__title">Nicht gefundene Markierungen</p>
+            <ul className="missing-markers__list">
+              {missing.map((item, index) => (
+                <li key={`missing-only-${index}`}>{item}</li>
+              ))}
+            </ul>
+          </div>
         ) : null}
       </>
     );
@@ -156,9 +161,14 @@ export default function ErrorHighlightedText({ text, highlightedErrors }) {
     <>
       <div className="text-panel">{parts}</div>
       {missing.length ? (
-        <p className="metric-card__help" style={{ marginTop: "0.5rem" }}>
-          Nicht im Text exakt gefunden: {missing.join(", ")}
-        </p>
+        <div className="missing-markers">
+          <p className="missing-markers__title">Nicht gefundene Markierungen</p>
+          <ul className="missing-markers__list">
+            {missing.map((item, index) => (
+              <li key={`missing-${index}`}>{item}</li>
+            ))}
+          </ul>
+        </div>
       ) : null}
     </>
   );

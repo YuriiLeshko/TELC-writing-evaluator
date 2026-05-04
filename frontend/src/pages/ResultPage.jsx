@@ -33,14 +33,6 @@ export default function ResultPage() {
   return (
     <div className="stack">
       <h1 className="page-title">Ergebnis</h1>
-      <div className="row">
-        <Link to="/training" className="btn btn--secondary link-btn">
-          Neues Training
-        </Link>
-        <Link to="/archive" className="btn btn--ghost link-btn">
-          Archiv
-        </Link>
-      </div>
       <ResultView result={result} candidateText={candidateText || ""} selectedTask={task} />
     </div>
   );
