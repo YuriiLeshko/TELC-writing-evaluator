@@ -9,7 +9,7 @@ Purpose:
 Structure:
 - `app`: FastAPI instance with project title.
 - CORS middleware: local Vite origins plus `CORS_ORIGINS` (comma-separated).
-- Startup hook calling `init_db()`.
+- Lifespan hook calling `init_db()` and `apply_idempotent_seed()`.
 - `/health` endpoint for quick service checks.
 - Router registration for users, task sessions, and submissions.
 
@@ -20,6 +20,7 @@ Dependencies:
 """
 
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -46,7 +47,14 @@ def _cors_allow_origins() -> list[str]:
     return merged
 
 
-app = FastAPI(title="TELC Writing Evaluator API")
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    init_db()
+    apply_idempotent_seed()
+    yield
+
+
+app = FastAPI(title="TELC Writing Evaluator API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -55,12 +63,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-@app.on_event("startup")
-def on_startup() -> None:
-    init_db()
-    apply_idempotent_seed()
 
 
 @app.get("/health")

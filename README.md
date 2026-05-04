@@ -1,6 +1,15 @@
 # TELC Writing Evaluator
 
-A web app for practicing the written part of TELC-style exams: the user completes a session with paired tasks (information letter / complaint), picks one, submits text, and receives scoring and feedback via an LLM (OpenRouter).
+A web app for practicing TELC B2–style writing tasks with AI-assisted feedback (OpenRouter). It is a training aid, not an official TELC product or examiner.
+
+## User workflow
+
+1. **Home** — Read what the tool does and the disclaimer (no official link to TELC; AI results may differ from real exam marking). Accept the disclaimer to unlock training areas (stored in the browser).
+2. **Training** — Start a **task session**: the app loads a paired **information** task and **complaint** task. Choose one, optionally use the **timer**, write your text in German, then submit.
+3. **Evaluation** — The backend runs the evaluation pipeline (relevance, key points, communication, accuracy, scoring, improvement text) via an LLM. The UI shows progress, then redirects to **Result** with scores, criterion feedback, highlighted issues, and a suggested improved version.
+4. **Archive** — Browse past submissions for the current demo user (again requires the accepted disclaimer).
+5. **Profile** — View usage counters and account metadata exposed by the API.
+6. **Admin** — UI for admin-only API actions (users, activate/deactivate, counters; CRUD for info and complaint tasks). In the MVP, the backend resolves an admin identity from seed data; see `docs/api_contract.md` and `backend/routers/admin.py`.
 
 **Stack:** backend — Python, FastAPI, SQLite, SQLAlchemy; frontend — React (Vite), Tailwind. The HTTP API contract is documented in [`docs/api_contract.md`](docs/api_contract.md).
 
@@ -97,7 +106,13 @@ From the repository root, with the venv activated and dev dependencies installed
 PYTHONPATH=. pytest backend/tests
 ```
 
-**Run tests with coverage** (package under test: `backend`; terminal summary + HTML report):
+**Coverage summary in the terminal** (overall % per file and missing lines in the table):
+
+```bash
+PYTHONPATH=. pytest backend/tests --cov=backend --cov-report=term-missing
+```
+
+**Coverage with HTML report** (same as above, plus browseable line coverage — open `htmlcov/index.html`):
 
 ```bash
 PYTHONPATH=. pytest backend/tests \
@@ -106,7 +121,15 @@ PYTHONPATH=. pytest backend/tests \
   --cov-report=html
 ```
 
-Open `htmlcov/index.html` in a browser for the line-by-line HTML report. Coverage artifacts (`htmlcov/`, `.coverage`) are listed in `.gitignore`.
+**Machine-readable coverage (e.g. for CI):**
+
+```bash
+PYTHONPATH=. pytest backend/tests --cov=backend --cov-report=xml
+```
+
+This writes `coverage.xml` in the repo root (also ignored by git via `.gitignore` patterns where applicable).
+
+Coverage artifacts (`htmlcov/`, `.coverage`, `coverage.xml`) are covered by `.gitignore` where listed.
 
 ---
 
