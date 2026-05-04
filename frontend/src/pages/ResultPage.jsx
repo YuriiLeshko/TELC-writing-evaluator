@@ -21,10 +21,17 @@ export default function ResultPage() {
       <div className="stack">
         <h1 className="page-title">Ergebnis</h1>
         <div className="card">
-          <p>Kein Ergebnis verfügbar. Bitte starten Sie eine Trainingseinheit.</p>
-          <Link to="/training" className="btn btn--primary link-btn" style={{ marginTop: "0.75rem" }}>
-            Zum Training
-          </Link>
+          <p>
+            Kein Ergebnis ausgewählt. Bitte öffnen Sie ein Ergebnis aus dem Archiv oder starten Sie ein Training.
+          </p>
+          <div className="row" style={{ marginTop: "0.75rem", flexWrap: "wrap", gap: "0.5rem" }}>
+            <Link to="/archive" className="btn btn--secondary link-btn">
+              Zum Archiv
+            </Link>
+            <Link to="/training" className="btn btn--primary link-btn">
+              Zum Training
+            </Link>
+          </div>
         </div>
       </div>
     );
