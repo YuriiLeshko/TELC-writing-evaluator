@@ -130,8 +130,9 @@ Typical setup: two services — a **Web Service** (FastAPI) and a **Static Site*
 | `OPENROUTER_API_KEY` | your OpenRouter secret |
 | `MODEL_NAME` | e.g. `openai/gpt-4o-mini` |
 | `FALLBACK_MODEL_NAME` | fallback model id |
+| `CORS_ORIGINS` | comma-separated **exact** frontend origins (scheme + host, no trailing slash), e.g. `https://telc-writing-evaluator-9tee.onrender.com` |
 
-CORS in the backend is configured for local Vite; for a production frontend URL, add that origin to `allow_origins` in `backend/main.py`, otherwise the browser will block requests.
+The API always allows local Vite (`http://localhost:5173`, `http://127.0.0.1:5173`). For a deployed static site, set **`CORS_ORIGINS`** on the **backend** service to that site’s public URL, or the browser will block `fetch` with a CORS error.
 
 **SQLite on Render:** the instance filesystem is **ephemeral** — data may be lost after redeploys. For durable data, attach a **Persistent Disk** or move to an external database when you need it.
 
@@ -159,6 +160,3 @@ Trigger a **new deploy** of the static site after changing `VITE_API_BASE_URL`.
 
 ---
 
-## License and contact
-
-Add a `LICENSE` and contact details for your course or team if required.

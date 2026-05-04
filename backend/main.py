@@ -8,7 +8,7 @@ Purpose:
 
 Structure:
 - `app`: FastAPI instance with project title.
-- CORS middleware for local frontend origins.
+- CORS middleware: local Vite origins plus `CORS_ORIGINS` (comma-separated).
 - Startup hook calling `init_db()`.
 - `/health` endpoint for quick service checks.
 - Router registration for users, task sessions, and submissions.
@@ -19,6 +19,8 @@ Dependencies:
 - `backend.routers.*` modules for HTTP endpoints.
 """
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -27,14 +29,28 @@ from backend.routers import submissions, task_sessions, users
 from backend.routers import admin as admin_router
 from backend.seed import apply_idempotent_seed
 
+_DEFAULT_CORS_ORIGINS = (
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+)
+
+
+def _cors_allow_origins() -> list[str]:
+    """Local Vite defaults plus optional CORS_ORIGINS (comma-separated HTTPS origins on Render)."""
+    extra = os.getenv("CORS_ORIGINS", "")
+    merged: list[str] = list(_DEFAULT_CORS_ORIGINS)
+    for part in extra.split(","):
+        origin = part.strip()
+        if origin and origin not in merged:
+            merged.append(origin)
+    return merged
+
+
 app = FastAPI(title="TELC Writing Evaluator API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=_cors_allow_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
