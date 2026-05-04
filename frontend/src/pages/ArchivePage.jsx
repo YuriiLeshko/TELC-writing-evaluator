@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Card from "../components/Card.jsx";
 import Button from "../components/Button.jsx";
 import Badge from "../components/Badge.jsx";
@@ -8,9 +9,9 @@ import {
   deleteTaskSession,
   getActiveTaskSessions,
   getMySubmissions,
+  getTaskSession,
 } from "../api/client.js";
 import { formatDateTime } from "../utils/date.js";
-import { safeGet } from "../utils/safeGet.js";
 
 function statusBadge(status) {
   if (status === "success") return <Badge variant="success">{status}</Badge>;
@@ -18,12 +19,17 @@ function statusBadge(status) {
   return <Badge variant="neutral">{status || "—"}</Badge>;
 }
 
+function submissionHasResult(sub) {
+  const res = sub?.result;
+  return res && typeof res === "object" && Object.keys(res).length > 0;
+}
+
 export default function ArchivePage() {
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [expanded, setExpanded] = useState(() => new Set());
 
   const load = useCallback(async () => {
     setError(null);
@@ -43,12 +49,31 @@ export default function ArchivePage() {
     load();
   }, [load]);
 
-  const toggle = (id) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
+  const onShowDetails = async (sub) => {
+    setError(null);
+    let session = null;
+    try {
+      session = await getTaskSession(sub.task_session_id);
+    } catch {
+      session = null;
+    }
+    const selectedTaskType = sub.selected_task_type;
+    const selectedTask =
+      session && selectedTaskType === "info"
+        ? session.info_task
+        : session && selectedTaskType === "complaint"
+          ? session.complaint_task
+          : null;
+    navigate("/result", {
+      state: {
+        result: sub.result ?? {},
+        candidateText: sub.candidate_text ?? "",
+        submission: sub,
+        session,
+        selectedTaskType,
+        selectedTask,
+        submissionId: sub.id,
+      },
     });
   };
 
@@ -117,8 +142,7 @@ export default function ArchivePage() {
             ) : (
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {submissions.map((sub) => {
-                  const open = expanded.has(sub.id);
-                  const res = sub.result && typeof sub.result === "object" ? sub.result : {};
+                  const canOpenResult = submissionHasResult(sub);
                   return (
                     <li key={sub.id} className="admin-user-row">
                       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
@@ -131,38 +155,22 @@ export default function ArchivePage() {
                         </span>
                         <span>Wörter: {sub.word_count ?? "—"}</span>
                         {statusBadge(sub.status)}
-                        <Button type="button" variant="secondary" onClick={() => toggle(sub.id)}>
-                          {open ? "Weniger" : "Details"}
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          disabled={!canOpenResult}
+                          onClick={() => onShowDetails(sub)}
+                          title={!canOpenResult ? "Kein auswertbares Ergebnis vorhanden." : undefined}
+                        >
+                          Details anzeigen
                         </Button>
                         <Button type="button" variant="danger" onClick={() => onDeleteSubmission(sub.id)}>
                           Löschen
                         </Button>
                       </div>
-                      {open ? (
-                        <div className="stack stack--sm" style={{ marginTop: "0.75rem", fontSize: "0.9rem" }}>
-                          <div>
-                            <strong>Text</strong>
-                            <div className="text-panel" style={{ marginTop: "0.35rem" }}>
-                              {sub.candidate_text || "—"}
-                            </div>
-                          </div>
-                          <div>
-                            <strong>Kurz-Fazit</strong>
-                            <p style={{ margin: "0.25rem 0" }}>
-                              Roh: {sub.raw_score ?? "—"} — Endnote: {sub.final_score ?? "—"} / {sub.max_score ?? "—"}
-                            </p>
-                          </div>
-                          {safeGet(res, "improved_text.improved_text") ? (
-                            <div>
-                              <strong>Verbesserte Version</strong>
-                              <div className="text-panel" style={{ marginTop: "0.35rem" }}>
-                                {String(safeGet(res, "improved_text.improved_text", ""))}
-                              </div>
-                            </div>
-                          ) : null}
-                          {sub.error_message ? (
-                            <div className="alert alert--error">Fehler: {sub.error_message}</div>
-                          ) : null}
+                      {sub.error_message ? (
+                        <div className="alert alert--error" style={{ marginTop: "0.5rem" }} role="alert">
+                          Fehler: {sub.error_message}
                         </div>
                       ) : null}
                     </li>

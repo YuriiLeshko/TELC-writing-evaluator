@@ -23,9 +23,6 @@ export default function Layout({ disclaimerAccepted, onAcceptDisclaimer }) {
 
   return (
     <div className="layout">
-      <div className="layout__banner">
-        Demo-Modus: Backend verwendet aktuell Demo-User/Admin.
-      </div>
       <div className={`app-shell ${collapsed ? "app-shell--collapsed" : ""}`.trim()}>
         <Navigation
           collapsed={collapsed}
