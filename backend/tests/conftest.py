@@ -71,6 +71,7 @@ def test_client(db_session: Session, monkeypatch: pytest.MonkeyPatch) -> Generat
             pass
 
     monkeypatch.setattr("backend.main.init_db", lambda: None)
+    monkeypatch.setattr("backend.main.apply_idempotent_seed", lambda: None)
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as client:
         yield client

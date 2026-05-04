@@ -25,6 +25,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.database import init_db
 from backend.routers import submissions, task_sessions, users
 from backend.routers import admin as admin_router
+from backend.seed import apply_idempotent_seed
 
 app = FastAPI(title="TELC Writing Evaluator API")
 
@@ -43,6 +44,7 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
+    apply_idempotent_seed()
 
 
 @app.get("/health")

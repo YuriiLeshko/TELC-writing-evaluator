@@ -190,13 +190,19 @@ def print_summary(db: Session) -> None:
     print(f"complaint source dir: {COMPLAINT_TASKS_DIR}")
 
 
-def seed() -> None:
-    init_db()
+def apply_idempotent_seed() -> None:
+    """Insert demo users and tasks from JSON if missing. Safe to call on every app startup."""
     with SessionLocal() as db:
         seed_users(db)
         seed_info_tasks(db)
         seed_complaint_tasks(db)
         db.commit()
+
+
+def seed() -> None:
+    init_db()
+    apply_idempotent_seed()
+    with SessionLocal() as db:
         print_summary(db)
 
 
