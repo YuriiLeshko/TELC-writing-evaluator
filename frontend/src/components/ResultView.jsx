@@ -257,11 +257,12 @@ export default function ResultView({ result, candidateText, selectedTask }) {
           <X size={18} aria-hidden />
         </button>
 
-        <div ref={railTilesRef} className="result-rail-sidebar__tiles">
-          <div
-            id="rail-section-score"
-            className={`result-rail-card ${activeSection === "rail-section-score" ? "result-rail-card--active" : ""}`}
-          >
+        <div ref={railTilesRef} className="result-rail-sidebar__content">
+          <div className="result-rail-sidebar__tiles">
+            <div
+              id="rail-section-score"
+              className={`result-rail-card ${activeSection === "rail-section-score" ? "result-rail-card--active" : ""}`}
+            >
             <button
               type="button"
               className="result-rail-card__head"
@@ -368,6 +369,7 @@ export default function ResultView({ result, candidateText, selectedTask }) {
                 )}
               </div>
             ) : null}
+          </div>
           </div>
         </div>
       </aside>

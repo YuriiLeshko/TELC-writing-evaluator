@@ -819,6 +819,8 @@ a.link-btn {
 
 .result-rail-sidebar {
   width: var(--result-rail-width);
+  height: 100vh;
+  height: 100dvh;
   min-height: 0;
   box-sizing: border-box;
   background: var(--surface-muted);
@@ -850,10 +852,6 @@ a.link-btn {
     position: fixed;
     top: 0;
     right: 0;
-    height: 100vh;
-    height: 100dvh;
-    max-height: 100vh;
-    max-height: 100dvh;
   }
 }
 
@@ -882,10 +880,7 @@ a.link-btn {
   background: var(--background);
 }
 
-.result-rail-sidebar__tiles {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+.result-rail-sidebar__content {
   flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
@@ -894,17 +889,26 @@ a.link-btn {
   -webkit-overflow-scrolling: touch;
 }
 
+.result-rail-sidebar__tiles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+  min-width: 0;
+}
+
 .result-rail-card {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
+  height: auto;
   min-width: 0;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
   box-shadow: var(--shadow);
-  overflow-x: hidden;
-  overflow-y: visible;
+  overflow: visible;
   overflow-wrap: anywhere;
   word-wrap: break-word;
   transition: border-color 0.15s, box-shadow 0.15s;
@@ -949,7 +953,7 @@ a.link-btn {
   padding: 0.45rem 0.55rem 0.55rem;
   border-top: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface) 88%, var(--background) 12%);
-  overflow-x: hidden;
+  overflow: visible;
   overflow-wrap: anywhere;
   word-wrap: break-word;
 }
@@ -1079,6 +1083,7 @@ a.link-btn {
     transition: transform 0.2s ease;
     overflow-x: hidden;
     overflow-y: hidden;
+    box-sizing: border-box;
   }
 
   .result-rail-sidebar--mobile-open {
