@@ -17,10 +17,10 @@ A web app for practicing TELC B2–style writing tasks with AI-assisted feedback
 
 ## Deployed (production)
 
-| Service | URL |
-| ------- | --- |
+| Service | URL                                              |
+| ------- |--------------------------------------------------|
 | Frontend | https://telc-writing-evaluator-9tee.onrender.com |
-| Backend API | https://telc-writing-evaluator.onrender.com |
+| Backend API | https://telc-writing-evaluator.onrender.com/docs |
 
 After you add the URLs, confirm the frontend was built with `VITE_API_BASE_URL` pointing at the backend’s **HTTPS** URL (see **Render** below).
 
@@ -151,7 +151,7 @@ Typical setup: two services — a **Web Service** (FastAPI) and a **Static Site*
 | Key | Value |
 | --- | ----- |
 | `OPENROUTER_API_KEY` | your OpenRouter secret |
-| `MODEL_NAME` | e.g. `openai/gpt-4o-mini` |
+| `MODEL_NAME` | e.g. `openai/gpt-oss-120b:free` |
 | `FALLBACK_MODEL_NAME` | fallback model id |
 | `CORS_ORIGINS` | comma-separated **exact** frontend origins (scheme + host, no trailing slash), e.g. `https://telc-writing-evaluator-9tee.onrender.com` |
 
