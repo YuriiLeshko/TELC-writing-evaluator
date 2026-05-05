@@ -669,6 +669,18 @@ a.link-btn {
   margin-top: 0.15rem;
 }
 
+.status-good {
+  color: var(--success);
+}
+
+.status-warning {
+  color: var(--warning);
+}
+
+.status-bad {
+  color: var(--danger);
+}
+
 .task-scroll {
   display: flex;
   gap: 0.75rem;
@@ -969,6 +981,12 @@ a.link-btn {
 
 .result-rail-card__err-list li {
   margin-bottom: 0.2rem;
+}
+
+.result-rail-summary-list {
+  margin-top: 0.35rem;
+  padding-top: 0.25rem;
+  border-top: 1px dashed var(--border);
 }
 
 .result-rail-tile__title {

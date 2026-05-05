@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PanelRightClose, PanelRightOpen, X } from "lucide-react";
 import ErrorHighlightedText from "./ErrorHighlightedText.jsx";
-import Badge from "./Badge.jsx";
 import { safeGet } from "../utils/safeGet.js";
 
 const RAIL_SECTION_IDS = ["rail-section-score", "rail-section-i", "rail-section-ii", "rail-section-iii", "rail-section-errors"];
@@ -36,6 +35,19 @@ export default function ResultView({ result, candidateText, selectedTask }) {
 
   const wc = r.word_count;
   const improved = r.improved_text;
+  const finalScore = Number(r.final_score);
+  const maxScore = Number(r.max_score);
+  const hasValidScoreRatio = Number.isFinite(finalScore) && Number.isFinite(maxScore) && maxScore > 0;
+  const scoreRatio = hasValidScoreRatio ? finalScore / maxScore : null;
+  const scoreStatusClass =
+    scoreRatio == null ? "" : scoreRatio >= 0.8 ? "status-good" : scoreRatio >= 0.6 ? "status-warning" : "status-bad";
+  const wordCountValue = Number(wc?.value);
+  const hasWordCount = Number.isFinite(wordCountValue);
+  const wordCountMin = 150;
+  const wordCountOk = hasWordCount ? wordCountValue >= wordCountMin : null;
+  const wordCountStatusClass = wordCountOk == null ? "" : wordCountOk ? "status-good" : "status-bad";
+  const topicMismatch = Boolean(r.topic_mismatch);
+  const situationMismatch = Boolean(r.situation_mismatch);
 
   const errorCount = Array.isArray(highlighted) ? highlighted.length : 0;
   const gradeI = safeGet(r, "criterion_I.grade");
@@ -47,6 +59,22 @@ export default function ResultView({ result, candidateText, selectedTask }) {
   const commentI = safeGet(r, "criterion_I.comment");
   const commentII = safeGet(r, "criterion_II.comment");
   const commentIII = safeGet(r, "criterion_III.comment");
+  const criterionIMaxPoints = 5;
+  const gradeINormalized = typeof gradeI === "string" ? gradeI.trim().toUpperCase() : "";
+  const gradeIStatusClass =
+    gradeINormalized === "A"
+      ? "status-good"
+      : gradeINormalized === "B"
+        ? "status-warning"
+        : gradeINormalized === "C" || gradeINormalized === "D"
+          ? "status-bad"
+          : "";
+  const ptsIStatusClass = gradeIStatusClass;
+  const fulfilledKeyPoints = safeGet(r, "criterion_I.fulfilled_key_points") ?? safeGet(r, "key_points.fulfilled_key_points");
+  const ownIdeas = safeGet(r, "criterion_I.own_ideas") ?? safeGet(r, "key_points.own_ideas");
+  const invalidPoints = safeGet(r, "criterion_I.invalid_points") ?? safeGet(r, "key_points.invalid_points");
+  const hasDetailedKeyPointData =
+    Array.isArray(fulfilledKeyPoints) || Array.isArray(ownIdeas) || Array.isArray(invalidPoints);
 
   const scrollRailTo = useCallback((id) => {
     const root = railTilesRef.current;
@@ -269,31 +297,33 @@ export default function ResultView({ result, candidateText, selectedTask }) {
               onClick={() => onTileActivate("rail-section-score")}
             >
               <span className="result-rail-tile__title">Endnote</span>
-              <span className="result-rail-tile__value">
+              <span className={`result-rail-tile__value ${scoreStatusClass}`}>
                 {r.final_score ?? "—"}/{r.max_score ?? "—"}
               </span>
             </button>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
                 <p style={{ margin: "0.15rem 0", fontSize: "0.84rem" }}>
-                  <strong>Rohpunkte:</strong> {r.raw_score ?? "—"}
+                  <strong>Wortzahl:</strong>{" "}
+                  <span className={wordCountStatusClass}>
+                    {wc?.value ?? "—"} / {wordCountMin}
+                  </span>
                 </p>
                 <p style={{ margin: "0.15rem 0", fontSize: "0.84rem" }}>
-                  <strong>Wortanzahl:</strong> {wc?.value ?? "—"}
-                  {wc?.minimum_required != null ? ` (Min. ${wc.minimum_required})` : ""}
+                  <span className={wordCountStatusClass}>
+                    {wordCountOk == null ? "Wortzahl unbekannt" : wordCountOk ? "Wortzahl erfüllt" : "Wortzahl zu niedrig"}
+                  </span>
                 </p>
                 <p style={{ margin: "0.15rem 0", fontSize: "0.84rem" }}>
-                  <strong>Topic mismatch:</strong> {String(r.topic_mismatch ?? "—")}
+                  <strong>Thema passend:</strong>{" "}
+                  <span className={topicMismatch ? "status-bad" : "status-good"}>{topicMismatch ? "Schlecht" : "Gut"}</span>
                 </p>
                 <p style={{ margin: "0.15rem 0", fontSize: "0.84rem" }}>
-                  <strong>Situation mismatch:</strong> {String(r.situation_mismatch ?? "—")}
+                  <strong>Situation passend:</strong>{" "}
+                  <span className={situationMismatch ? "status-bad" : "status-good"}>
+                    {situationMismatch ? "Schlecht" : "Gut"}
+                  </span>
                 </p>
-                <div className="row" style={{ gap: "0.3rem", marginTop: "0.35rem" }}>
-                  {r.topic_mismatch ? <Badge variant="warning">Themenabweichung</Badge> : null}
-                  {r.situation_mismatch ? <Badge variant="warning">Situationsabweichung</Badge> : null}
-                  {wc && wc.meets_requirement === true ? <Badge variant="success">Wortanzahl erfüllt</Badge> : null}
-                  {wc && wc.meets_requirement === false ? <Badge variant="warning">Wortanzahl zu kurz</Badge> : null}
-                </div>
               </div>
             ) : null}
           </div>
@@ -303,10 +333,49 @@ export default function ResultView({ result, candidateText, selectedTask }) {
             className={`result-rail-card ${activeSection === "rail-section-i" ? "result-rail-card--active" : ""}`}
           >
             <button type="button" className="result-rail-card__head" onClick={() => onTileActivate("rail-section-i")}>
-              <span className="result-rail-tile__title">Kriterium I</span>
-              <span className="result-rail-tile__value">{fmtGradePts(gradeI, ptsI)}</span>
+              <span className="result-rail-tile__title">Aufgabenerfüllung</span>
+              <span className={`result-rail-tile__value ${gradeIStatusClass}`}>
+                {gradeI ?? "—"} · {ptsI ?? "—"}/{criterionIMaxPoints}
+              </span>
             </button>
-            {railBodyVisible ? criterionBody("Task Achievement", gradeI, ptsI, commentI) : null}
+            {railBodyVisible ? (
+              <div className="result-rail-card__body">
+                <p className="metric-card__help" style={{ margin: "0 0 0.4rem" }}>
+                  Inhalt und Leitpunkte
+                </p>
+                <p style={{ margin: 0, fontSize: "0.86rem" }}>
+                  <strong>Note:</strong> <span className={gradeIStatusClass}>{gradeI ?? "—"}</span>
+                </p>
+                <p style={{ margin: "0.2rem 0 0", fontSize: "0.86rem" }}>
+                  <strong>Punkte:</strong>{" "}
+                  <span className={ptsIStatusClass}>
+                    {ptsI ?? "—"} / {criterionIMaxPoints}
+                  </span>
+                </p>
+                <p style={{ margin: "0.45rem 0 0", color: "var(--muted)", fontSize: "0.86rem", lineHeight: 1.45 }}>
+                  {commentI || "Keine Details."}
+                </p>
+                {hasDetailedKeyPointData ? (
+                  <div className="result-rail-summary-list">
+                    {Array.isArray(fulfilledKeyPoints) ? (
+                      <p style={{ margin: "0.25rem 0 0", fontSize: "0.82rem" }}>
+                        <strong>Erfüllte Leitpunkte:</strong> {fulfilledKeyPoints.length}
+                      </p>
+                    ) : null}
+                    {Array.isArray(ownIdeas) ? (
+                      <p style={{ margin: "0.2rem 0 0", fontSize: "0.82rem" }}>
+                        <strong>Eigene Ideen:</strong> {ownIdeas.length}
+                      </p>
+                    ) : null}
+                    {Array.isArray(invalidPoints) ? (
+                      <p style={{ margin: "0.2rem 0 0", fontSize: "0.82rem" }}>
+                        <strong>Fehlende/ungültige Punkte:</strong> {invalidPoints.length}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <div
