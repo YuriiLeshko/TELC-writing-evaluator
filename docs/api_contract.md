@@ -472,6 +472,11 @@ Prefix: `/admin`
 
 All endpoints require demo admin helper.
 
+Action semantics:
+- **Deactivate** = soft status change (`is_active = false`).
+- **Activate** = status change (`is_active = true`).
+- **Delete** = hard deletion from database (only when entity is not already used).
+
 Auth-related errors:
 
 - `401`: `"Demo admin not found. Run backend/seed.py first."`
@@ -527,8 +532,10 @@ Partial update supported for:
 
 #### DELETE `/admin/users/{user_id}`
 
-- hard delete if no related sessions/submissions
-- otherwise sets `is_active = false`
+- hard delete only if no related sessions/submissions
+- if related sessions/submissions exist: request is rejected, user is not modified
+- admin cannot delete themselves
+- admin users cannot be deleted
 
 Responses:
 
@@ -538,9 +545,9 @@ Responses:
 
 or
 
-```json
-{ "status": "deactivated" }
-```
+- `409`: `"User cannot be deleted because related sessions or submissions exist. Deactivate the user instead."`
+- `400`: `"Admin cannot delete themselves."`
+- `403`: `"Admin users cannot be deleted."`
 
 #### PATCH `/admin/users/{user_id}/counters`
 
@@ -580,14 +587,18 @@ Request:
 
 ```json
 {
-  "task_number": 2,
   "source_text": "string",
   "situation_text": "string",
   "instruction_text": "string",
-  "expected_key_points": ["string"],
-  "is_active": true
+  "expected_key_points": ["string"]
 }
 ```
+
+Notes:
+- `task_number` is auto-assigned by backend (`max(task_number) + 1` per task type).
+- Frontend should not send `task_number` when creating a task.
+- New tasks are created as inactive by default (`is_active = false`).
+- Frontend should not send `is_active` during create.
 
 - `200`: `InfoTaskRead`
 - `400`: `"Info task number already exists."`
@@ -614,11 +625,27 @@ Partial update:
 
 #### DELETE `/admin/info-tasks/{task_id}`
 
-Soft delete via `is_active = false`.
+Hard delete (record removal) only for unused tasks.
 
 ```json
-{ "status": "deactivated", "task_id": 2 }
+{ "status": "deleted", "task_id": 2 }
 ```
+
+- `409`: `"Task cannot be deleted because it is already used. Deactivate it instead."`
+
+#### PATCH `/admin/info-tasks/{task_id}/deactivate`
+
+Soft deactivate task (`is_active = false`).
+
+- `200`: `InfoTaskRead`
+- `404`: `"Info task not found."`
+
+#### PATCH `/admin/info-tasks/{task_id}/activate`
+
+Reactivate task (`is_active = true`).
+
+- `200`: `InfoTaskRead`
+- `404`: `"Info task not found."`
 
 ---
 
@@ -634,14 +661,18 @@ Request:
 
 ```json
 {
-  "task_number": 2,
   "source_text": "string",
   "situation_text": "string",
   "instruction_text": "string",
-  "expected_key_points": ["string"],
-  "is_active": true
+  "expected_key_points": ["string"]
 }
 ```
+
+Notes:
+- `task_number` is auto-assigned by backend (`max(task_number) + 1` per task type).
+- Frontend should not send `task_number` when creating a task.
+- New tasks are created as inactive by default (`is_active = false`).
+- Frontend should not send `is_active` during create.
 
 - `200`: `ComplaintTaskRead`
 - `400`: `"Complaint task number already exists."`
@@ -668,11 +699,27 @@ Partial update:
 
 #### DELETE `/admin/complaint-tasks/{task_id}`
 
-Soft delete via `is_active = false`.
+Hard delete (record removal) only for unused tasks.
 
 ```json
-{ "status": "deactivated", "task_id": 2 }
+{ "status": "deleted", "task_id": 2 }
 ```
+
+- `409`: `"Task cannot be deleted because it is already used. Deactivate it instead."`
+
+#### PATCH `/admin/complaint-tasks/{task_id}/deactivate`
+
+Soft deactivate task (`is_active = false`).
+
+- `200`: `ComplaintTaskRead`
+- `404`: `"Complaint task not found."`
+
+#### PATCH `/admin/complaint-tasks/{task_id}/activate`
+
+Reactivate task (`is_active = true`).
+
+- `200`: `ComplaintTaskRead`
+- `404`: `"Complaint task not found."`
 
 ---
 

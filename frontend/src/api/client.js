@@ -200,6 +200,14 @@ export function adminDeleteInfoTask(taskId) {
   return request(`/admin/info-tasks/${taskId}`, { method: "DELETE" });
 }
 
+export function adminActivateInfoTask(taskId) {
+  return request(`/admin/info-tasks/${taskId}/activate`, { method: "PATCH" });
+}
+
+export function adminDeactivateInfoTask(taskId) {
+  return request(`/admin/info-tasks/${taskId}/deactivate`, { method: "PATCH" });
+}
+
 export function adminGetComplaintTasks() {
   return request("/admin/complaint-tasks");
 }
@@ -224,4 +232,12 @@ export function adminUpdateComplaintTask(taskId, data) {
 
 export function adminDeleteComplaintTask(taskId) {
   return request(`/admin/complaint-tasks/${taskId}`, { method: "DELETE" });
+}
+
+export function adminActivateComplaintTask(taskId) {
+  return request(`/admin/complaint-tasks/${taskId}/activate`, { method: "PATCH" });
+}
+
+export function adminDeactivateComplaintTask(taskId) {
+  return request(`/admin/complaint-tasks/${taskId}/deactivate`, { method: "PATCH" });
 }

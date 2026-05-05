@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from backend.api_schemas import (
@@ -28,6 +28,11 @@ router = APIRouter(prefix="/admin", tags=["admin"])
 
 def user_to_schema(user: User) -> UserRead:
     return UserRead.model_validate(user, from_attributes=True)
+
+
+def _next_task_number(model: type[InfoTask] | type[ComplaintTask], db: Session) -> int:
+    max_number = db.scalar(select(func.max(model.task_number)))
+    return int(max_number or 0) + 1
 
 
 @router.get("/users", response_model=list[UserRead])
@@ -103,20 +108,25 @@ def admin_update_user(
 @router.delete("/users/{user_id}")
 def admin_delete_user(
     user_id: int,
-    _: User = Depends(get_demo_admin_user),
+    current_admin: User = Depends(get_demo_admin_user),
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
     user = db.get(User, user_id)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found.")
+    if user.id == current_admin.id:
+        raise HTTPException(status_code=400, detail="Admin cannot delete themselves.")
+    if user.role == "admin":
+        raise HTTPException(status_code=403, detail="Admin users cannot be deleted.")
 
-    has_related = db.scalar(
-        select(TaskSession.id).where(TaskSession.user_id == user.id).limit(1)
-    ) or db.scalar(select(Submission.id).where(Submission.user_id == user.id).limit(1))
+    has_related = db.scalar(select(TaskSession.id).where(TaskSession.user_id == user.id).limit(1)) or db.scalar(
+        select(Submission.id).where(Submission.user_id == user.id).limit(1)
+    )
     if has_related:
-        user.is_active = False
-        db.commit()
-        return {"status": "deactivated"}
+        raise HTTPException(
+            status_code=409,
+            detail="User cannot be deleted because related sessions or submissions exist. Deactivate the user instead.",
+        )
 
     db.delete(user)
     db.commit()
@@ -189,11 +199,12 @@ def admin_create_info_task(
     _: User = Depends(get_demo_admin_user),
     db: Session = Depends(get_db),
 ) -> InfoTaskRead:
-    existing = db.scalar(select(InfoTask).where(InfoTask.task_number == payload.task_number))
+    task_number = payload.task_number if payload.task_number is not None else _next_task_number(InfoTask, db)
+    existing = db.scalar(select(InfoTask).where(InfoTask.task_number == task_number))
     if existing is not None:
         raise HTTPException(status_code=400, detail="Info task number already exists.")
     task = InfoTask(
-        task_number=payload.task_number,
+        task_number=task_number,
         source_text=payload.source_text,
         situation_text=payload.situation_text,
         instruction_text=payload.instruction_text,
@@ -252,9 +263,44 @@ def admin_delete_info_task(
     task = db.get(InfoTask, task_id)
     if task is None:
         raise HTTPException(status_code=404, detail="Info task not found.")
+    has_related = db.scalar(select(TaskSession.id).where(TaskSession.info_task_id == task.id).limit(1)) or db.scalar(
+        select(Submission.id).where((Submission.selected_task_type == "info") & (Submission.selected_task_id == task.id)).limit(1)
+    )
+    if has_related:
+        raise HTTPException(status_code=409, detail="Task cannot be deleted because it is already used. Deactivate it instead.")
+    db.delete(task)
+    db.commit()
+    return {"status": "deleted", "task_id": task_id}
+
+
+@router.patch("/info-tasks/{task_id}/deactivate", response_model=InfoTaskRead)
+def admin_deactivate_info_task(
+    task_id: int,
+    _: User = Depends(get_demo_admin_user),
+    db: Session = Depends(get_db),
+) -> InfoTaskRead:
+    task = db.get(InfoTask, task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Info task not found.")
     task.is_active = False
     db.commit()
-    return {"status": "deactivated", "task_id": task_id}
+    db.refresh(task)
+    return info_task_to_schema(task)
+
+
+@router.patch("/info-tasks/{task_id}/activate", response_model=InfoTaskRead)
+def admin_activate_info_task(
+    task_id: int,
+    _: User = Depends(get_demo_admin_user),
+    db: Session = Depends(get_db),
+) -> InfoTaskRead:
+    task = db.get(InfoTask, task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Info task not found.")
+    task.is_active = True
+    db.commit()
+    db.refresh(task)
+    return info_task_to_schema(task)
 
 
 @router.get("/complaint-tasks", response_model=list[ComplaintTaskRead])
@@ -272,11 +318,12 @@ def admin_create_complaint_task(
     _: User = Depends(get_demo_admin_user),
     db: Session = Depends(get_db),
 ) -> ComplaintTaskRead:
-    existing = db.scalar(select(ComplaintTask).where(ComplaintTask.task_number == payload.task_number))
+    task_number = payload.task_number if payload.task_number is not None else _next_task_number(ComplaintTask, db)
+    existing = db.scalar(select(ComplaintTask).where(ComplaintTask.task_number == task_number))
     if existing is not None:
         raise HTTPException(status_code=400, detail="Complaint task number already exists.")
     task = ComplaintTask(
-        task_number=payload.task_number,
+        task_number=task_number,
         source_text=payload.source_text,
         situation_text=payload.situation_text,
         instruction_text=payload.instruction_text,
@@ -335,6 +382,43 @@ def admin_delete_complaint_task(
     task = db.get(ComplaintTask, task_id)
     if task is None:
         raise HTTPException(status_code=404, detail="Complaint task not found.")
+    has_related = db.scalar(select(TaskSession.id).where(TaskSession.complaint_task_id == task.id).limit(1)) or db.scalar(
+        select(Submission.id)
+        .where((Submission.selected_task_type == "complaint") & (Submission.selected_task_id == task.id))
+        .limit(1)
+    )
+    if has_related:
+        raise HTTPException(status_code=409, detail="Task cannot be deleted because it is already used. Deactivate it instead.")
+    db.delete(task)
+    db.commit()
+    return {"status": "deleted", "task_id": task_id}
+
+
+@router.patch("/complaint-tasks/{task_id}/deactivate", response_model=ComplaintTaskRead)
+def admin_deactivate_complaint_task(
+    task_id: int,
+    _: User = Depends(get_demo_admin_user),
+    db: Session = Depends(get_db),
+) -> ComplaintTaskRead:
+    task = db.get(ComplaintTask, task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Complaint task not found.")
     task.is_active = False
     db.commit()
-    return {"status": "deactivated", "task_id": task_id}
+    db.refresh(task)
+    return complaint_task_to_schema(task)
+
+
+@router.patch("/complaint-tasks/{task_id}/activate", response_model=ComplaintTaskRead)
+def admin_activate_complaint_task(
+    task_id: int,
+    _: User = Depends(get_demo_admin_user),
+    db: Session = Depends(get_db),
+) -> ComplaintTaskRead:
+    task = db.get(ComplaintTask, task_id)
+    if task is None:
+        raise HTTPException(status_code=404, detail="Complaint task not found.")
+    task.is_active = True
+    db.commit()
+    db.refresh(task)
+    return complaint_task_to_schema(task)

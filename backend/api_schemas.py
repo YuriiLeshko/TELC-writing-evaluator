@@ -97,12 +97,12 @@ class ComplaintTaskRead(BaseModel):
 
 
 class InfoTaskCreate(BaseModel):
-    task_number: int
+    task_number: int | None = None
     source_text: str
     situation_text: str
     instruction_text: str
     expected_key_points: list[str]
-    is_active: bool = True
+    is_active: bool = False
 
 
 class InfoTaskUpdate(BaseModel):
@@ -115,12 +115,12 @@ class InfoTaskUpdate(BaseModel):
 
 
 class ComplaintTaskCreate(BaseModel):
-    task_number: int
+    task_number: int | None = None
     source_text: str
     situation_text: str
     instruction_text: str
     expected_key_points: list[str]
-    is_active: bool = True
+    is_active: bool = False
 
 
 class ComplaintTaskUpdate(BaseModel):
