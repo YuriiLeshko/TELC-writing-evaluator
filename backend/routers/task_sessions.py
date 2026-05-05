@@ -118,6 +118,8 @@ def start_task_session(
         info_task_id=info_task.id,
         complaint_task_id=complaint_task.id,
         started_at=datetime.now(timezone.utc),
+        submitted_at=None,
+        duration_seconds=None,
         status="started",
     )
     db.add(session)

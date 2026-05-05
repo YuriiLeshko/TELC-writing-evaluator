@@ -25,6 +25,13 @@ def _ensure_string_list(value: object) -> list[str]:
     return []
 
 
+def _ensure_dict_list(value: object) -> list[dict]:
+    """Normalize possible LLM object-list outputs to list[dict]."""
+    if isinstance(value, list):
+        return [item for item in value if isinstance(item, dict)]
+    return []
+
+
 async def check_key_points(
     llm_client: LLMClient,
     input_data: WritingEvaluationInput,
@@ -53,6 +60,7 @@ async def check_key_points(
     raw_result["improvement_feedback"] = _ensure_string_list(
         raw_result.get("improvement_feedback")
     )
+    raw_result["key_point_details"] = _ensure_dict_list(raw_result.get("key_point_details"))
 
     return KeyPointCheckResult.model_validate(raw_result)
 
@@ -88,5 +96,6 @@ if __name__ == "__main__":
 
         result = await check_key_points(llm_client=llm_client, input_data=input_data)
         print(result.model_dump_json(indent=2))
+        print("key_point_details:", result.key_point_details)
 
     asyncio.run(_smoke_test())

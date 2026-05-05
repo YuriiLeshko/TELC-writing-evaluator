@@ -26,11 +26,22 @@ Output requirements:
   "improvement_feedback": ["string"],
   "example_errors": ["string"],
   "technical_notes": ["string"],
+  "accuracy_details": [
+    {
+      "aspect": "grammar | syntax | word_order | verb_forms | agreement | spelling | punctuation | capitalization | comprehension",
+      "label": "German display label",
+      "status": "strong | adequate | weak | problematic",
+      "error_count": 0,
+      "evidence": ["short exact examples from candidate_text"],
+      "comment": "Kurzer deutscher Kommentar"
+    }
+  ],
   "highlighted_errors": [
     {
       "text": "exakter fehlerhafter Ausschnitt aus dem Originaltext",
       "correction": "korrigierte Version",
       "error_type": "kurzer Fehlertyp auf Deutsch",
+      "aspect": "grammar | syntax | word_order | verb_forms | agreement | spelling | punctuation | capitalization",
       "explanation": "kurze Erklärung auf Deutsch"
     }
   ]
@@ -62,6 +73,7 @@ Scope restrictions:
   - if there are no clear errors, return []
   - explanations must be in German
   - corrections must be in German
+  - each item must include aspect
 You must write all explanations, feedback, and comments strictly in German (Deutsch).
 Do not use English words or sentences.
 Do not mix German and English.
@@ -163,11 +175,22 @@ Required output JSON structure:
   "improvement_feedback": ["string"],
   "example_errors": ["string"],
   "technical_notes": ["string"],
+  "accuracy_details": [
+    {{
+      "aspect": "grammar | syntax | word_order | verb_forms | agreement | spelling | punctuation | capitalization | comprehension",
+      "label": "German display label",
+      "status": "strong | adequate | weak | problematic",
+      "error_count": 0,
+      "evidence": ["short exact examples from candidate_text"],
+      "comment": "Kurzer deutscher Kommentar"
+    }}
+  ],
   "highlighted_errors": [
     {{
       "text": "exakter fehlerhafter Ausschnitt aus dem Originaltext",
       "correction": "korrigierte Version",
       "error_type": "kurzer Fehlertyp auf Deutsch",
+      "aspect": "grammar | syntax | word_order | verb_forms | agreement | spelling | punctuation | capitalization",
       "explanation": "kurze Erklärung auf Deutsch"
     }}
   ]
@@ -187,6 +210,36 @@ highlighted_errors rules:
 - use short fragments, usually 1-8 words (never whole paragraphs)
 - maximum 10 items; if no clear errors, return []
 - corrections and explanations must be in German
+- each highlighted error must include aspect
+accuracy_details rules:
+- return exactly one object for each aspect:
+  - grammar
+  - syntax
+  - word_order
+  - verb_forms
+  - agreement
+  - spelling
+  - punctuation
+  - capitalization
+  - comprehension
+- German labels:
+  - grammar -> "Grammatik"
+  - syntax -> "Satzbau"
+  - word_order -> "Wortstellung"
+  - verb_forms -> "Verbformen"
+  - agreement -> "Kongruenz"
+  - spelling -> "Rechtschreibung"
+  - punctuation -> "Zeichensetzung"
+  - capitalization -> "Groß- und Kleinschreibung"
+  - comprehension -> "Verständlichkeit"
+- status meaning:
+  - strong = no clear problems
+  - adequate = minor or occasional errors
+  - weak = repeated or noticeable errors
+  - problematic = frequent serious errors or comprehension affected
+- evidence must include only real short examples from candidate_text; if none, []
+- error_count should match or reasonably estimate errors for that aspect
+- comments must be concise German and evidence-based
 Language requirements:
 - All explanations must be written in German.
 - Use clear and simple German sentences suitable for B2 learners.

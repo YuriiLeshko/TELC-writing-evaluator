@@ -146,7 +146,7 @@ async def evaluate_submission(
             final_score=result.final_score,
             max_score=result.max_score,
             word_count=result.word_count.value if result.word_count else None,
-            started_at=session.started_at,
+            started_at=started_at,
             submitted_at=submitted_at,
             duration_seconds=duration_seconds,
             status="success",
@@ -163,6 +163,12 @@ async def evaluate_submission(
             result=result.model_dump(mode="json"),
         )
     except Exception as exc:
+        failed_submitted_at = datetime.now(timezone.utc)
+        failed_started_at = session.started_at
+        if failed_started_at.tzinfo is None:
+            failed_started_at = failed_started_at.replace(tzinfo=timezone.utc)
+        failed_duration_seconds = int((failed_submitted_at - failed_started_at).total_seconds())
+        failed_duration_seconds = max(failed_duration_seconds, 0)
         failed_submission = Submission(
             user_id=current_user.id,
             task_session_id=session.id,
@@ -170,9 +176,11 @@ async def evaluate_submission(
             selected_task_id=selected_task.id,
             candidate_text=payload.candidate_text,
             result_json={},
+            started_at=failed_started_at,
+            submitted_at=failed_submitted_at,
+            duration_seconds=failed_duration_seconds,
             status="failed",
             error_message=str(exc),
-            submitted_at=datetime.now(timezone.utc),
         )
         db.add(failed_submission)
         db.commit()

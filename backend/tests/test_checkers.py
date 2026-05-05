@@ -56,11 +56,38 @@ async def test_check_key_points_with_fake_llm(input_data: WritingEvaluationInput
                 "explanation": "Teilweise.",
                 "positive_feedback": ["P1 enthalten."],
                 "improvement_feedback": ["P2 fehlt."],
+                "key_point_details": [
+                    {
+                        "key_point": "P1",
+                        "covered": True,
+                        "status": "fulfilled",
+                        "coverage_quality": "adequate",
+                        "sentence_count": 2,
+                        "development": "sufficient",
+                        "relevance": "direct",
+                        "situation_appropriate": True,
+                        "language_level": "B1+",
+                        "comment": "P1 ist ausreichend ausgearbeitet.",
+                    },
+                    {
+                        "key_point": "P2",
+                        "covered": False,
+                        "status": "not_fulfilled",
+                        "coverage_quality": "missing",
+                        "sentence_count": 0,
+                        "development": "missing",
+                        "relevance": "irrelevant",
+                        "situation_appropriate": False,
+                        "language_level": None,
+                        "comment": "P2 fehlt im Text.",
+                    },
+                ],
             }
         ]
     )
     result = await check_key_points(client, input_data)
     assert isinstance(result, KeyPointCheckResult)
+    assert len(result.key_point_details) == 2
     assert len(client.calls) == 1
     assert client.calls[0]["temperature"] == 0.0
 
@@ -86,11 +113,35 @@ async def test_check_communication_with_fake_llm(input_data: WritingEvaluationIn
                 "linking_devices": ["deshalb"],
                 "complex_connectors": ["obwohl"],
                 "language_level_comment": "Nahe B2.",
+                "communication_details": [
+                    {
+                        "aspect": "email_elements",
+                        "label": "E-Mail-Elemente",
+                        "status": "strong",
+                        "level": None,
+                        "present_items": ["Betreff", "Anrede", "Hauptteil", "Grußformel"],
+                        "missing_items": ["Schluss"],
+                        "evidence": ["Betreff: Beschädigte Lieferung", "Sehr geehrte Damen und Herren"],
+                        "comment": "Die zentralen E-Mail-Bausteine sind weitgehend vorhanden.",
+                    },
+                    {
+                        "aspect": "vocabulary",
+                        "label": "Wortschatz",
+                        "status": "adequate",
+                        "level": "B1+",
+                        "present_items": ["aufgabenbezogene Lexik"],
+                        "missing_items": ["präzisere Nuancen"],
+                        "evidence": ["beschädigt", "zurückerstatten"],
+                        "comment": "Der Wortschatz passt, bleibt aber teils allgemein.",
+                    },
+                ],
             }
         ]
     )
     result = await check_communication(client, input_data)
     assert isinstance(result, CommunicationCheckResult)
+    assert len(result.communication_details) == 2
+    assert result.communication_details[0].aspect == "email_elements"
     assert len(client.calls) == 1
     assert client.calls[0]["temperature"] == 0.0
 
@@ -110,11 +161,30 @@ async def test_check_accuracy_with_fake_llm(input_data: WritingEvaluationInput) 
                 "improvement_feedback": ["Kasus pruefen."],
                 "example_errors": ["ein Kopfhörer -> einen Kopfhörer"],
                 "technical_notes": ["Einige Fehler."],
+                "accuracy_details": [
+                    {
+                        "aspect": "grammar",
+                        "label": "Grammatik",
+                        "status": "adequate",
+                        "error_count": 1,
+                        "evidence": ["ein Kopfhörer"],
+                        "comment": "Nur ein klarer Kasusfehler.",
+                    },
+                    {
+                        "aspect": "comprehension",
+                        "label": "Verständlichkeit",
+                        "status": "strong",
+                        "error_count": 0,
+                        "evidence": [],
+                        "comment": "Die Verständlichkeit ist nicht beeinträchtigt.",
+                    },
+                ],
                 "highlighted_errors": [
                     {
                         "text": "ein Kopfhörer",
                         "correction": "einen Kopfhörer",
                         "error_type": "Kasusfehler",
+                        "aspect": "agreement",
                         "explanation": "Akkusativ erforderlich.",
                     }
                 ],
@@ -123,7 +193,9 @@ async def test_check_accuracy_with_fake_llm(input_data: WritingEvaluationInput) 
     )
     result = await check_accuracy(client, input_data)
     assert isinstance(result, AccuracyCheckResult)
+    assert len(result.accuracy_details) == 2
     assert result.highlighted_errors[0].error_type == "Kasusfehler"
+    assert result.highlighted_errors[0].aspect == "agreement"
     assert len(client.calls) == 1
     assert client.calls[0]["temperature"] == 0.0
 

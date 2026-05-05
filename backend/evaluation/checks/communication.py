@@ -14,6 +14,13 @@ from backend.evaluation.schemas import CommunicationCheckResult, WritingEvaluati
 from backend.services.llm_client import LLMClient
 
 
+def _ensure_dict_list(value: object) -> list[dict]:
+    """Normalize possible LLM object-list outputs to list[dict]."""
+    if isinstance(value, list):
+        return [item for item in value if isinstance(item, dict)]
+    return []
+
+
 async def check_communication(
     llm_client: LLMClient,
     input_data: WritingEvaluationInput,
@@ -29,6 +36,9 @@ async def check_communication(
         user_prompt=user_prompt,
         temperature=0.0,
         max_tokens=900,
+    )
+    raw_result["communication_details"] = _ensure_dict_list(
+        raw_result.get("communication_details")
     )
 
     return CommunicationCheckResult.model_validate(raw_result)
@@ -65,5 +75,6 @@ if __name__ == "__main__":
 
         result = await check_communication(llm_client=llm_client, input_data=input_data)
         print(result.model_dump_json(indent=2))
+        print("communication_details:", result.communication_details)
 
     asyncio.run(_smoke_test())
