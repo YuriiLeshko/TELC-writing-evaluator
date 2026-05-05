@@ -2,12 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { PanelRightClose, PanelRightOpen, X } from "lucide-react";
 import ErrorHighlightedText from "./ErrorHighlightedText.jsx";
 import { safeGet } from "../utils/safeGet.js";
+import { formatElapsed } from "../utils/date.js";
 
 const RAIL_SECTION_IDS = ["rail-section-score", "rail-section-i", "rail-section-ii", "rail-section-iii", "rail-section-errors"];
 
-const ERR_PREVIEW_MAX = 8;
-
-export default function ResultView({ result, candidateText, selectedTask }) {
+export default function ResultView({ result, candidateText, selectedTask, submission }) {
   const [railCollapsed, setRailCollapsed] = useState(false);
   const [railMobileOpen, setRailMobileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState(RAIL_SECTION_IDS[0]);
@@ -31,7 +30,34 @@ export default function ResultView({ result, candidateText, selectedTask }) {
   const r = result && typeof result === "object" ? result : {};
   const crit3 = r.criterion_III || {};
   const highlighted = crit3.highlighted_errors || [];
-  const expectedKeyPoints = Array.isArray(selectedTask?.expected_key_points) ? selectedTask.expected_key_points : [];
+  const rawExpectedKeyPoints = selectedTask?.expected_key_points;
+  const normalizePointText = (value) =>
+    String(value ?? "")
+      .trim()
+      .replace(/^\s*\d+[\).\-\s:]+/, "")
+      .replace(/\s+/g, " ")
+      .toLowerCase();
+  const expectedKeyPoints = (() => {
+    if (Array.isArray(rawExpectedKeyPoints)) {
+      return rawExpectedKeyPoints
+        .map((point) => String(point ?? "").trim())
+        .filter(Boolean)
+        .map((point) => point.replace(/^\s*\d+[\).\-\s:]+/, "").trim());
+    }
+    if (typeof rawExpectedKeyPoints === "string") {
+      return rawExpectedKeyPoints
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => line.replace(/^\s*\d+[\).\-\s:]+/, "").trim());
+    }
+    return [];
+  })();
+  const expectedPointIndexByText = expectedKeyPoints.reduce((acc, point, index) => {
+    const normalized = normalizePointText(point);
+    if (normalized && !(normalized in acc)) acc[normalized] = index + 1;
+    return acc;
+  }, {});
 
   const wc = r.word_count;
   const improved = r.improved_text;
@@ -48,9 +74,26 @@ export default function ResultView({ result, candidateText, selectedTask }) {
   const wordCountStatusClass = wordCountOk == null ? "" : wordCountOk ? "status-good" : "status-bad";
   const topicMismatch = Boolean(r.topic_mismatch);
   const situationMismatch = Boolean(r.situation_mismatch);
+  const resultDurationSeconds = Number(r.duration_seconds);
+  const submissionDurationSeconds = Number(submission?.duration_seconds);
+  const durationSeconds = Number.isFinite(resultDurationSeconds)
+    ? resultDurationSeconds
+    : Number.isFinite(submissionDurationSeconds)
+      ? submissionDurationSeconds
+      : null;
+  const durationOverTarget = Number.isFinite(durationSeconds) ? durationSeconds > 30 * 60 : null;
+  const durationStatusClass = durationOverTarget == null ? "" : durationOverTarget ? "status-bad" : "status-good";
+  const durationLabel = (() => {
+    if (!Number.isFinite(durationSeconds)) return "—";
+    const safeSeconds = Math.max(0, Math.floor(durationSeconds));
+    const totalMinutes = Math.floor(safeSeconds / 60);
+    if (safeSeconds < 3600 && safeSeconds % 60 !== 0) {
+      return formatElapsed(safeSeconds);
+    }
+    return String(totalMinutes);
+  })();
 
   const errorCount = Array.isArray(highlighted) ? highlighted.length : 0;
-  const gradeI = safeGet(r, "criterion_I.grade");
   const ptsI = safeGet(r, "criterion_I.points");
   const gradeII = safeGet(r, "criterion_II.grade");
   const ptsII = safeGet(r, "criterion_II.points");
@@ -59,22 +102,77 @@ export default function ResultView({ result, candidateText, selectedTask }) {
   const commentI = safeGet(r, "criterion_I.comment");
   const commentII = safeGet(r, "criterion_II.comment");
   const commentIII = safeGet(r, "criterion_III.comment");
-  const criterionIMaxPoints = 5;
-  const gradeINormalized = typeof gradeI === "string" ? gradeI.trim().toUpperCase() : "";
-  const gradeIStatusClass =
-    gradeINormalized === "A"
+  const criterionIScaledPointsRaw = Number(safeGet(r, "criterion_I.scaled_points"));
+  const criterionIMaxScaledPointsRaw = Number(safeGet(r, "criterion_I.max_scaled_points"));
+  const hasScaledPoints = Number.isFinite(criterionIScaledPointsRaw) && Number.isFinite(criterionIMaxScaledPointsRaw);
+  const criterionIScaledPoints = hasScaledPoints ? criterionIScaledPointsRaw : Number(ptsI) * 3;
+  const criterionIMaxScaledPoints = hasScaledPoints ? criterionIMaxScaledPointsRaw : 15;
+  const hasCriterionIScore = Number.isFinite(criterionIScaledPoints) && Number.isFinite(criterionIMaxScaledPoints);
+  const criterionIScoreStatusClass = !hasCriterionIScore
+    ? ""
+    : criterionIScaledPoints >= 12
       ? "status-good"
-      : gradeINormalized === "B"
+      : criterionIScaledPoints >= 6
         ? "status-warning"
-        : gradeINormalized === "C" || gradeINormalized === "D"
-          ? "status-bad"
-          : "";
-  const ptsIStatusClass = gradeIStatusClass;
-  const fulfilledKeyPoints = safeGet(r, "criterion_I.fulfilled_key_points") ?? safeGet(r, "key_points.fulfilled_key_points");
-  const ownIdeas = safeGet(r, "criterion_I.own_ideas") ?? safeGet(r, "key_points.own_ideas");
-  const invalidPoints = safeGet(r, "criterion_I.invalid_points") ?? safeGet(r, "key_points.invalid_points");
-  const hasDetailedKeyPointData =
-    Array.isArray(fulfilledKeyPoints) || Array.isArray(ownIdeas) || Array.isArray(invalidPoints);
+        : "status-bad";
+  const keyPointDetails = safeGet(r, "criterion_I.key_point_details");
+  const hasKeyPointDetails = Array.isArray(keyPointDetails) && keyPointDetails.length > 0;
+  const criterionILevel =
+    safeGet(r, "criterion_I.level") ??
+    safeGet(r, "criterion_I.overall_level") ??
+    safeGet(r, "criterion_I.language_level");
+  const keyPointSummary = (() => {
+    if (!hasKeyPointDetails) return null;
+    const fulfilled = [];
+    const partiallyFulfilled = [];
+    const notFulfilled = [];
+    let ownIdeaLabel = "—";
+    let bestAvailableLevel = null;
+    const levelPriority = { A1: 1, A2: 2, B1: 3, "B1+": 4, B2: 5, "B2+": 6, C1: 7, "C1+": 8, C2: 9 };
+    const normalizeLevel = (value) => {
+      if (value == null) return null;
+      const raw = String(value).trim().toUpperCase();
+      return raw || null;
+    };
+
+    keyPointDetails.forEach((detail, idx) => {
+      const status = String(detail?.status ?? "").trim().toLowerCase();
+      const isOwnIdea =
+        detail?.own_idea === true ||
+        detail?.is_own_idea === true ||
+        String(detail?.type ?? "").trim().toLowerCase() === "own_idea" ||
+        String(detail?.point_type ?? "").trim().toLowerCase() === "own_idea";
+      const normalizedLevel = normalizeLevel(detail?.language_level);
+      if (normalizedLevel && (!bestAvailableLevel || (levelPriority[normalizedLevel] ?? 0) > (levelPriority[bestAvailableLevel] ?? 0))) {
+        bestAvailableLevel = normalizedLevel;
+      }
+
+      if (isOwnIdea) {
+        ownIdeaLabel = detail?.key_point_text || detail?.comment || "—";
+        return;
+      }
+
+      const explicitNumber = Number.isFinite(Number(detail?.number)) ? Number(detail.number) : null;
+      const detailKeyPoint = detail?.key_point ?? detail?.key_point_text ?? "";
+      const matchedExpectedNumber =
+        expectedKeyPoints.length > 0 ? expectedPointIndexByText[normalizePointText(detailKeyPoint)] ?? null : null;
+      const fallbackByOrder = expectedKeyPoints.length === 0 ? idx + 1 : null;
+      const pointNumber = explicitNumber ?? matchedExpectedNumber ?? fallbackByOrder;
+      if (!Number.isFinite(pointNumber)) return;
+      if (status === "fulfilled") fulfilled.push(pointNumber);
+      if (status === "partially_fulfilled") partiallyFulfilled.push(pointNumber);
+      if (status === "not_fulfilled") notFulfilled.push(pointNumber);
+    });
+
+    const overallLevel = criterionILevel != null && criterionILevel !== "" ? String(criterionILevel) : bestAvailableLevel || "—";
+    return {
+      fulfilled: fulfilled.length ? fulfilled.join(", ") : "—",
+      partiallyFulfilled: partiallyFulfilled.length ? partiallyFulfilled.join(", ") : "—",
+      notFulfilled: notFulfilled.length ? notFulfilled.join(", ") : "—",
+      ownIdeaLabel,
+      overallLevel,
+    };
+  })();
 
   const scrollRailTo = useCallback((id) => {
     const root = railTilesRef.current;
@@ -153,8 +251,47 @@ export default function ResultView({ result, candidateText, selectedTask }) {
   const formatErrLine = (err) =>
     typeof err === "object" ? `${err.text || "?"} — ${err.error_type || ""}: ${err.explanation || ""}` : String(err);
 
-  const errPreview = Array.isArray(highlighted) ? highlighted.slice(0, ERR_PREVIEW_MAX) : [];
-  const errMore = Math.max(0, (highlighted?.length ?? 0) - ERR_PREVIEW_MAX);
+  const topLevelExtraEntries = Object.entries(r).filter(
+    ([key]) => !["criterion_I", "criterion_II", "criterion_III", "improved_text", "word_count"].includes(key),
+  );
+
+  const formatValue = (value) => {
+    if (value == null || value === "") return "—";
+    if (typeof value === "boolean") return value ? "true" : "false";
+    if (typeof value === "number" || typeof value === "string") return String(value);
+    return null;
+  };
+
+  const renderDataTree = (value, depth = 0) => {
+    const scalar = formatValue(value);
+    if (scalar != null) return <span>{scalar}</span>;
+    if (Array.isArray(value)) {
+      if (!value.length) return <span>—</span>;
+      return (
+        <ul className={`result-rail-data-list result-rail-data-list--depth-${Math.min(depth + 1, 3)}`}>
+          {value.map((item, idx) => (
+            <li key={`${depth}-arr-${idx}`}>
+              <span className="result-rail-data-key">[{idx}]</span>: {renderDataTree(item, depth + 1)}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    if (typeof value === "object") {
+      const entries = Object.entries(value);
+      if (!entries.length) return <span>—</span>;
+      return (
+        <ul className={`result-rail-data-list result-rail-data-list--depth-${Math.min(depth + 1, 3)}`}>
+          {entries.map(([k, v]) => (
+            <li key={`${depth}-obj-${k}`}>
+              <span className="result-rail-data-key">{k}</span>: {renderDataTree(v, depth + 1)}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    return <span>{String(value)}</span>;
+  };
 
   const criterionBody = (subtitle, grade, pts, comment) => (
     <div className="result-rail-card__body">
@@ -190,7 +327,7 @@ export default function ResultView({ result, candidateText, selectedTask }) {
 
       <div className="result-page-shell">
         <main className="result-main stack">
-          <details className="summary-block result-main-card" open>
+          <details className="summary-block result-main-card">
             <summary>Aufgabentext anzeigen</summary>
             <div className="stack stack--sm" style={{ marginTop: "0.65rem" }}>
               <div>
@@ -215,11 +352,11 @@ export default function ResultView({ result, candidateText, selectedTask }) {
                 <strong>Mögliche Punkte / Erwartete Schwerpunkte</strong>
                 <div className="text-panel" style={{ marginTop: "0.35rem" }}>
                   {expectedKeyPoints.length ? (
-                    <ul className="changes-list">
+                    <ol className="changes-list">
                       {expectedKeyPoints.map((point, index) => (
                         <li key={`kp-${index}`}>{point}</li>
                       ))}
-                    </ul>
+                    </ol>
                   ) : (
                     "—"
                   )}
@@ -235,7 +372,7 @@ export default function ResultView({ result, candidateText, selectedTask }) {
             </div>
           </details>
 
-          <details className="summary-block result-main-card" open>
+          <details className="summary-block result-main-card">
             <summary>Verbesserte Version</summary>
             <div className="stack stack--sm" style={{ marginTop: "0.65rem" }}>
               {improved ? (
@@ -310,8 +447,9 @@ export default function ResultView({ result, candidateText, selectedTask }) {
                   </span>
                 </p>
                 <p style={{ margin: "0.15rem 0", fontSize: "0.84rem" }}>
-                  <span className={wordCountStatusClass}>
-                    {wordCountOk == null ? "Wortzahl unbekannt" : wordCountOk ? "Wortzahl erfüllt" : "Wortzahl zu niedrig"}
+                  <strong>Zeit:</strong>{" "}
+                  <span className={durationStatusClass}>
+                    {durationLabel === "—" ? "—" : `${durationLabel} Min.`}
                   </span>
                 </p>
                 <p style={{ margin: "0.15rem 0", fontSize: "0.84rem" }}>
@@ -324,6 +462,20 @@ export default function ResultView({ result, candidateText, selectedTask }) {
                     {situationMismatch ? "Schlecht" : "Gut"}
                   </span>
                 </p>
+                {topLevelExtraEntries.length ? (
+                  <div className="result-rail-summary-list">
+                    <p className="result-rail-kp-summary__line">
+                      <strong>Backend-Daten:</strong>
+                    </p>
+                    <ul className="result-rail-data-list">
+                      {topLevelExtraEntries.map(([key, value]) => (
+                        <li key={`top-${key}`}>
+                          <span className="result-rail-data-key">{key}</span>: {renderDataTree(value)}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -333,47 +485,44 @@ export default function ResultView({ result, candidateText, selectedTask }) {
             className={`result-rail-card ${activeSection === "rail-section-i" ? "result-rail-card--active" : ""}`}
           >
             <button type="button" className="result-rail-card__head" onClick={() => onTileActivate("rail-section-i")}>
-              <span className="result-rail-tile__title">Aufgabenerfüllung</span>
-              <span className={`result-rail-tile__value ${gradeIStatusClass}`}>
-                {gradeI ?? "—"} · {ptsI ?? "—"}/{criterionIMaxPoints}
+              <span className="result-rail-tile__title">Task Achievement</span>
+              <span className={`result-rail-tile__value ${criterionIScoreStatusClass}`}>
+                {hasCriterionIScore ? `${criterionIScaledPoints} / ${criterionIMaxScaledPoints}` : "— / —"}
               </span>
             </button>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
                 <p className="metric-card__help" style={{ margin: "0 0 0.4rem" }}>
-                  Inhalt und Leitpunkte
+                  Aufgabenerfüllung
                 </p>
-                <p style={{ margin: 0, fontSize: "0.86rem" }}>
-                  <strong>Note:</strong> <span className={gradeIStatusClass}>{gradeI ?? "—"}</span>
-                </p>
-                <p style={{ margin: "0.2rem 0 0", fontSize: "0.86rem" }}>
-                  <strong>Punkte:</strong>{" "}
-                  <span className={ptsIStatusClass}>
-                    {ptsI ?? "—"} / {criterionIMaxPoints}
-                  </span>
-                </p>
+                {keyPointSummary ? (
+                  <div className="result-rail-summary-list result-rail-kp-summary">
+                    <p className="result-rail-kp-summary__line">
+                      <strong>Erfüllte Leitpunkte:</strong> {keyPointSummary.fulfilled}
+                    </p>
+                    <p className="result-rail-kp-summary__line">
+                      <strong>Teilweise erfüllt:</strong> {keyPointSummary.partiallyFulfilled}
+                    </p>
+                    <p className="result-rail-kp-summary__line">
+                      <strong>Nicht erfüllt:</strong> {keyPointSummary.notFulfilled}
+                    </p>
+                    <p className="result-rail-kp-summary__line">
+                      <strong>Eigener Aspekt:</strong> {keyPointSummary.ownIdeaLabel}
+                    </p>
+                    <p className="result-rail-kp-summary__line">
+                      <strong>Niveau:</strong> {keyPointSummary.overallLevel}
+                    </p>
+                  </div>
+                ) : null}
                 <p style={{ margin: "0.45rem 0 0", color: "var(--muted)", fontSize: "0.86rem", lineHeight: 1.45 }}>
                   {commentI || "Keine Details."}
                 </p>
-                {hasDetailedKeyPointData ? (
-                  <div className="result-rail-summary-list">
-                    {Array.isArray(fulfilledKeyPoints) ? (
-                      <p style={{ margin: "0.25rem 0 0", fontSize: "0.82rem" }}>
-                        <strong>Erfüllte Leitpunkte:</strong> {fulfilledKeyPoints.length}
-                      </p>
-                    ) : null}
-                    {Array.isArray(ownIdeas) ? (
-                      <p style={{ margin: "0.2rem 0 0", fontSize: "0.82rem" }}>
-                        <strong>Eigene Ideen:</strong> {ownIdeas.length}
-                      </p>
-                    ) : null}
-                    {Array.isArray(invalidPoints) ? (
-                      <p style={{ margin: "0.2rem 0 0", fontSize: "0.82rem" }}>
-                        <strong>Fehlende/ungültige Punkte:</strong> {invalidPoints.length}
-                      </p>
-                    ) : null}
-                  </div>
-                ) : null}
+                <div className="result-rail-summary-list">
+                  <p className="result-rail-kp-summary__line">
+                    <strong>criterion_I (voll):</strong>
+                  </p>
+                  {renderDataTree(safeGet(r, "criterion_I"))}
+                </div>
               </div>
             ) : null}
           </div>
@@ -386,7 +535,17 @@ export default function ResultView({ result, candidateText, selectedTask }) {
               <span className="result-rail-tile__title">Kriterium II</span>
               <span className="result-rail-tile__value">{fmtGradePts(gradeII, ptsII)}</span>
             </button>
-            {railBodyVisible ? criterionBody("Communicative Design", gradeII, ptsII, commentII) : null}
+            {railBodyVisible ? (
+              <div>
+                {criterionBody("Communicative Design", gradeII, ptsII, commentII)}
+                <div className="result-rail-card__body">
+                  <p className="result-rail-kp-summary__line">
+                    <strong>criterion_II (voll):</strong>
+                  </p>
+                  {renderDataTree(safeGet(r, "criterion_II"))}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <div
@@ -401,7 +560,17 @@ export default function ResultView({ result, candidateText, selectedTask }) {
               <span className="result-rail-tile__title">Kriterium III</span>
               <span className="result-rail-tile__value">{fmtGradePts(gradeIII, ptsIII)}</span>
             </button>
-            {railBodyVisible ? criterionBody("Formal Accuracy", gradeIII, ptsIII, commentIII) : null}
+            {railBodyVisible ? (
+              <div>
+                {criterionBody("Formal Accuracy", gradeIII, ptsIII, commentIII)}
+                <div className="result-rail-card__body">
+                  <p className="result-rail-kp-summary__line">
+                    <strong>criterion_III (voll):</strong>
+                  </p>
+                  {renderDataTree(safeGet(r, "criterion_III"))}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <div
@@ -418,18 +587,19 @@ export default function ResultView({ result, candidateText, selectedTask }) {
             </button>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
-                {errPreview.length ? (
+                {Array.isArray(highlighted) && highlighted.length ? (
                   <>
                     <ul className="analysis-errors-list result-rail-card__err-list">
-                      {errPreview.map((err, i) => (
+                      {highlighted.map((err, i) => (
                         <li key={i}>{formatErrLine(err)}</li>
                       ))}
                     </ul>
-                    {errMore > 0 ? (
-                      <p className="metric-card__help" style={{ margin: "0.35rem 0 0" }}>
-                        +{errMore} weitere
+                    <div className="result-rail-summary-list">
+                      <p className="result-rail-kp-summary__line">
+                        <strong>highlighted_errors (voll):</strong>
                       </p>
-                    ) : null}
+                      {renderDataTree(highlighted)}
+                    </div>
                   </>
                 ) : (
                   <p className="metric-card__help" style={{ margin: 0 }}>

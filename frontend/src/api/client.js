@@ -62,6 +62,17 @@ export function getCurrentUser() {
   return request("/users/me");
 }
 
+export function updateCurrentUser(data) {
+  return request("/users/me", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteCurrentUser() {
+  return request("/users/me", { method: "DELETE" });
+}
+
 /**
  * TODO: Es gibt keinen dokumentierten GET-/users-Listenendpunkt in docs/api_contract.md
  * (nur GET /users/me). Für Benutzerlisten Admin-Endpunkte verwenden.
@@ -86,6 +97,13 @@ export function getActiveTaskSessions() {
 
 export function getTaskSession(sessionId) {
   return request(`/task-sessions/${sessionId}`);
+}
+
+export function updateTaskSessionSelection(sessionId, selectedTaskType) {
+  return request(`/task-sessions/${sessionId}/selection`, {
+    method: "PATCH",
+    body: JSON.stringify({ selected_task_type: selectedTaskType }),
+  });
 }
 
 export function deleteTaskSession(sessionId) {

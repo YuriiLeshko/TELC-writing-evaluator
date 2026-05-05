@@ -149,16 +149,21 @@ Response:
 
 ### PATCH `/users/me`
 
-Update own email and/or password.
+Update own `username`, `email`, and/or `password`.
 
 Request body (at least one field):
 
 ```json
 {
+  "username": "updated-user",
   "email": "updated@example.com",
   "password": "new-password"
 }
 ```
+
+Notes:
+- If `password` is empty (`""`), password is not changed.
+- Admin-only fields are ignored on this endpoint (`role`, `is_active`, counters, next-task indexes).
 
 Response:
 
@@ -673,9 +678,6 @@ Soft delete via `is_active = false`.
 
 ## Frontend Notes
 
-- Use `/users/me` to render current counters:
-  - `available_sessions`
-  - `available_submissions`
 - To start workflow:
   1. `POST /task-sessions/start`
   2. user chooses `info` or `complaint`

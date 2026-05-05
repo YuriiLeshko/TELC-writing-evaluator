@@ -29,6 +29,7 @@ from backend.api_schemas import (
     ComplaintTaskRead,
     InfoTaskRead,
     StartTaskSessionResponse,
+    TaskSessionSelectionUpdateRequest,
     TaskSessionRead,
 )
 from backend.database import get_db
@@ -189,6 +190,33 @@ def get_task_session(
     )
     if session is None:
         raise HTTPException(status_code=404, detail="Task session not found.")
+    return task_session_to_schema(session)
+
+
+@router.patch("/{session_id}/selection", response_model=TaskSessionRead)
+def update_task_session_selection(
+    session_id: int,
+    payload: TaskSessionSelectionUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_demo_current_user),
+) -> TaskSessionRead:
+    session = db.scalar(
+        select(TaskSession)
+        .options(joinedload(TaskSession.info_task), joinedload(TaskSession.complaint_task))
+        .where(
+            TaskSession.id == session_id,
+            TaskSession.user_id == current_user.id,
+        )
+    )
+    if session is None:
+        raise HTTPException(status_code=404, detail="Task session not found.")
+    if session.status != "started":
+        raise HTTPException(status_code=400, detail="Only active sessions can be updated.")
+
+    session.selected_task_type = payload.selected_task_type
+    session.selected_task_id = session.info_task_id if payload.selected_task_type == "info" else session.complaint_task_id
+    db.commit()
+    db.refresh(session)
     return task_session_to_schema(session)
 
 

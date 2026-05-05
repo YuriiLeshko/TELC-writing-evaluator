@@ -53,6 +53,7 @@ class UserRegister(BaseModel):
 
 
 class UserSelfUpdate(BaseModel):
+    username: str | None = None
     email: str | None = None
     password: str | None = None
 
@@ -147,6 +148,10 @@ class TaskSessionRead(BaseModel):
 class StartTaskSessionResponse(BaseModel):
     session: TaskSessionRead
     display_title: str
+
+
+class TaskSessionSelectionUpdateRequest(BaseModel):
+    selected_task_type: Literal["info", "complaint"]
 
 
 class SubmitEvaluationRequest(BaseModel):

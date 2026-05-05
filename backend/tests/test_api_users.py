@@ -36,6 +36,39 @@ def test_register_update_and_delete_self_flow(test_client, seeded_users, db_sess
     assert delete_resp.json()["status"] == "deleted"
 
 
+def test_patch_users_me_updates_username_email(test_client, seeded_users, db_session) -> None:
+    response = test_client.patch(
+        "/users/me",
+        json={"username": "updated-user", "email": "user-updated@example.com"},
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["username"] == "updated-user"
+    assert body["email"] == "user-updated@example.com"
+
+
+def test_patch_users_me_empty_password_does_not_change_hash(test_client, seeded_users, db_session) -> None:
+    user = seeded_users["user"]
+    original_hash = user.hashed_password
+    response = test_client.patch("/users/me", json={"password": ""})
+    assert response.status_code == 200
+    db_session.refresh(user)
+    assert user.hashed_password == original_hash
+
+
+def test_patch_users_me_ignores_admin_fields(test_client, seeded_users, db_session) -> None:
+    user = seeded_users["user"]
+    response = test_client.patch(
+        "/users/me",
+        json={"role": "admin", "available_sessions": 999, "available_submissions": 999},
+    )
+    assert response.status_code == 200
+    db_session.refresh(user)
+    assert user.role == "user"
+    assert user.available_sessions != 999
+    assert user.available_submissions != 999
+
+
 def test_users_list_endpoint_not_available_for_regular_user(test_client, seeded_users) -> None:
     response = test_client.get("/users")
     assert response.status_code in (404, 405)

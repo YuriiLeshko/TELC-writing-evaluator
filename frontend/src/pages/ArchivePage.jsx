@@ -30,6 +30,8 @@ export default function ArchivePage() {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [deletingKey, setDeletingKey] = useState(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -78,20 +80,48 @@ export default function ArchivePage() {
   };
 
   const onDeleteSession = async (id) => {
-    if (!window.confirm("Sitzung wirklich löschen?")) return;
+    setError(null);
+    setDeletingKey(`session-${id}`);
     try {
       await deleteTaskSession(id);
+      setPendingDelete(null);
       await load();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDeletingKey(null);
     }
   };
 
   const onDeleteSubmission = async (id) => {
-    if (!window.confirm("Einreichung wirklich löschen?")) return;
+    setError(null);
+    setDeletingKey(`submission-${id}`);
     try {
       await deleteSubmission(id);
+      setPendingDelete(null);
       await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDeletingKey(null);
+    }
+  };
+
+  const onContinueSession = async (session) => {
+    setError(null);
+    try {
+      const fullSession = await getTaskSession(session.id);
+      navigate("/training", {
+        state: {
+          activeSession: fullSession ?? session,
+          selectedTaskType:
+            fullSession?.selected_task_type ??
+            fullSession?.selectedTaskType ??
+            session?.selected_task_type ??
+            session?.selectedTaskType ??
+            null,
+        },
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -121,15 +151,47 @@ export default function ArchivePage() {
                   <li
                     key={s.id}
                     className="admin-user-row"
-                    style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}
                   >
-                    <span>
-                      <strong>#{s.id}</strong> — {formatDateTime(s.started_at)}
-                    </span>
-                    {statusBadge(s.status)}
-                    <Button type="button" variant="danger" onClick={() => onDeleteSession(s.id)}>
-                      Löschen
-                    </Button>
+                    <div className="archive-row-actions">
+                      <span>
+                        <strong>#{s.id}</strong> — {formatDateTime(s.started_at)}
+                      </span>
+                      {statusBadge(s.status)}
+                      <Button type="button" variant="secondary" onClick={() => onContinueSession(s)}>
+                        Fortsetzen
+                      </Button>
+                      <div className="archive-row-actions__delete">
+                        {pendingDelete?.type === "session" && pendingDelete?.id === s.id ? (
+                          <div className="archive-delete-confirm">
+                            <span className="archive-delete-confirm__text">Wirklich löschen?</span>
+                            <Button
+                              type="button"
+                              variant="danger"
+                              onClick={() => onDeleteSession(s.id)}
+                              disabled={deletingKey === `session-${s.id}`}
+                            >
+                              Ja, löschen
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              onClick={() => setPendingDelete(null)}
+                              disabled={deletingKey === `session-${s.id}`}
+                            >
+                              Abbrechen
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="danger"
+                            onClick={() => setPendingDelete({ type: "session", id: s.id })}
+                          >
+                            Löschen
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -145,7 +207,7 @@ export default function ArchivePage() {
                   const canOpenResult = submissionHasResult(sub);
                   return (
                     <li key={sub.id} className="admin-user-row">
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
+                      <div className="archive-row-actions">
                         <span>
                           <strong>#{sub.id}</strong> {formatDateTime(sub.submitted_at)}
                         </span>
@@ -164,9 +226,37 @@ export default function ArchivePage() {
                         >
                           Details anzeigen
                         </Button>
-                        <Button type="button" variant="danger" onClick={() => onDeleteSubmission(sub.id)}>
-                          Löschen
-                        </Button>
+                        <div className="archive-row-actions__delete">
+                          {pendingDelete?.type === "submission" && pendingDelete?.id === sub.id ? (
+                            <div className="archive-delete-confirm">
+                              <span className="archive-delete-confirm__text">Wirklich löschen?</span>
+                              <Button
+                                type="button"
+                                variant="danger"
+                                onClick={() => onDeleteSubmission(sub.id)}
+                                disabled={deletingKey === `submission-${sub.id}`}
+                              >
+                                Ja, löschen
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                onClick={() => setPendingDelete(null)}
+                                disabled={deletingKey === `submission-${sub.id}`}
+                              >
+                                Abbrechen
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="danger"
+                              onClick={() => setPendingDelete({ type: "submission", id: sub.id })}
+                            >
+                              Löschen
+                            </Button>
+                          )}
+                        </div>
                       </div>
                       {sub.error_message ? (
                         <div className="alert alert--error" style={{ marginTop: "0.5rem" }} role="alert">

@@ -88,13 +88,25 @@ def update_me(
     current_user: User = Depends(get_demo_current_user),
 ) -> UserRead:
     data = payload.model_dump(exclude_unset=True)
-    if "email" in data and data["email"] != current_user.email:
-        existing = db.scalar(select(User).where(User.email == data["email"]))
-        if existing is not None:
-            raise HTTPException(status_code=400, detail="Email already exists.")
-        current_user.email = data["email"]
+    if "username" in data:
+        username_value = data["username"]
+        current_user.username = username_value.strip() if isinstance(username_value, str) else username_value
+    if "email" in data:
+        email_value = data["email"]
+        if not isinstance(email_value, str) or not email_value.strip():
+            raise HTTPException(status_code=400, detail="Email cannot be empty.")
+        normalized_email = email_value.strip()
+        if normalized_email == current_user.email:
+            normalized_email = None
+        if normalized_email is not None:
+            existing = db.scalar(select(User).where(User.email == normalized_email))
+            if existing is not None:
+                raise HTTPException(status_code=400, detail="Email already exists.")
+            current_user.email = normalized_email
     if "password" in data:
-        current_user.hashed_password = data["password"]
+        password_value = data["password"]
+        if isinstance(password_value, str) and password_value.strip():
+            current_user.hashed_password = password_value
 
     db.commit()
     db.refresh(current_user)
