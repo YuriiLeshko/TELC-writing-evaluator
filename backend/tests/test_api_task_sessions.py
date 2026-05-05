@@ -8,6 +8,9 @@ def test_start_task_session_updates_counters(test_client, seeded_users, seeded_t
     assert response.status_code == 200
     data = response.json()
     assert data["session"]["status"] == "started"
+    assert data["session"]["started_at"] is not None
+    assert data["session"]["submitted_at"] is None
+    assert data["session"]["duration_seconds"] is None
 
     user = seeded_users["user"]
     db_session.refresh(user)
@@ -31,6 +34,8 @@ def test_get_active_sessions(test_client, seeded_users, seeded_tasks, db_session
     response = test_client.get("/task-sessions/active")
     assert response.status_code == 200
     assert len(response.json()) == 1
+    assert response.json()[0]["started_at"] is not None
+    assert response.json()[0]["duration_seconds"] is None
 
 
 def test_delete_started_session(test_client, seeded_users, seeded_tasks, db_session) -> None:

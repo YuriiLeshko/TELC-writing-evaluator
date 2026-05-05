@@ -14,6 +14,13 @@ from backend.evaluation.schemas import AccuracyCheckResult, WritingEvaluationInp
 from backend.services.llm_client import LLMClient
 
 
+def _ensure_dict_list(value: object) -> list[dict]:
+    """Normalize possible LLM object-list outputs to list[dict]."""
+    if isinstance(value, list):
+        return [item for item in value if isinstance(item, dict)]
+    return []
+
+
 async def check_accuracy(
     llm_client: LLMClient,
     input_data: WritingEvaluationInput,
@@ -29,6 +36,8 @@ async def check_accuracy(
         temperature=0.0,
         max_tokens=900,
     )
+    raw_result["accuracy_details"] = _ensure_dict_list(raw_result.get("accuracy_details"))
+    raw_result["highlighted_errors"] = _ensure_dict_list(raw_result.get("highlighted_errors"))
 
     return AccuracyCheckResult.model_validate(raw_result)
 
@@ -64,5 +73,7 @@ if __name__ == "__main__":
 
         result = await check_accuracy(llm_client=llm_client, input_data=input_data)
         print(result.model_dump_json(indent=2))
+        print("accuracy_details:", result.accuracy_details)
+        print("highlighted_errors:", result.highlighted_errors)
 
     asyncio.run(_smoke_test())

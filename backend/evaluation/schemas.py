@@ -77,6 +77,23 @@ class RelevanceCheckResult(BaseModel):
     improvement_feedback: list[str] = Field(default_factory=list)
 
 
+class KeyPointDetail(BaseModel):
+    """Structured per-key-point TELC task-achievement analysis."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    key_point: str
+    covered: bool
+    status: Literal["fulfilled", "partially_fulfilled", "not_fulfilled"]
+    coverage_quality: Literal["strong", "adequate", "weak", "missing"]
+    sentence_count: int
+    development: Literal["detailed", "sufficient", "too_short", "unclear", "missing"]
+    relevance: Literal["direct", "partial", "irrelevant"]
+    situation_appropriate: bool
+    language_level: Literal["B2", "B1+", "B1", "A2"] | None = None
+    comment: str
+
+
 class KeyPointCheckResult(BaseModel):
     """Structured LLM output for key-point extraction and validation."""
 
@@ -101,6 +118,7 @@ class KeyPointCheckResult(BaseModel):
     explanation: str = Field(..., min_length=1)
     positive_feedback: list[str] = Field(default_factory=list)
     improvement_feedback: list[str] = Field(default_factory=list)
+    key_point_details: list[KeyPointDetail] = Field(default_factory=list)
 
     @field_validator(
         "fulfilled_key_points",
@@ -116,6 +134,29 @@ class KeyPointCheckResult(BaseModel):
         if any(not item for item in cleaned):
             raise ValueError("list fields must not contain empty strings")
         return cleaned
+
+
+class CommunicationDetail(BaseModel):
+    """Structured per-aspect communicative design analysis for Criterion II."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    aspect: Literal[
+        "email_elements",
+        "structure",
+        "coherence",
+        "cohesion",
+        "register",
+        "vocabulary",
+        "sentence_variety",
+    ]
+    label: str
+    status: Literal["strong", "adequate", "weak", "missing", "inappropriate"]
+    level: Literal["B2", "B1+", "B1", "A2"] | None = None
+    present_items: list[str] = Field(default_factory=list)
+    missing_items: list[str] = Field(default_factory=list)
+    evidence: list[str] = Field(default_factory=list)
+    comment: str
 
 
 class CommunicationCheckResult(BaseModel):
@@ -162,6 +203,7 @@ class CommunicationCheckResult(BaseModel):
     linking_devices: list[str] = Field(default_factory=list)
     complex_connectors: list[str] = Field(default_factory=list)
     language_level_comment: str = Field(default="")
+    communication_details: list[CommunicationDetail] = Field(default_factory=list)
 
     @field_validator(
         "positive_feedback",
@@ -186,7 +228,40 @@ class GrammarErrorSpan(BaseModel):
     text: str = Field(..., min_length=1)
     correction: str = Field(..., min_length=1)
     error_type: str = Field(..., min_length=1)
+    aspect: Literal[
+        "grammar",
+        "syntax",
+        "word_order",
+        "verb_forms",
+        "agreement",
+        "spelling",
+        "punctuation",
+        "capitalization",
+    ]
     explanation: str = Field(..., min_length=1)
+
+
+class AccuracyDetail(BaseModel):
+    """Structured grouped formal-accuracy analysis for Criterion III."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    aspect: Literal[
+        "grammar",
+        "syntax",
+        "word_order",
+        "verb_forms",
+        "agreement",
+        "spelling",
+        "punctuation",
+        "capitalization",
+        "comprehension",
+    ]
+    label: str
+    status: Literal["strong", "adequate", "weak", "problematic"]
+    error_count: int = 0
+    evidence: list[str] = Field(default_factory=list)
+    comment: str
 
 
 class AccuracyCheckResult(BaseModel):
@@ -229,6 +304,7 @@ class AccuracyCheckResult(BaseModel):
     improvement_feedback: list[str] = Field(default_factory=list)
     example_errors: list[str] = Field(default_factory=list)
     technical_notes: list[str] = Field(default_factory=list)
+    accuracy_details: list[AccuracyDetail] = Field(default_factory=list)
     highlighted_errors: list[GrammarErrorSpan] = Field(default_factory=list)
 
     @field_validator(
@@ -263,6 +339,11 @@ class CriterionScore(BaseModel):
     grade: Literal["A", "B", "C", "D"] = Field(...)
     points: int = Field(..., ge=0, le=5)
     comment: str | None = Field(default=None)
+    scaled_points: int | None = Field(default=None)
+    max_scaled_points: int | None = Field(default=None)
+    key_point_details: list[KeyPointDetail] | None = Field(default=None)
+    communication_details: list[CommunicationDetail] | None = Field(default=None)
+    accuracy_details: list[AccuracyDetail] | None = Field(default=None)
     highlighted_errors: list[GrammarErrorSpan] | None = Field(default=None)
 
     @model_validator(mode="after")

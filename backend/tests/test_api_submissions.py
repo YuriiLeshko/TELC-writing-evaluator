@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 import pytest
+from sqlalchemy import select
 
 from backend.evaluation.schemas import (
+    AccuracyDetail,
+    CommunicationDetail,
     CriterionScore,
+    GrammarErrorSpan,
     ImprovedTextResult,
+    KeyPointDetail,
     WordCountCheck,
     WritingEvaluationResult,
 )
@@ -15,9 +20,72 @@ def _fake_result() -> WritingEvaluationResult:
     return WritingEvaluationResult(
         topic_mismatch=False,
         situation_mismatch=False,
-        criterion_I=CriterionScore(grade="B", points=3, comment="I"),
-        criterion_II=CriterionScore(grade="B", points=3, comment="II"),
-        criterion_III=CriterionScore(grade="B", points=3, comment="III"),
+        criterion_I=CriterionScore(
+            grade="B",
+            points=3,
+            comment="I",
+            scaled_points=9,
+            max_scaled_points=15,
+            key_point_details=[
+                KeyPointDetail(
+                    key_point="P1",
+                    covered=True,
+                    status="fulfilled",
+                    coverage_quality="strong",
+                    sentence_count=2,
+                    development="detailed",
+                    relevance="direct",
+                    situation_appropriate=True,
+                    language_level="B2",
+                    comment="P1 wird klar erfüllt.",
+                )
+            ],
+        ),
+        criterion_II=CriterionScore(
+            grade="B",
+            points=3,
+            comment="II",
+            scaled_points=9,
+            max_scaled_points=15,
+            communication_details=[
+                CommunicationDetail(
+                    aspect="email_elements",
+                    label="E-Mail-Elemente",
+                    status="strong",
+                    level=None,
+                    present_items=["Betreff", "Anrede", "Hauptteil", "Grußformel"],
+                    missing_items=["Schluss"],
+                    evidence=["Betreff: Beschädigte Lieferung"],
+                    comment="Die meisten E-Mail-Elemente sind vorhanden.",
+                )
+            ],
+        ),
+        criterion_III=CriterionScore(
+            grade="B",
+            points=3,
+            comment="III",
+            scaled_points=9,
+            max_scaled_points=15,
+            accuracy_details=[
+                AccuracyDetail(
+                    aspect="grammar",
+                    label="Grammatik",
+                    status="adequate",
+                    error_count=1,
+                    evidence=["ein Kopfhörer"],
+                    comment="Einzelner Kasusfehler.",
+                )
+            ],
+            highlighted_errors=[
+                GrammarErrorSpan(
+                    text="ein Kopfhörer",
+                    correction="einen Kopfhörer",
+                    error_type="Kasusfehler",
+                    aspect="agreement",
+                    explanation="Akkusativ nach Verb.",
+                )
+            ],
+        ),
         word_count=WordCountCheck(value=160, minimum_required=150, meets_requirement=True),
         improved_text=ImprovedTextResult(improved_text="Verbessert", changes_summary=["Satzbau"]),
         raw_score=9,
@@ -46,6 +114,13 @@ def test_evaluate_submission_success(test_client, seeded_users, seeded_tasks, db
     data = response.json()
     assert data["task_session_id"] == session_id
     assert data["result"]["final_score"] == 27
+    assert data["result"]["criterion_I"]["scaled_points"] == 9
+    assert len(data["result"]["criterion_I"]["key_point_details"]) == 1
+    assert data["result"]["criterion_II"]["scaled_points"] == 9
+    assert len(data["result"]["criterion_II"]["communication_details"]) == 1
+    assert data["result"]["criterion_III"]["scaled_points"] == 9
+    assert len(data["result"]["criterion_III"]["accuracy_details"]) == 1
+    assert data["result"]["criterion_III"]["highlighted_errors"][0]["aspect"] == "agreement"
 
     user = seeded_users["user"]
     db_session.refresh(user)
@@ -53,6 +128,20 @@ def test_evaluate_submission_success(test_client, seeded_users, seeded_tasks, db
 
     session = db_session.get(TaskSession, session_id)
     assert session is not None and session.status == "submitted"
+    assert session.started_at is not None
+    assert session.submitted_at is not None
+    assert session.duration_seconds is not None
+    assert session.duration_seconds >= 0
+    submission = db_session.get(Submission, data["submission_id"])
+    assert submission is not None
+    assert submission.started_at is not None
+    assert submission.submitted_at is not None
+    assert submission.duration_seconds is not None
+    assert submission.duration_seconds >= 0
+    assert submission.duration_seconds == session.duration_seconds
+    assert submission.result_json["criterion_I"]["max_scaled_points"] == 15
+    assert submission.result_json["criterion_II"]["max_scaled_points"] == 15
+    assert submission.result_json["criterion_III"]["max_scaled_points"] == 15
 
 
 def test_evaluate_submission_no_counter_left(test_client, seeded_users, seeded_tasks, db_session) -> None:
@@ -101,6 +190,18 @@ def test_evaluate_submission_failure_keeps_counter_and_session(test_client, seed
 
     session = db_session.get(TaskSession, session_id)
     assert session is not None and session.status == "started"
+    assert session.submitted_at is None
+    assert session.duration_seconds is None
+
+    failed_submission = db_session.scalar(
+        select(Submission).where(Submission.task_session_id == session_id)
+    )
+    assert failed_submission is not None
+    assert failed_submission.status == "failed"
+    assert failed_submission.started_at is not None
+    assert failed_submission.submitted_at is not None
+    assert failed_submission.duration_seconds is not None
+    assert failed_submission.duration_seconds >= 0
 
 
 def test_submissions_list_active_and_delete(test_client, seeded_users, seeded_tasks, db_session, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -119,6 +220,9 @@ def test_submissions_list_active_and_delete(test_client, seeded_users, seeded_ta
     assert my_resp.status_code == 200
     assert active_resp.status_code == 200
     assert len(my_resp.json()) == 1
+    assert my_resp.json()[0]["started_at"] is not None
+    assert my_resp.json()[0]["submitted_at"] is not None
+    assert my_resp.json()[0]["duration_seconds"] is not None
     submission_id = my_resp.json()[0]["id"]
 
     delete_resp = test_client.delete(f"/submissions/{submission_id}")

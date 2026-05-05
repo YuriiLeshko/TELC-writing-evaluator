@@ -22,6 +22,7 @@ def test_key_points_prompt_contains_required_parts() -> None:
     assert "TASK" in prompt
     assert "CANDIDATE" in prompt
     assert "fulfilled_key_points" in prompt
+    assert "key_point_details" in prompt
     assert "do not assign grades" in prompt.lower()
     assert "German" in prompt
 
@@ -31,6 +32,7 @@ def test_communication_prompt_contains_required_parts() -> None:
     assert "TASK" in prompt
     assert "CANDIDATE" in prompt
     assert "register_quality" in prompt
+    assert "communication_details" in prompt
     assert "do not assign grades" in prompt.lower()
     assert "German" in prompt
 
@@ -38,8 +40,9 @@ def test_communication_prompt_contains_required_parts() -> None:
 def test_accuracy_prompt_contains_highlighted_error_rules() -> None:
     prompt = build_accuracy_user_prompt("CANDIDATE")
     assert "CANDIDATE" in prompt
+    assert "accuracy_details" in prompt
     assert "highlighted_errors" in prompt
-    assert "exact fragment copied from candidate_text" in prompt
+    assert '"aspect": "grammar | syntax | word_order | verb_forms | agreement | spelling | punctuation | capitalization"' in prompt
     assert "do not assign grades" in prompt.lower()
     assert "German" in prompt
 

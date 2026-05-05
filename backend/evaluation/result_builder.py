@@ -88,6 +88,7 @@ def _attach_accuracy_errors(
 ) -> CriterionScore:
     """Attach structured accuracy error spans to Criterion III only."""
     criterion_score.highlighted_errors = accuracy.highlighted_errors
+    criterion_score.accuracy_details = accuracy.accuracy_details
     return criterion_score
 
 
@@ -106,8 +107,16 @@ def build_final_result(
 ) -> WritingEvaluationResult:
     """Build final result with concise criterion-level comments."""
     criterion_i.comment = _build_criterion_i_comment(key_points)
+    criterion_i.scaled_points = criterion_i.points * 3
+    criterion_i.max_scaled_points = 15
+    criterion_i.key_point_details = key_points.key_point_details
     criterion_ii.comment = _build_criterion_ii_comment(communication)
+    criterion_ii.scaled_points = criterion_ii.points * 3
+    criterion_ii.max_scaled_points = 15
+    criterion_ii.communication_details = communication.communication_details
     criterion_iii.comment = _build_criterion_iii_comment(accuracy)
+    criterion_iii.scaled_points = criterion_iii.points * 3
+    criterion_iii.max_scaled_points = 15
     criterion_iii = _attach_accuracy_errors(criterion_iii, accuracy)
     if word_count is not None and not word_count.meets_requirement:
         note = " Die Endpunktzahl ist jedoch 0, weil der Text unter 150 Wörtern liegt."

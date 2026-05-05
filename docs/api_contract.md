@@ -204,6 +204,12 @@ Response `200`:
 }
 ```
 
+Timing behavior:
+- `started_at` is set when the session is created by `POST /task-sessions/start`.
+- The timer starts at session creation time, not when the user confirms task choice.
+- `submitted_at` and `duration_seconds` remain `null` until a successful submission.
+- `duration_seconds` is computed as `int((submitted_at - started_at).total_seconds())`.
+
 Errors:
 
 - `403`: `"User is inactive."`
@@ -269,6 +275,10 @@ On success:
 - marks session as submitted
 - sets `submitted_at`, `duration_seconds`, `selected_task_type`, `selected_task_id`
 - decrements `available_submissions` by 1
+- stores the same timing triplet in both `TaskSession` and `Submission`:
+  - `started_at`
+  - `submitted_at`
+  - `duration_seconds`
 
 Response `200`:
 
@@ -281,6 +291,132 @@ Response `200`:
   "result": {}
 }
 ```
+
+`result` contains the full deterministic evaluation payload. For Criterion I, the response now includes per-key-point detail data for frontend rendering:
+
+```json
+{
+  "criterion_I": {
+    "grade": "B",
+    "points": 3,
+    "scaled_points": 9,
+    "max_scaled_points": 15,
+    "comment": "string",
+    "key_point_details": [
+      {
+        "key_point": "string",
+        "covered": true,
+        "status": "fulfilled",
+        "coverage_quality": "strong",
+        "sentence_count": 2,
+        "development": "detailed",
+        "relevance": "direct",
+        "situation_appropriate": true,
+        "language_level": "B2",
+        "comment": "Kurzer Kommentar auf Deutsch"
+      }
+    ]
+  }
+}
+```
+
+Notes:
+- `key_point_details` contains one item per expected key point.
+- These details are intended for frontend display of Criterion I coverage quality.
+- Scoring rules and final score calculation remain deterministic and unchanged.
+
+For Criterion II, the response now also includes detailed communicative-design analysis:
+
+```json
+{
+  "criterion_II": {
+    "grade": "B",
+    "points": 3,
+    "scaled_points": 9,
+    "max_scaled_points": 15,
+    "comment": "string",
+    "communication_details": [
+      {
+        "aspect": "coherence",
+        "label": "Gedanklicher Zusammenhang",
+        "status": "adequate",
+        "level": null,
+        "present_items": ["string"],
+        "missing_items": ["string"],
+        "evidence": ["string"],
+        "comment": "Kurzer deutscher Kommentar"
+      }
+    ]
+  }
+}
+```
+
+`communication_details` fields:
+- `aspect`
+- `label`
+- `status`
+- `level`
+- `present_items`
+- `missing_items`
+- `evidence`
+- `comment`
+
+Additional notes:
+- `communication_details` contains one item per communicative aspect.
+- Criterion II scoring remains deterministic and unchanged.
+
+For Criterion III, the response includes grouped formal-accuracy analysis and highlightable errors:
+
+```json
+{
+  "criterion_III": {
+    "grade": "C",
+    "points": 1,
+    "scaled_points": 3,
+    "max_scaled_points": 15,
+    "comment": "string",
+    "accuracy_details": [
+      {
+        "aspect": "grammar",
+        "label": "Grammatik",
+        "status": "adequate",
+        "error_count": 1,
+        "evidence": ["ein Kopfhörer"],
+        "comment": "Kurzer deutscher Kommentar"
+      }
+    ],
+    "highlighted_errors": [
+      {
+        "text": "ein Kopfhörer",
+        "correction": "einen Kopfhörer",
+        "error_type": "Kasusfehler",
+        "aspect": "agreement",
+        "explanation": "Kurze deutsche Erklärung"
+      }
+    ]
+  }
+}
+```
+
+`accuracy_details` fields:
+- `aspect`
+- `label`
+- `status`
+- `error_count`
+- `evidence`
+- `comment`
+
+`highlighted_errors` (`GrammarErrorSpan`) fields:
+- `text`
+- `correction`
+- `error_type`
+- `aspect`
+- `explanation`
+
+Additional Criterion III notes:
+- `accuracy_details` is for grouped grammar analysis.
+- `highlighted_errors` is for frontend text-highlighting and error lists.
+- Criterion III scoring remains deterministic and unchanged.
 
 Errors:
 

@@ -31,7 +31,19 @@ Output requirements:
   "improvement_feedback": ["string"],
   "linking_devices": ["string"],
   "complex_connectors": ["string"],
-  "language_level_comment": "string"
+  "language_level_comment": "string",
+  "communication_details": [
+    {
+      "aspect": "email_elements | structure | coherence | cohesion | register | vocabulary | sentence_variety",
+      "label": "German display label",
+      "status": "strong | adequate | weak | missing | inappropriate",
+      "level": "B2 | B1+ | B1 | A2 | null",
+      "present_items": ["string"],
+      "missing_items": ["string"],
+      "evidence": ["string"],
+      "comment": "Kurzer deutscher Kommentar"
+    }
+  ]
 }
 
 Scope restrictions:
@@ -136,6 +148,37 @@ Use:
 - "some_variety" if there is some complexity but also repetition.
 - "simple" if the text mostly uses short/simple/repetitive structures.
 
+communication_details:
+- Return exactly one object for each aspect:
+  - email_elements
+  - structure
+  - coherence
+  - cohesion
+  - register
+  - vocabulary
+  - sentence_variety
+- Use these German labels:
+  - email_elements -> "E-Mail-Elemente"
+  - structure -> "Struktur"
+  - coherence -> "Gedanklicher Zusammenhang"
+  - cohesion -> "Verknüpfungen"
+  - register -> "Register und Stil"
+  - vocabulary -> "Wortschatz"
+  - sentence_variety -> "Satzvielfalt"
+- Do not invent evidence. Evidence must be based on candidate text.
+- status values:
+  - strong = clearly fulfills B2 expectations
+  - adequate = acceptable but not fully strong
+  - weak = limited, repetitive, or underdeveloped
+  - missing = absent
+  - inappropriate = wrong register/style or unsuitable for situation
+- For email_elements:
+  - present_items should include available elements from: Betreff, Anrede, Einleitung, Hauptteil, Schluss, Grußformel
+  - missing_items should include missing elements from that same set.
+- For vocabulary and sentence_variety, set level to B2/B1+/B1/A2.
+- For other aspects, level should usually be null unless clearly justified.
+- comment must be concise German and evidence-based.
+
 Important constraints:
 - Grammar mistakes must not lower communicative design directly unless they harm coherence.
 - Do not evaluate whether all Leitpunkte are fulfilled.
@@ -165,7 +208,19 @@ Required output JSON structure:
   "improvement_feedback": ["string"],
   "linking_devices": ["string"],
   "complex_connectors": ["string"],
-  "language_level_comment": "Kurzer Kommentar auf Deutsch"
+  "language_level_comment": "Kurzer Kommentar auf Deutsch",
+  "communication_details": [
+    {{
+      "aspect": "email_elements | structure | coherence | cohesion | register | vocabulary | sentence_variety",
+      "label": "German display label",
+      "status": "strong | adequate | weak | missing | inappropriate",
+      "level": "B2 | B1+ | B1 | A2 | null",
+      "present_items": ["string"],
+      "missing_items": ["string"],
+      "evidence": ["string"],
+      "comment": "Kurzer deutscher Kommentar"
+    }}
+  ]
 }}
 
 The explanation must be short and mention only communicative design.
@@ -185,5 +240,6 @@ Language requirements:
 - Do not include English words.
 - Each feedback item must be in German.
 - Maximum 1 sentence per feedback item.
+- Keep all explanation/comment text in German only (except JSON field names).
 Return JSON only.
 """

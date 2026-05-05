@@ -21,7 +21,21 @@ Output requirements:
   "invalid_points": ["string"],
   "explanation": "string",
   "positive_feedback": ["string"],
-  "improvement_feedback": ["string"]
+  "improvement_feedback": ["string"],
+  "key_point_details": [
+    {
+      "key_point": "string",
+      "covered": true,
+      "status": "fulfilled | partially_fulfilled | not_fulfilled",
+      "coverage_quality": "strong | adequate | weak | missing",
+      "sentence_count": 0,
+      "development": "detailed | sufficient | too_short | unclear | missing",
+      "relevance": "direct | partial | irrelevant",
+      "situation_appropriate": true,
+      "language_level": "B2 | B1+ | B1 | A2 | null",
+      "comment": "Kurzer Kommentar auf Deutsch"
+    }
+  ]
 }
 
 Scope restrictions:
@@ -108,6 +122,35 @@ Include:
 - expected key points that were mentioned but not adequately developed
 - candidate ideas that were irrelevant, unclear, too general, or inappropriate
 
+key_point_details:
+- Return exactly one object per expected key point.
+- Use original expected key point wording exactly or very close.
+- Do not invent expected key points.
+- sentence_count = estimated number of candidate sentences that address this key point.
+- covered=true only if the point is adequately fulfilled.
+- status:
+  - fulfilled: clearly developed, relevant, situation-appropriate, beyond one sentence, sufficiently detailed, B2/B1+ acceptable content
+  - partially_fulfilled: mentioned but too short, vague, weakly developed, or only partly relevant
+  - not_fulfilled: missing, irrelevant, unclear, or inappropriate
+- coverage_quality:
+  - strong = clear, detailed, direct
+  - adequate = sufficient but not very detailed
+  - weak = too general or underdeveloped
+  - missing = not present
+- development:
+  - detailed = clearly developed beyond one sentence
+  - sufficient = enough for TELC task but could be richer
+  - too_short = only brief mention
+  - unclear = hard to understand
+  - missing = absent
+- relevance:
+  - direct = directly answers the key point
+  - partial = only partly answers
+  - irrelevant = does not answer
+- situation_appropriate=false if content does not fit the communicative situation.
+- language_level must estimate the language used for that point.
+- comment must be concise German and evidence-based.
+
 Important constraints:
 - Use the same or very close wording from expected_key_points when listing fulfilled_key_points.
 - Do not invent expected key points.
@@ -123,7 +166,21 @@ Required output JSON structure:
   "invalid_points": ["string"],
   "explanation": "Kurze Erklärung auf Deutsch (1–2 Sätze)",
   "positive_feedback": ["string"],
-  "improvement_feedback": ["string"]
+  "improvement_feedback": ["string"],
+  "key_point_details": [
+    {{
+      "key_point": "string",
+      "covered": true,
+      "status": "fulfilled | partially_fulfilled | not_fulfilled",
+      "coverage_quality": "strong | adequate | weak | missing",
+      "sentence_count": 0,
+      "development": "detailed | sufficient | too_short | unclear | missing",
+      "relevance": "direct | partial | irrelevant",
+      "situation_appropriate": true,
+      "language_level": "B2 | B1+ | B1 | A2 | null",
+      "comment": "Kurzer Kommentar auf Deutsch"
+    }}
+  ]
 }}
 
 The explanation must be short and mention only task achievement / key-point fulfillment.
