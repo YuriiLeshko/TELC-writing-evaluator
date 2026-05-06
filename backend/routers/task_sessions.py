@@ -62,6 +62,7 @@ def info_task_to_schema(task: InfoTask) -> InfoTaskRead:
         situation_text=task.situation_text,
         instruction_text=task.instruction_text,
         expected_key_points=parse_key_points(task.expected_key_points_json),
+        is_active=task.is_active,
     )
 
 
@@ -73,6 +74,7 @@ def complaint_task_to_schema(task: ComplaintTask) -> ComplaintTaskRead:
         situation_text=task.situation_text,
         instruction_text=task.instruction_text,
         expected_key_points=parse_key_points(task.expected_key_points_json),
+        is_active=task.is_active,
     )
 
 

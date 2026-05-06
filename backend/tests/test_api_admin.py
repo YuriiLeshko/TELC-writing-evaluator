@@ -150,17 +150,41 @@ def test_admin_manage_complaint_tasks(test_client, seeded_users, seeded_tasks) -
     assert delete_resp.json()["status"] == "deleted"
 
 
+def test_admin_task_lists_include_inactive_tasks(test_client, seeded_users, seeded_tasks, db_session) -> None:
+    info_task = seeded_tasks["info_task"]
+    complaint_task = seeded_tasks["complaint_task"]
+    info_task.is_active = False
+    complaint_task.is_active = False
+    db_session.commit()
+
+    info_list_resp = test_client.get("/admin/info-tasks")
+    complaint_list_resp = test_client.get("/admin/complaint-tasks")
+    assert info_list_resp.status_code == 200
+    assert complaint_list_resp.status_code == 200
+
+    info_by_id = {item["id"]: item for item in info_list_resp.json()}
+    complaint_by_id = {item["id"]: item for item in complaint_list_resp.json()}
+    assert info_by_id[info_task.id]["is_active"] is False
+    assert complaint_by_id[complaint_task.id]["is_active"] is False
+
+
 def test_admin_info_task_activate_deactivate_persists(test_client, seeded_users, seeded_tasks, db_session) -> None:
     task = seeded_tasks["info_task"]
     deact = test_client.patch(f"/admin/info-tasks/{task.id}/deactivate")
     assert deact.status_code == 200
-    db_session.refresh(task)
-    assert task.is_active is False
+    assert deact.json()["is_active"] is False
+    db_session.expire_all()
+    reloaded_after_deact = db_session.get(InfoTask, task.id)
+    assert reloaded_after_deact is not None
+    assert reloaded_after_deact.is_active is False
 
     act = test_client.patch(f"/admin/info-tasks/{task.id}/activate")
     assert act.status_code == 200
-    db_session.refresh(task)
-    assert task.is_active is True
+    assert act.json()["is_active"] is True
+    db_session.expire_all()
+    reloaded_after_act = db_session.get(InfoTask, task.id)
+    assert reloaded_after_act is not None
+    assert reloaded_after_act.is_active is True
 
 
 def test_admin_delete_info_task_hard_deletes_when_unused(test_client, seeded_users, db_session) -> None:
@@ -203,13 +227,19 @@ def test_admin_complaint_task_activate_deactivate_persists(test_client, seeded_u
     task = seeded_tasks["complaint_task"]
     deact = test_client.patch(f"/admin/complaint-tasks/{task.id}/deactivate")
     assert deact.status_code == 200
-    db_session.refresh(task)
-    assert task.is_active is False
+    assert deact.json()["is_active"] is False
+    db_session.expire_all()
+    reloaded_after_deact = db_session.get(ComplaintTask, task.id)
+    assert reloaded_after_deact is not None
+    assert reloaded_after_deact.is_active is False
 
     act = test_client.patch(f"/admin/complaint-tasks/{task.id}/activate")
     assert act.status_code == 200
-    db_session.refresh(task)
-    assert task.is_active is True
+    assert act.json()["is_active"] is True
+    db_session.expire_all()
+    reloaded_after_act = db_session.get(ComplaintTask, task.id)
+    assert reloaded_after_act is not None
+    assert reloaded_after_act.is_active is True
 
 
 def test_admin_delete_complaint_task_hard_deletes_when_unused(test_client, seeded_users, db_session) -> None:

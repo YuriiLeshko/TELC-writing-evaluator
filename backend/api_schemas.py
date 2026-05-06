@@ -83,6 +83,7 @@ class InfoTaskRead(BaseModel):
     situation_text: str
     instruction_text: str
     expected_key_points: list[str]
+    is_active: bool
 
 
 class ComplaintTaskRead(BaseModel):
@@ -94,6 +95,7 @@ class ComplaintTaskRead(BaseModel):
     situation_text: str
     instruction_text: str
     expected_key_points: list[str]
+    is_active: bool
 
 
 class InfoTaskCreate(BaseModel):

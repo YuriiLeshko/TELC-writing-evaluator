@@ -659,10 +659,14 @@ function TaskInlineEditor({ kind, task, onSaved, onError, onActivate, onDeactiva
   const [situation_text, setSituation] = useState(task.situation_text || "");
   const [instruction_text, setInstruction] = useState(task.instruction_text || "");
   const [expected_key_points, setKp] = useState((task.expected_key_points || []).join("\n"));
-  const [is_active, setActive] = useState(task.is_active !== false);
+  const [is_active, setActive] = useState(Boolean(task.is_active));
   const [confirmSave, setConfirmSave] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  useEffect(() => {
+    setActive(Boolean(task.is_active));
+  }, [task.id, task.is_active]);
 
   const save = async () => {
     onError(null);
@@ -738,7 +742,6 @@ function TaskInlineEditor({ kind, task, onSaved, onError, onActivate, onDeactiva
               try {
                 setActionLoading(true);
                 await onActivate();
-                setActive(true);
                 console.log(`[admin] activate-${kind}-task`, { id: task.id });
               } catch (e) {
                 onError(e instanceof Error ? e.message : String(e));
@@ -773,7 +776,6 @@ function TaskInlineEditor({ kind, task, onSaved, onError, onActivate, onDeactiva
                     { id: task.id, response: resp },
                   );
                   setConfirmAction(null);
-                  if (confirmAction === "deactivate") setActive(false);
                 } catch (e) {
                   onError(e instanceof Error ? e.message : String(e));
                 } finally {
