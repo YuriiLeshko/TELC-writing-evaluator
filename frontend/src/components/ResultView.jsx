@@ -92,7 +92,6 @@ export default function ResultView({ result, candidateText, selectedTask, submis
   const errorCount = Array.isArray(highlighted) ? highlighted.length : 0;
   const ptsI = safeGet(r, "criterion_I.points");
   const ptsII = safeGet(r, "criterion_II.points");
-  const gradeIII = safeGet(r, "criterion_III.grade");
   const ptsIII = safeGet(r, "criterion_III.points");
   const commentI = safeGet(r, "criterion_I.comment");
   const commentII = safeGet(r, "criterion_II.comment");
@@ -254,6 +253,72 @@ export default function ResultView({ result, candidateText, selectedTask, submis
     }
     return null;
   };
+  const criterionIIIRawPoints = Number(ptsIII);
+  const criterionIIIScaledPointsRaw = Number(safeGet(r, "criterion_III.scaled_points"));
+  const criterionIIIMaxScaledPointsRaw = Number(safeGet(r, "criterion_III.max_scaled_points"));
+  const hasCriterionIIIScaledPoints = Number.isFinite(criterionIIIScaledPointsRaw) && Number.isFinite(criterionIIIMaxScaledPointsRaw);
+  const criterionIIIScaledPoints = hasCriterionIIIScaledPoints ? criterionIIIScaledPointsRaw : criterionIIIRawPoints * 3;
+  const criterionIIIMaxScaledPoints = hasCriterionIIIScaledPoints ? criterionIIIMaxScaledPointsRaw : 15;
+  const hasCriterionIIIScore = Number.isFinite(criterionIIIScaledPoints) && Number.isFinite(criterionIIIMaxScaledPoints);
+  const criterionIIIScoreStatusClass = !hasCriterionIIIScore
+    ? ""
+    : criterionIIIScaledPoints >= 12
+      ? "status-good"
+      : criterionIIIScaledPoints >= 6
+        ? "status-warning"
+        : "status-bad";
+  const accuracyDetails = safeGet(r, "criterion_III.accuracy_details");
+  const normalizeAccuracyValue = (value) => String(value ?? "").trim().toLowerCase();
+  const extractAccuracyAspect = (aspectKey) => {
+    if (!accuracyDetails || typeof accuracyDetails !== "object") return null;
+    const direct = accuracyDetails?.[aspectKey];
+    if (direct && typeof direct === "object" && !Array.isArray(direct)) return direct;
+    const nested = accuracyDetails?.aspects?.[aspectKey];
+    if (nested && typeof nested === "object" && !Array.isArray(nested)) return nested;
+    if (Array.isArray(accuracyDetails)) {
+      return accuracyDetails.find((entry) => {
+        const key = normalizeAccuracyValue(entry?.aspect ?? entry?.name ?? entry?.type ?? entry?.key);
+        return key === normalizeAccuracyValue(aspectKey);
+      });
+    }
+    if (Array.isArray(accuracyDetails?.aspects)) {
+      return accuracyDetails.aspects.find((entry) => {
+        const key = normalizeAccuracyValue(entry?.aspect ?? entry?.name ?? entry?.type ?? entry?.key);
+        return key === normalizeAccuracyValue(aspectKey);
+      });
+    }
+    return null;
+  };
+  const mapAccuracyStatus = (status) => {
+    const normalized = normalizeAccuracyValue(status);
+    if (!normalized) return "—";
+    if (normalized === "strong") return "gut";
+    if (normalized === "adequate") return "ausreichend";
+    if (normalized === "weak") return "schwach";
+    if (normalized === "problematic") return "problematisch";
+    return "—";
+  };
+  const accuracyStatusClass = (status) => {
+    const normalized = normalizeAccuracyValue(status);
+    if (normalized === "strong") return "status-good";
+    if (normalized === "adequate") return "status-warning";
+    if (["weak", "problematic"].includes(normalized)) return "status-bad";
+    return "";
+  };
+  const criterionIIIIndicators = [
+    { key: "grammar", label: "Grammatik" },
+    { key: "syntax", label: "Satzbau" },
+    { key: "word_order", label: "Wortstellung" },
+    { key: "spelling", label: "Rechtschreibung" },
+    { key: "punctuation", label: "Zeichensetzung" },
+    { key: "comprehension", label: "Verständlichkeit" },
+  ].map((indicator) => {
+    const detail = extractAccuracyAspect(indicator.key);
+    const rawStatus = detail?.status ?? safeGet(r, `criterion_III.${indicator.key}_quality`);
+    const statusLabel = mapAccuracyStatus(rawStatus);
+    const statusClass = accuracyStatusClass(rawStatus);
+    return { ...indicator, statusLabel, statusClass };
+  });
   const keyPointDetails = safeGet(r, "criterion_I.key_point_details");
   const hasKeyPointDetails = Array.isArray(keyPointDetails) && keyPointDetails.length > 0;
   const criterionILevel =
@@ -408,14 +473,17 @@ export default function ResultView({ result, candidateText, selectedTask, submis
     .filter(Boolean)
     .join(" ");
 
-  const fmtGradePts = (g, p) => {
-    const gStr = g != null && g !== "" ? String(g) : "—";
-    const pStr = p ?? "—";
-    return `${gStr} · ${pStr}`;
-  };
-
-  const formatErrLine = (err) =>
-    typeof err === "object" ? `${err.text || "?"} — ${err.error_type || ""}: ${err.explanation || ""}` : String(err);
+  const highlightedErrorItems = (Array.isArray(highlighted) ? highlighted : []).map((err, idx) => {
+    const errorType = String(err?.error_type ?? "").trim();
+    const title = errorType ? `Fehler ${idx + 1} · ${errorType}` : `Fehler ${idx + 1}`;
+    return {
+      id: `error-${idx}`,
+      title,
+      text: String(err?.text ?? "").trim() || "—",
+      explanation: String(err?.explanation ?? "").trim() || "—",
+      correction: String(err?.correction ?? "").trim() || "—",
+    };
+  });
 
   const formatValue = (value) => {
     if (value == null || value === "") return "—";
@@ -454,22 +522,6 @@ export default function ResultView({ result, candidateText, selectedTask, submis
     }
     return <span>{String(value)}</span>;
   };
-
-  const criterionBody = (subtitle, grade, pts, comment) => (
-    <div className="result-rail-card__body">
-      {subtitle ? (
-        <p className="metric-card__help" style={{ margin: "0 0 0.4rem" }}>
-          {subtitle}
-        </p>
-      ) : null}
-      <p style={{ margin: 0, fontSize: "0.86rem" }}>
-        <strong>Note:</strong> {grade ?? "—"} &nbsp;|&nbsp; <strong>Punkte:</strong> {pts ?? "—"}
-      </p>
-      <p style={{ margin: "0.45rem 0 0", color: "var(--muted)", fontSize: "0.86rem", lineHeight: 1.45 }}>
-        {comment || "Keine Details."}
-      </p>
-    </div>
-  );
 
   return (
     <div
@@ -786,18 +838,27 @@ export default function ResultView({ result, candidateText, selectedTask, submis
               className="result-rail-card__head"
               onClick={() => onTileActivate("rail-section-iii")}
             >
-              <span className="result-rail-tile__title">Kriterium III</span>
-              <span className="result-rail-tile__value">{fmtGradePts(gradeIII, ptsIII)}</span>
+              <span className="result-rail-tile__title">Formale Korrektheit</span>
+              <span className={`result-rail-tile__value ${criterionIIIScoreStatusClass}`}>
+                {hasCriterionIIIScore ? `${criterionIIIScaledPoints} / ${criterionIIIMaxScaledPoints}` : "— / —"}
+              </span>
             </button>
             {railBodyVisible ? (
-              <div>
-                {criterionBody("Formal Accuracy", gradeIII, ptsIII, commentIII)}
-                <div className="result-rail-card__body">
-                  <p className="result-rail-kp-summary__line">
-                    <strong>criterion_III (voll):</strong>
-                  </p>
-                  {renderDataTree(safeGet(r, "criterion_III"))}
+              <div className="result-rail-card__body">
+                <p className="metric-card__help" style={{ margin: "0 0 0.35rem" }}>
+                  Grammatik, Satzbau und Rechtschreibung
+                </p>
+                <div className="result-rail-kp-summary">
+                  {criterionIIIIndicators.map((indicator) => (
+                    <p key={indicator.key} className="result-rail-kp-summary__line">
+                      <strong>{indicator.label}:</strong>{" "}
+                      <span className={indicator.statusClass}>{indicator.statusLabel}</span>
+                    </p>
+                  ))}
                 </div>
+                <p style={{ margin: "0.35rem 0 0", color: "var(--muted)", fontSize: "0.82rem", lineHeight: 1.35 }}>
+                  {commentIII || "Keine Details."}
+                </p>
               </div>
             ) : null}
           </div>
@@ -811,25 +872,30 @@ export default function ResultView({ result, candidateText, selectedTask, submis
               className="result-rail-card__head"
               onClick={() => onTileActivate("rail-section-errors")}
             >
-              <span className="result-rail-tile__title">Fehler</span>
+              <span className="result-rail-tile__title">Markierte Fehler</span>
               <span className="result-rail-tile__value">{errorCount}</span>
             </button>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
-                {Array.isArray(highlighted) && highlighted.length ? (
-                  <>
-                    <ul className="analysis-errors-list result-rail-card__err-list">
-                      {highlighted.map((err, i) => (
-                        <li key={i}>{formatErrLine(err)}</li>
-                      ))}
-                    </ul>
-                    <div className="result-rail-summary-list">
-                      <p className="result-rail-kp-summary__line">
-                        <strong>highlighted_errors (voll):</strong>
-                      </p>
-                      {renderDataTree(highlighted)}
-                    </div>
-                  </>
+                {highlightedErrorItems.length ? (
+                  <div className="result-rail-kp-details">
+                    {highlightedErrorItems.map((error) => (
+                      <details key={error.id} className="result-rail-error-item">
+                        <summary className="result-rail-error-item__summary">{error.title}</summary>
+                        <div className="result-rail-error-item__body">
+                          <p className="result-rail-error-item__line result-rail-error-item__line--error">
+                            <strong>Fehler:</strong> {error.text}
+                          </p>
+                          <p className="result-rail-error-item__line">
+                            <strong>Erklärung:</strong> {error.explanation}
+                          </p>
+                          <p className="result-rail-error-item__line result-rail-error-item__line--correction">
+                            <strong>Korrektur:</strong> {error.correction}
+                          </p>
+                        </div>
+                      </details>
+                    ))}
+                  </div>
                 ) : (
                   <p className="metric-card__help" style={{ margin: 0 }}>
                     Keine markierten Fehler.

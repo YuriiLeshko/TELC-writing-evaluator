@@ -1033,6 +1033,47 @@ a.link-btn {
   line-height: 1.3;
 }
 
+.result-rail-error-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--surface) 92%, var(--background) 8%);
+  overflow: hidden;
+}
+
+.result-rail-error-item__summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 0.34rem 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.result-rail-error-item__summary::-webkit-details-marker {
+  display: none;
+}
+
+.result-rail-error-item__body {
+  border-top: 1px solid var(--border);
+  padding: 0.34rem 0.45rem 0.42rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.result-rail-error-item__line {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.result-rail-error-item__line--error {
+  color: var(--danger);
+}
+
+.result-rail-error-item__line--correction {
+  color: var(--success);
+}
+
 .result-rail-kp-detail__line {
   margin: 0.12rem 0;
   font-size: 0.78rem;
