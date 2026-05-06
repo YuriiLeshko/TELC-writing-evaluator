@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { PanelRightClose, PanelRightOpen, X } from "lucide-react";
 import ErrorHighlightedText from "./ErrorHighlightedText.jsx";
 import { safeGet } from "../utils/safeGet.js";
-import { formatElapsed } from "../utils/date.js";
 
 const RAIL_SECTION_IDS = ["rail-section-score", "rail-section-i", "rail-section-ii", "rail-section-iii", "rail-section-errors"];
 
@@ -83,13 +82,10 @@ export default function ResultView({ result, candidateText, selectedTask, submis
       : null;
   const durationOverTarget = Number.isFinite(durationSeconds) ? durationSeconds > 30 * 60 : null;
   const durationStatusClass = durationOverTarget == null ? "" : durationOverTarget ? "status-bad" : "status-good";
-  const durationLabel = (() => {
+  const durationMinutesLabel = (() => {
     if (!Number.isFinite(durationSeconds)) return "—";
     const safeSeconds = Math.max(0, Math.floor(durationSeconds));
-    const totalMinutes = Math.floor(safeSeconds / 60);
-    if (safeSeconds < 3600 && safeSeconds % 60 !== 0) {
-      return formatElapsed(safeSeconds);
-    }
+    const totalMinutes = Math.ceil(safeSeconds / 60);
     return String(totalMinutes);
   })();
 
@@ -250,10 +246,6 @@ export default function ResultView({ result, candidateText, selectedTask, submis
 
   const formatErrLine = (err) =>
     typeof err === "object" ? `${err.text || "?"} — ${err.error_type || ""}: ${err.explanation || ""}` : String(err);
-
-  const topLevelExtraEntries = Object.entries(r).filter(
-    ([key]) => !["criterion_I", "criterion_II", "criterion_III", "improved_text", "word_count"].includes(key),
-  );
 
   const formatValue = (value) => {
     if (value == null || value === "") return "—";
@@ -449,7 +441,7 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                 <p style={{ margin: "0.15rem 0", fontSize: "0.84rem" }}>
                   <strong>Zeit:</strong>{" "}
                   <span className={durationStatusClass}>
-                    {durationLabel === "—" ? "—" : `${durationLabel} Min.`}
+                    {durationMinutesLabel === "—" ? "—" : `${durationMinutesLabel} Min.`}
                   </span>
                 </p>
                 <p style={{ margin: "0.15rem 0", fontSize: "0.84rem" }}>
@@ -462,20 +454,6 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                     {situationMismatch ? "Schlecht" : "Gut"}
                   </span>
                 </p>
-                {topLevelExtraEntries.length ? (
-                  <div className="result-rail-summary-list">
-                    <p className="result-rail-kp-summary__line">
-                      <strong>Backend-Daten:</strong>
-                    </p>
-                    <ul className="result-rail-data-list">
-                      {topLevelExtraEntries.map(([key, value]) => (
-                        <li key={`top-${key}`}>
-                          <span className="result-rail-data-key">{key}</span>: {renderDataTree(value)}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
               </div>
             ) : null}
           </div>
