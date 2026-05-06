@@ -119,10 +119,7 @@ export default function ResultView({ result, candidateText, selectedTask, submis
     safeGet(r, "criterion_I.language_level");
   const keyPointSummary = (() => {
     if (!hasKeyPointDetails) return null;
-    const fulfilled = [];
-    const partiallyFulfilled = [];
-    const notFulfilled = [];
-    let ownIdeaLabel = "—";
+    let fulfilledCount = 0;
     let bestAvailableLevel = null;
     const levelPriority = { A1: 1, A2: 2, B1: 3, "B1+": 4, B2: 5, "B2+": 6, C1: 7, "C1+": 8, C2: 9 };
     const normalizeLevel = (value) => {
@@ -131,7 +128,7 @@ export default function ResultView({ result, candidateText, selectedTask, submis
       return raw || null;
     };
 
-    keyPointDetails.forEach((detail, idx) => {
+    keyPointDetails.forEach((detail) => {
       const status = String(detail?.status ?? "").trim().toLowerCase();
       const isOwnIdea =
         detail?.own_idea === true ||
@@ -143,31 +140,61 @@ export default function ResultView({ result, candidateText, selectedTask, submis
         bestAvailableLevel = normalizedLevel;
       }
 
-      if (isOwnIdea) {
-        ownIdeaLabel = detail?.key_point_text || detail?.comment || "—";
-        return;
-      }
-
-      const explicitNumber = Number.isFinite(Number(detail?.number)) ? Number(detail.number) : null;
-      const detailKeyPoint = detail?.key_point ?? detail?.key_point_text ?? "";
-      const matchedExpectedNumber =
-        expectedKeyPoints.length > 0 ? expectedPointIndexByText[normalizePointText(detailKeyPoint)] ?? null : null;
-      const fallbackByOrder = expectedKeyPoints.length === 0 ? idx + 1 : null;
-      const pointNumber = explicitNumber ?? matchedExpectedNumber ?? fallbackByOrder;
-      if (!Number.isFinite(pointNumber)) return;
-      if (status === "fulfilled") fulfilled.push(pointNumber);
-      if (status === "partially_fulfilled") partiallyFulfilled.push(pointNumber);
-      if (status === "not_fulfilled") notFulfilled.push(pointNumber);
+      if (!isOwnIdea && status === "fulfilled") fulfilledCount += 1;
     });
 
-    const overallLevel = criterionILevel != null && criterionILevel !== "" ? String(criterionILevel) : bestAvailableLevel || "—";
+    const summaryLevel =
+      safeGet(r, "criterion_I.task_achievement_summary.overall_level") ??
+      (criterionILevel != null && criterionILevel !== "" ? String(criterionILevel) : null) ??
+      bestAvailableLevel ??
+      "—";
+
     return {
-      fulfilled: fulfilled.length ? fulfilled.join(", ") : "—",
-      partiallyFulfilled: partiallyFulfilled.length ? partiallyFulfilled.join(", ") : "—",
-      notFulfilled: notFulfilled.length ? notFulfilled.join(", ") : "—",
-      ownIdeaLabel,
-      overallLevel,
+      fulfilledCount,
+      overallLevel: summaryLevel,
     };
+  })();
+
+  const keyPointDetailCards = (() => {
+    if (!hasKeyPointDetails) return [];
+    let regularPointNumber = 0;
+    const statusToGerman = (status) => {
+      const normalized = String(status ?? "").trim().toLowerCase();
+      if (normalized === "fulfilled") return "erfüllt";
+      if (normalized === "partially_fulfilled") return "teilweise erfüllt";
+      if (normalized === "not_fulfilled") return "nicht erfüllt";
+      return "—";
+    };
+
+    return keyPointDetails.map((detail, idx) => {
+      const isOwnIdea =
+        detail?.own_idea === true ||
+        detail?.is_own_idea === true ||
+        String(detail?.type ?? "").trim().toLowerCase() === "own_idea" ||
+        String(detail?.point_type ?? "").trim().toLowerCase() === "own_idea";
+
+      const keyPointText = String(detail?.key_point ?? detail?.key_point_text ?? "—").trim() || "—";
+      const statusLabel = statusToGerman(detail?.status);
+      const sentenceCount = Number(detail?.sentence_count);
+      const sentenceCountLabel = Number.isFinite(sentenceCount) ? String(sentenceCount) : "—";
+      const languageLevel = String(detail?.language_level ?? "—").trim() || "—";
+      const situationAppropriate = detail?.situation_appropriate;
+      const situationLabel = situationAppropriate === true ? "Ja" : situationAppropriate === false ? "Nein" : "—";
+      const comment = String(detail?.comment ?? "").trim() || "—";
+
+      const title = isOwnIdea ? "Eigener Aspekt" : `Punkt ${++regularPointNumber}`;
+
+      return {
+        id: `${isOwnIdea ? "own" : "point"}-${idx}`,
+        title,
+        keyPointText,
+        statusLabel,
+        sentenceCountLabel,
+        languageLevel,
+        situationLabel,
+        comment,
+      };
+    });
   })();
 
   const scrollRailTo = useCallback((id) => {
@@ -463,44 +490,53 @@ export default function ResultView({ result, candidateText, selectedTask, submis
             className={`result-rail-card ${activeSection === "rail-section-i" ? "result-rail-card--active" : ""}`}
           >
             <button type="button" className="result-rail-card__head" onClick={() => onTileActivate("rail-section-i")}>
-              <span className="result-rail-tile__title">Task Achievement</span>
+              <span className="result-rail-tile__title">Aufgabenerfüllung</span>
               <span className={`result-rail-tile__value ${criterionIScoreStatusClass}`}>
                 {hasCriterionIScore ? `${criterionIScaledPoints} / ${criterionIMaxScaledPoints}` : "— / —"}
               </span>
             </button>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
-                <p className="metric-card__help" style={{ margin: "0 0 0.4rem" }}>
-                  Aufgabenerfüllung
-                </p>
-                {keyPointSummary ? (
-                  <div className="result-rail-summary-list result-rail-kp-summary">
-                    <p className="result-rail-kp-summary__line">
-                      <strong>Erfüllte Leitpunkte:</strong> {keyPointSummary.fulfilled}
-                    </p>
-                    <p className="result-rail-kp-summary__line">
-                      <strong>Teilweise erfüllt:</strong> {keyPointSummary.partiallyFulfilled}
-                    </p>
-                    <p className="result-rail-kp-summary__line">
-                      <strong>Nicht erfüllt:</strong> {keyPointSummary.notFulfilled}
-                    </p>
-                    <p className="result-rail-kp-summary__line">
-                      <strong>Eigener Aspekt:</strong> {keyPointSummary.ownIdeaLabel}
-                    </p>
-                    <p className="result-rail-kp-summary__line">
-                      <strong>Niveau:</strong> {keyPointSummary.overallLevel}
-                    </p>
-                  </div>
-                ) : null}
-                <p style={{ margin: "0.45rem 0 0", color: "var(--muted)", fontSize: "0.86rem", lineHeight: 1.45 }}>
+                <div className="result-rail-kp-summary">
+                  <p className="result-rail-kp-summary__line">
+                    <strong>Erfüllte Punkte:</strong> {keyPointSummary?.fulfilledCount ?? "—"}
+                  </p>
+                  <p className="result-rail-kp-summary__line">
+                    <strong>Sprachniveau:</strong> {keyPointSummary?.overallLevel ?? "—"}
+                  </p>
+                </div>
+                <p style={{ margin: "0.35rem 0 0", color: "var(--muted)", fontSize: "0.82rem", lineHeight: 1.35 }}>
                   {commentI || "Keine Details."}
                 </p>
-                <div className="result-rail-summary-list">
-                  <p className="result-rail-kp-summary__line">
-                    <strong>criterion_I (voll):</strong>
-                  </p>
-                  {renderDataTree(safeGet(r, "criterion_I"))}
-                </div>
+                {keyPointDetailCards.length ? (
+                  <div className="result-rail-kp-details">
+                    {keyPointDetailCards.map((point) => (
+                      <details key={point.id} className="result-rail-kp-item">
+                        <summary className="result-rail-kp-item__summary">{point.title}</summary>
+                        <div className="result-rail-kp-item__body">
+                          <p className="result-rail-kp-item__line">
+                            <strong>Inhalt:</strong> {point.keyPointText}
+                          </p>
+                          <p className="result-rail-kp-item__line">
+                            <strong>Status:</strong> {point.statusLabel}
+                          </p>
+                          <p className="result-rail-kp-item__line">
+                            <strong>Sätze:</strong> {point.sentenceCountLabel}
+                          </p>
+                          <p className="result-rail-kp-item__line">
+                            <strong>Sprachniveau:</strong> {point.languageLevel}
+                          </p>
+                          <p className="result-rail-kp-item__line">
+                            <strong>Zur Situation passend:</strong> {point.situationLabel}
+                          </p>
+                          <p className="result-rail-kp-item__line">
+                            <strong>Kommentar:</strong> {point.comment}
+                          </p>
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
