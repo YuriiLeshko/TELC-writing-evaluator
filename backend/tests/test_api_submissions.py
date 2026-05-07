@@ -80,7 +80,7 @@ def _fake_result() -> WritingEvaluationResult:
             ],
         ),
         word_count=WordCountCheck(value=160, minimum_required=150, meets_requirement=True),
-        improved_text=ImprovedTextResult(improved_text="Verbessert", changes_summary=["Satzbau"]),
+        improved_text=ImprovedTextResult(improved_text="Verbessert"),
         raw_score=9,
         final_score=27,
         max_score=45,

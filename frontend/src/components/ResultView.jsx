@@ -480,18 +480,7 @@ export default function ResultView({ result, candidateText, selectedTask, submis
             <summary>Verbesserte Version</summary>
             <div className="stack stack--sm" style={{ marginTop: "0.65rem" }}>
               {improved ? (
-                <>
-                  <div className="text-panel">{improved.improved_text || "—"}</div>
-                  {Array.isArray(improved.changes_summary) && improved.changes_summary.length ? (
-                    <ul className="changes-list">
-                      {improved.changes_summary.map((line, i) => (
-                        <li key={i}>{line}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="metric-card__help">Keine Änderungszusammenfassung.</p>
-                  )}
-                </>
+                <div className="text-panel">{improved.improved_text || "—"}</div>
               ) : (
                 <p className="metric-card__help">Keine verbesserte Version vorhanden.</p>
               )}

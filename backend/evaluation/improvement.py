@@ -1,9 +1,8 @@
 """Generate an improved TELC B2 candidate text after evaluation.
 
 Purpose:
-- Produce a corrected and better-structured German version of the candidate text.
+- Produce a corrected and better-structured German improved candidate text only (validated JSON field improved_text).
 - Preserve original intent and avoid inventing specific facts.
-- Support learning feedback without affecting scoring.
 
 This module does NOT:
 - calculate scores

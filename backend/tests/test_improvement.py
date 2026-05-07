@@ -15,12 +15,9 @@ async def test_generate_improved_text_success() -> None:
         expected_key_points=["P1", "P2"],
         candidate_text="Text",
     )
-    client = FakeLLMClient(
-        [{"improved_text": "Verbesserter Text", "changes_summary": ["Grammatik verbessert"]}]
-    )
+    client = FakeLLMClient([{"improved_text": "Verbesserter Text"}])
     result = await generate_improved_text(client, input_data)
     assert result.improved_text == "Verbesserter Text"
-    assert len(result.changes_summary) == 1
     assert len(client.calls) == 1
     assert client.calls[0]["temperature"] == 0.2
 

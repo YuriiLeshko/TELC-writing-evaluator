@@ -431,7 +431,7 @@ class WordCountCheck(BaseModel):
 
 
 class ImprovedTextResult(BaseModel):
-    """Improved version of the candidate text and short summary of changes."""
+    """Improved German candidate text only (no separate analysis or change list)."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -439,25 +439,11 @@ class ImprovedTextResult(BaseModel):
         json_schema_extra={
             "example": {
                 "improved_text": "Betreff: Beschädigte Lieferung ...",
-                "changes_summary": [
-                    "Grammatik und Satzbau verbessert",
-                    "Formellen Stil verstärkt",
-                ],
             }
         },
     )
 
     improved_text: str = Field(..., min_length=1)
-    changes_summary: list[str] = Field(default_factory=list)
-
-    @field_validator("changes_summary")
-    @classmethod
-    def validate_changes_summary(cls, value: list[str]) -> list[str]:
-        """Ensure summary entries are non-empty strings."""
-        cleaned = [item.strip() for item in value]
-        if any(not item for item in cleaned):
-            raise ValueError("changes_summary must not contain empty strings")
-        return cleaned
 
 
 class WritingEvaluationResult(BaseModel):
@@ -479,10 +465,6 @@ class WritingEvaluationResult(BaseModel):
                 },
                 "improved_text": {
                     "improved_text": "Betreff: Beschädigte Lieferung ...",
-                    "changes_summary": [
-                        "Grammatik und Satzbau verbessert",
-                        "Formellen Stil verstärkt",
-                    ],
                 },
                 "analysis_status": "success",
                 "analysis_error": None,

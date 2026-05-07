@@ -153,7 +153,6 @@ async def evaluate_writing(
             word_count=word_count_check,
             improved_text=ImprovedTextResult(
                 improved_text=input_data.candidate_text,
-                changes_summary=["Technischer Hinweis: Verbesserung konnte nicht erstellt werden."],
             ),
             overall_analysis_status="failed",
             overall_analysis_error=fail_message,
@@ -216,12 +215,7 @@ async def evaluate_writing(
             },
             highlighted_errors=[],
         )
-        improved_text = ImprovedTextResult(
-            improved_text=input_data.candidate_text,
-            changes_summary=[
-                "Keine verbesserte Version erstellt, da der Text das Thema verfehlt."
-            ],
-        )
+        improved_text = ImprovedTextResult(improved_text=input_data.candidate_text)
 
         return build_final_result(
             relevance=relevance,
@@ -301,12 +295,7 @@ async def evaluate_writing(
         ]
         overall_analysis_error = " ".join(failed_messages)
     if overall_analysis_status != "success":
-        improved_text = ImprovedTextResult(
-            improved_text=input_data.candidate_text,
-            changes_summary=[
-                "Keine verbesserte Version erstellt, da die Bewertung nicht vollständig durchgeführt werden konnte."
-            ],
-        )
+        improved_text = ImprovedTextResult(improved_text=input_data.candidate_text)
     else:
         assert key_points is not None
         assert communication is not None
@@ -324,12 +313,7 @@ async def evaluate_writing(
             )
         except Exception:
             logger.exception("Improved text generation failed, using fallback improved text.")
-            improved_text = ImprovedTextResult(
-                improved_text=input_data.candidate_text,
-                changes_summary=[
-                    "Technischer Fallback: Verbesserte Version konnte wegen LLM-Ausfall nicht erstellt werden."
-                ],
-            )
+            improved_text = ImprovedTextResult(improved_text=input_data.candidate_text)
 
     return build_final_result(
         relevance=relevance,

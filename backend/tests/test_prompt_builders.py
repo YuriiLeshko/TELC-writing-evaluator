@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from backend.evaluation.prompts.accuracy import build_accuracy_user_prompt
 from backend.evaluation.prompts.communication import build_communication_user_prompt
-from backend.evaluation.prompts.improvement import build_improvement_user_prompt
+from backend.evaluation.prompts.improvement import (
+    SYSTEM_PROMPT as IMPROVEMENT_SYSTEM_PROMPT,
+    build_improvement_user_prompt,
+)
 from backend.evaluation.prompts.key_points import SYSTEM_PROMPT as KEY_POINTS_SYSTEM_PROMPT
 from backend.evaluation.prompts.key_points import build_key_points_user_prompt
 from backend.evaluation.prompts.relevance import build_relevance_user_prompt
@@ -61,6 +64,14 @@ def test_accuracy_prompt_contains_highlighted_error_rules() -> None:
     assert "German" in prompt
 
 
+def test_improvement_system_prompt_uses_common_blocks_and_schema() -> None:
+    assert "Security rules:" in IMPROVEMENT_SYSTEM_PROMPT
+    assert "Output rules:" in IMPROVEMENT_SYSTEM_PROMPT
+    assert "Language rules:" in IMPROVEMENT_SYSTEM_PROMPT
+    assert "improved_text" in IMPROVEMENT_SYSTEM_PROMPT
+    assert "changes_summary" not in IMPROVEMENT_SYSTEM_PROMPT.lower()
+
+
 def test_improvement_prompt_contains_no_invented_facts_rule() -> None:
     input_data = WritingEvaluationInput(
         task_text="TASK",
@@ -72,3 +83,4 @@ def test_improvement_prompt_contains_no_invented_facts_rule() -> None:
     assert "TASK" in prompt
     assert "Keine konkreten Fakten erfinden" in prompt
     assert "improved_text" in prompt
+    assert "changes_summary" not in prompt.lower()

@@ -124,7 +124,7 @@ async def test_pipeline_normal_flow(monkeypatch: pytest.MonkeyPatch, input_data:
 
     async def fake_improved(*args, **kwargs):
         calls.append("improved")
-        return ImprovedTextResult(improved_text="Verbessert", changes_summary=["Satzbau"])
+        return ImprovedTextResult(improved_text="Verbessert")
 
     monkeypatch.setattr(pipeline, "check_relevance", fake_relevance)
     monkeypatch.setattr(pipeline, "check_key_points", fake_key)
@@ -172,7 +172,7 @@ async def test_pipeline_topic_mismatch_short_circuit(monkeypatch: pytest.MonkeyP
 
     async def fake_improved(*args, **kwargs):
         calls.append("improved")
-        return ImprovedTextResult(improved_text="Verbessert", changes_summary=["Hinweis"])
+        return ImprovedTextResult(improved_text="Verbessert")
 
     monkeypatch.setattr(pipeline, "check_relevance", fake_relevance)
     monkeypatch.setattr(pipeline, "check_key_points", fake_fail)
@@ -286,7 +286,7 @@ async def test_pipeline_low_word_count_override(monkeypatch: pytest.MonkeyPatch)
         )
 
     async def fake_improved(*args, **kwargs):
-        return ImprovedTextResult(improved_text="Verbessert", changes_summary=["Hinweis"])
+        return ImprovedTextResult(improved_text="Verbessert")
 
     monkeypatch.setattr(pipeline, "check_relevance", fake_relevance)
     monkeypatch.setattr(pipeline, "check_key_points", fake_key)
@@ -353,7 +353,7 @@ async def test_pipeline_communication_fallback_not_forced_to_d(
         )
 
     async def fake_improved(*args, **kwargs):
-        return ImprovedTextResult(improved_text="Verbessert", changes_summary=["Hinweis"])
+        return ImprovedTextResult(improved_text="Verbessert")
 
     monkeypatch.setattr(pipeline, "check_relevance", fake_relevance)
     monkeypatch.setattr(pipeline, "check_key_points", fake_key)
@@ -430,7 +430,7 @@ async def test_pipeline_retries_checker_then_succeeds(
         )
 
     async def fake_improved(*args, **kwargs):
-        return ImprovedTextResult(improved_text="Verbessert", changes_summary=["Hinweis"])
+        return ImprovedTextResult(improved_text="Verbessert")
 
     monkeypatch.setattr(pipeline, "check_relevance", fake_relevance)
     monkeypatch.setattr(pipeline, "check_key_points", flaky_key)
@@ -494,7 +494,7 @@ async def test_pipeline_failed_checker_marks_criterion_failed_not_d(
         )
 
     async def fake_improved(*args, **kwargs):
-        return ImprovedTextResult(improved_text="Verbessert", changes_summary=["Hinweis"])
+        return ImprovedTextResult(improved_text="Verbessert")
 
     monkeypatch.setattr(pipeline, "check_relevance", fake_relevance)
     monkeypatch.setattr(pipeline, "check_key_points", failing_key)

@@ -51,8 +51,15 @@ def test_word_count_check_validation() -> None:
 
 
 def test_improved_text_result_validation() -> None:
-    improved = ImprovedTextResult(improved_text="Verbesserter Text", changes_summary=["Klarer strukturiert"])
+    improved = ImprovedTextResult(improved_text="Verbesserter Text")
     assert improved.improved_text.startswith("Verbesserter")
+
+
+def test_improved_text_result_rejects_extra_fields() -> None:
+    with pytest.raises(ValidationError):
+        ImprovedTextResult.model_validate(
+            {"improved_text": "x", "changes_summary": ["y"]}
+        )
 
 
 def test_grammar_error_span_validation() -> None:
@@ -306,7 +313,7 @@ def test_writing_evaluation_result_serialization() -> None:
             highlighted_errors=criterion_iii.highlighted_errors,
         ),
         word_count=WordCountCheck(value=170, minimum_required=150, meets_requirement=True),
-        improved_text=ImprovedTextResult(improved_text="Text", changes_summary=["Verbessert"]),
+        improved_text=ImprovedTextResult(improved_text="Text"),
         raw_score=9,
         final_score=27,
         max_score=45,

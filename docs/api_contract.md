@@ -370,8 +370,7 @@ Response `200` (frontend-facing contract):
     "final_score": 24,
     "max_score": 45,
     "improved_text": {
-      "improved_text": "Sehr geehrte Damen und Herren, ...",
-      "changes_summary": ["Grammatik verbessert", "Register formeller gestaltet"]
+      "improved_text": "Sehr geehrte Damen und Herren, ..."
     }
   }
 }
@@ -478,8 +477,7 @@ Required:
 #### `result.improved_text`
 
 Required:
-- `improved_text`
-- `changes_summary`
+- `improved_text` (full improved German text only)
 
 Timing source for `duration_seconds`:
 - Primary source: `submission.duration_seconds`.

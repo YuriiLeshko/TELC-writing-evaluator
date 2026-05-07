@@ -129,7 +129,7 @@ def test_build_final_result_normal_case() -> None:
         criterion_iii=CriterionScore(grade="B", points=3),
         final_score=FinalScore(raw_score=9, final_score=27, max_score=45),
         word_count=WordCountCheck(value=160, minimum_required=150, meets_requirement=True),
-        improved_text=ImprovedTextResult(improved_text="Verbessert", changes_summary=["Satzbau"]),
+        improved_text=ImprovedTextResult(improved_text="Verbessert"),
     )
     dumped = result.model_dump(mode="json")
     assert "comment" in dumped["criterion_I"]
@@ -169,7 +169,7 @@ def test_build_final_result_low_word_count_note() -> None:
         criterion_iii=CriterionScore(grade="D", points=0),
         final_score=FinalScore(raw_score=0, final_score=0, max_score=45),
         word_count=WordCountCheck(value=120, minimum_required=150, meets_requirement=False),
-        improved_text=ImprovedTextResult(improved_text="Verbessert", changes_summary=["Erweitert"]),
+        improved_text=ImprovedTextResult(improved_text="Verbessert"),
     )
     assert result.word_count is not None
     assert result.word_count.meets_requirement is False
@@ -187,7 +187,7 @@ def test_build_final_result_final_score_none() -> None:
         criterion_ii=CriterionScore(grade="B", points=3),
         criterion_iii=CriterionScore(grade="B", points=3),
         final_score=None,
-        improved_text=ImprovedTextResult(improved_text="Verbessert", changes_summary=["OK"]),
+        improved_text=ImprovedTextResult(improved_text="Verbessert"),
         overall_analysis_status="partial",
         overall_analysis_error="Teilanalyse fehlgeschlagen.",
     )
@@ -225,7 +225,7 @@ def test_build_final_result_failed_criterion_unchanged_scores() -> None:
             analysis_error="III fehlgeschlagen.",
         ),
         final_score=None,
-        improved_text=ImprovedTextResult(improved_text="x", changes_summary=["y"]),
+        improved_text=ImprovedTextResult(improved_text="x"),
         overall_analysis_status="failed",
     )
     assert result.criterion_I.grade is None
@@ -276,7 +276,7 @@ def test_build_final_result_topic_mismatch_serializes() -> None:
         criterion_ii=CriterionScore(grade="D", points=0),
         criterion_iii=CriterionScore(grade="D", points=0),
         final_score=FinalScore(raw_score=0, final_score=0, max_score=45),
-        improved_text=ImprovedTextResult(improved_text="Text", changes_summary=["Korrigiert"]),
+        improved_text=ImprovedTextResult(improved_text="Text"),
     )
     dumped = result.model_dump(mode="json")
     assert dumped["topic_mismatch"] is True
