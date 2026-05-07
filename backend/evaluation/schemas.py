@@ -73,8 +73,17 @@ class RelevanceCheckResult(BaseModel):
     topic_mismatch: bool = Field(...)
     situation_mismatch: bool = Field(...)
     explanation: str = Field(..., min_length=1)
-    positive_feedback: list[str] = Field(default_factory=list)
-    improvement_feedback: list[str] = Field(default_factory=list)
+    positive_feedback: list[str] = Field(...)
+    improvement_feedback: list[str] = Field(...)
+
+    @field_validator("positive_feedback", "improvement_feedback")
+    @classmethod
+    def validate_feedback_lists(cls, value: list[str]) -> list[str]:
+        """Ensure feedback entries are non-empty strings."""
+        cleaned = [item.strip() for item in value]
+        if any(not item for item in cleaned):
+            raise ValueError("feedback fields must not contain empty strings")
+        return cleaned
 
 
 class KeyPointDetail(BaseModel):

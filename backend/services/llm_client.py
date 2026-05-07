@@ -11,8 +11,6 @@ pip install httpx python-dotenv
 
 Required environment variables:
 OPENROUTER_API_KEY
-
-Optional environment variables:
 MODEL_NAME
 FALLBACK_MODEL_NAME
 

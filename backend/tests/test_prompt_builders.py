@@ -9,7 +9,11 @@ from backend.evaluation.schemas import WritingEvaluationInput
 
 
 def test_relevance_prompt_contains_required_parts() -> None:
-    prompt = build_relevance_user_prompt("TASK", "CANDIDATE")
+    prompt = build_relevance_user_prompt(
+        "TASK",
+        ["Problem beschreiben", "Lösung verlangen"],
+        "CANDIDATE",
+    )
     assert "TASK" in prompt
     assert "CANDIDATE" in prompt
     assert "topic_mismatch" in prompt
