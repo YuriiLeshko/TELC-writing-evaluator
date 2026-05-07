@@ -150,7 +150,8 @@ def test_build_final_result_normal_case() -> None:
     assert dumped["criterion_III"]["analysis_status"] == "success"
     assert dumped["criterion_III"]["analysis_error"] is None
     assert "accuracy_details" not in dumped["criterion_III"]
-    assert "aspect_ratings" not in dumped["criterion_III"]
+    assert dumped["criterion_III"]["aspect_ratings"]["grammar"] == "adequate"
+    assert dumped["criterion_III"]["aspect_ratings"]["comprehension"] == "strong"
     assert dumped["criterion_III"]["highlighted_errors"][0]["error_type"] == "Kasusfehler"
     assert "aspect" not in dumped["criterion_III"]["highlighted_errors"][0]
     assert "explanations" not in dumped

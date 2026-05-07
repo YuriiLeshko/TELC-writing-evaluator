@@ -92,6 +92,7 @@ Frontend-relevant fields for archive/detail navigation:
   "selected_task_id": 1,
   "candidate_text": "string",
   "result": {},
+  "raw_score": 9,
   "final_score": 27,
   "max_score": 45,
   "word_count": 162,
@@ -103,6 +104,7 @@ Frontend-relevant fields for archive/detail navigation:
 ```
 
 Notes:
+- `raw_score` and `final_score` may be `null` when evaluation finished with `result.analysis_status` `"partial"` or `"failed"` (see evaluation result shape below).
 - `duration_seconds` is expected on `SubmissionRead` and used as duration fallback in result display.
 - Archive detail flow passes `submission` to `/result` route state.
 
@@ -289,7 +291,7 @@ On success:
   - `submitted_at`
   - `duration_seconds`
 
-Response `200` (frontend-facing contract):
+Response `200` (frontend-facing contract; values reflect `WritingEvaluationResult` after API shaping — see `backend/routers/submissions.py` `_sanitize_result_for_api`):
 
 ```json
 {
@@ -300,10 +302,16 @@ Response `200` (frontend-facing contract):
   "result": {
     "topic_mismatch": false,
     "situation_mismatch": false,
+    "analysis_status": "success",
+    "analysis_error": null,
     "criterion_I": {
+      "grade": "B",
+      "points": 3,
       "scaled_points": 9,
       "max_scaled_points": 15,
       "comment": "Aufgabenerfüllung auf B2-Niveau mit kleinen Lücken.",
+      "analysis_status": "success",
+      "analysis_error": null,
       "task_achievement_summary": {
         "fulfilled_count": 2,
         "partially_fulfilled_count": 1,
@@ -326,6 +334,8 @@ Response `200` (frontend-facing contract):
       ]
     },
     "criterion_II": {
+      "grade": "B",
+      "points": 3,
       "scaled_points": 9,
       "max_scaled_points": 15,
       "comment": "Kommunikation ist insgesamt gut nachvollziehbar.",
@@ -341,18 +351,24 @@ Response `200` (frontend-facing contract):
       ]
     },
     "criterion_III": {
-      "scaled_points": 6,
+      "grade": "C",
+      "points": 1,
+      "scaled_points": 3,
       "max_scaled_points": 15,
       "comment": "Formale Korrektheit schwankt, Verständlichkeit bleibt erhalten.",
-      "accuracy_details": [
-        {
-          "aspect": "grammar",
-          "label": "Grammatik",
-          "status": "adequate",
-          "error_count": 2,
-          "comment": "Einige Kasus- und Verbfehler."
-        }
-      ],
+      "analysis_status": "success",
+      "analysis_error": null,
+      "aspect_ratings": {
+        "grammar": "adequate",
+        "syntax": "strong",
+        "word_order": "adequate",
+        "verb_forms": "adequate",
+        "agreement": "adequate",
+        "spelling": "adequate",
+        "punctuation": "adequate",
+        "capitalization": "adequate",
+        "comprehension": "weak"
+      },
       "highlighted_errors": [
         {
           "text": "ein Kopfhörer",
@@ -367,6 +383,7 @@ Response `200` (frontend-facing contract):
       "minimum_required": 150,
       "meets_requirement": true
     },
+    "raw_score": 8,
     "final_score": 24,
     "max_score": 45,
     "improved_text": {
@@ -383,27 +400,34 @@ Required response fields:
 - `selected_task_id`
 - `result`
 
-Required `result` fields:
-- `topic_mismatch` (`true` = Thema unpassend)
+Required `result` fields (successful full evaluation):
+- `topic_mismatch` (`true` = Thema unpassend; dann werden die drei Kriterien inhaltlich mit D bewertet, die Endnote wird dennoch berechnet — siehe `criteria.md`)
 - `situation_mismatch` (`true` = Situation unpassend)
+- `analysis_status` (`success` | `partial` | `failed`)
+- `analysis_error` (`string | null`; bei `partial` / `failed` oft gesetzt)
 - `criterion_I`
 - `criterion_II`
 - `criterion_III`
 - `word_count`
-- `final_score`
 - `max_score`
 - `improved_text`
 
+Scores (nullable bei partial/failed):
+- `raw_score` (`int | null`)
+- `final_score` (`int | null`): `null` wenn mindestens ein Kriterium technisch **nicht** ausgewertet wurde (`analysis_status` `"partial"` oder `"failed"`).
+
 Optional `result` fields:
-- `raw_score` (only if frontend starts using it)
 - `duration_seconds` (optional in `result`; frontend currently falls back to `submission.duration_seconds`)
 
 #### `result.criterion_I` (Aufgabenerfüllung)
 
-Required:
-- `scaled_points`
-- `max_scaled_points`
+Required (wenn Analyse für dieses Kriterium erfolgreich):
+- `grade` (`A` \| `B` \| `C` \| `D`; bei technischem Fehler `null`)
+- `points` (`0`–`5`; bei technischem Fehler `null`)
+- `scaled_points` / `max_scaled_points` (oft `null`, wenn `analysis_status` dieses Kriteriums `failed`)
 - `comment`
+- `analysis_status` (`success` \| `failed`)
+- `analysis_error` (`string | null`; bei `failed` mit erklärendem Text)
 - `task_achievement_summary`
 - `key_point_details`
 
@@ -428,8 +452,8 @@ Required:
 #### `result.criterion_II` (Kommunikative Gestaltung)
 
 Required:
-- `scaled_points`
-- `max_scaled_points`
+- `grade` / `points` (bei `analysis_status: failed` beide `null`; es wird **keine** automatische D-Note für technische Fehler vergeben)
+- `scaled_points` / `max_scaled_points`
 - `comment`
 - `analysis_status` (`success` | `failed`)
 - `analysis_error` (`string | null`)
@@ -444,18 +468,18 @@ Required:
 #### `result.criterion_III` (Formale Korrektheit)
 
 Required:
-- `scaled_points`
-- `max_scaled_points`
+- `grade` / `points` (wie Kriterium II bei technischem Fehler)
+- `scaled_points` / `max_scaled_points`
 - `comment`
-- `accuracy_details`
+- `analysis_status` (`success` \| `failed`)
+- `analysis_error` (`string \| null`)
+- `aspect_ratings` (Objekt oder `null`; bei erfolgreicher Analyse die Teilaspekte direkt aus der Sprachprüfung)
 - `highlighted_errors`
 
-`accuracy_details[]` fields:
-- `aspect` (`grammar`, `syntax`, `word_order`, `spelling`, `punctuation`, `comprehension`)
-- `label`
-- `status`
-- `error_count`
-- `comment`
+`aspect_ratings` keys (jeweils `strong` \| `adequate` \| `weak` \| `problematic`):
+- `grammar`, `syntax`, `word_order`, `verb_forms`, `agreement`, `spelling`, `punctuation`, `capitalization`, `comprehension`
+
+Hinweis: Das veraltete Feld `accuracy_details` wird von der API nicht mehr ausgeliefert.
 
 `highlighted_errors[]` fields:
 - `text`

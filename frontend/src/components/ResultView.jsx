@@ -60,8 +60,18 @@ export default function ResultView({ result, candidateText, selectedTask, submis
 
   const wc = r.word_count;
   const improved = r.improved_text;
-  const finalScore = Number(r.final_score);
-  const maxScore = Number(r.max_score);
+  const overallAnalysisStatus = safeGet(r, "analysis_status") || "success";
+  const overallAnalysisError = safeGet(r, "analysis_error");
+  const finalScoreRaw = r.final_score;
+  const maxScoreRaw = r.max_score;
+  const finalScore =
+    finalScoreRaw === null || finalScoreRaw === undefined || finalScoreRaw === ""
+      ? NaN
+      : Number(finalScoreRaw);
+  const maxScore =
+    maxScoreRaw === null || maxScoreRaw === undefined || maxScoreRaw === ""
+      ? NaN
+      : Number(maxScoreRaw);
   const hasValidScoreRatio = Number.isFinite(finalScore) && Number.isFinite(maxScore) && maxScore > 0;
   const scoreRatio = hasValidScoreRatio ? finalScore / maxScore : null;
   const scoreStatusClass =
@@ -90,16 +100,19 @@ export default function ResultView({ result, candidateText, selectedTask, submis
   })();
 
   const errorCount = Array.isArray(highlighted) ? highlighted.length : 0;
-  const ptsI = safeGet(r, "criterion_I.points");
-  const ptsII = safeGet(r, "criterion_II.points");
-  const ptsIII = safeGet(r, "criterion_III.points");
+  const ptsIRaw = safeGet(r, "criterion_I.points");
+  const ptsI = ptsIRaw === null || ptsIRaw === undefined || ptsIRaw === "" ? NaN : Number(ptsIRaw);
   const commentI = safeGet(r, "criterion_I.comment");
   const commentII = safeGet(r, "criterion_II.comment");
   const commentIII = safeGet(r, "criterion_III.comment");
   const criterionIScaledPointsRaw = Number(safeGet(r, "criterion_I.scaled_points"));
   const criterionIMaxScaledPointsRaw = Number(safeGet(r, "criterion_I.max_scaled_points"));
   const hasScaledPoints = Number.isFinite(criterionIScaledPointsRaw) && Number.isFinite(criterionIMaxScaledPointsRaw);
-  const criterionIScaledPoints = hasScaledPoints ? criterionIScaledPointsRaw : Number(ptsI) * 3;
+  const criterionIScaledPoints = hasScaledPoints
+    ? criterionIScaledPointsRaw
+    : Number.isFinite(ptsI)
+      ? ptsI * 3
+      : NaN;
   const criterionIMaxScaledPoints = hasScaledPoints ? criterionIMaxScaledPointsRaw : 15;
   const hasCriterionIScore = Number.isFinite(criterionIScaledPoints) && Number.isFinite(criterionIMaxScaledPoints);
   const criterionIScoreStatusClass = !hasCriterionIScore
@@ -109,11 +122,19 @@ export default function ResultView({ result, candidateText, selectedTask, submis
       : criterionIScaledPoints >= 6
         ? "status-warning"
         : "status-bad";
-  const criterionIIRawPoints = Number(ptsII);
+  const criterionIIRawPointsVal = safeGet(r, "criterion_II.points");
+  const criterionIIRawPoints =
+    criterionIIRawPointsVal === null || criterionIIRawPointsVal === undefined || criterionIIRawPointsVal === ""
+      ? NaN
+      : Number(criterionIIRawPointsVal);
   const criterionIIScaledPointsRaw = Number(safeGet(r, "criterion_II.scaled_points"));
   const criterionIIMaxScaledPointsRaw = Number(safeGet(r, "criterion_II.max_scaled_points"));
   const hasCriterionIIScaledPoints = Number.isFinite(criterionIIScaledPointsRaw) && Number.isFinite(criterionIIMaxScaledPointsRaw);
-  const criterionIIScaledPoints = hasCriterionIIScaledPoints ? criterionIIScaledPointsRaw : criterionIIRawPoints * 3;
+  const criterionIIScaledPoints = hasCriterionIIScaledPoints
+    ? criterionIIScaledPointsRaw
+    : Number.isFinite(criterionIIRawPoints)
+      ? criterionIIRawPoints * 3
+      : NaN;
   const criterionIIMaxScaledPoints = hasCriterionIIScaledPoints ? criterionIIMaxScaledPointsRaw : 15;
   const hasCriterionIIScore = Number.isFinite(criterionIIScaledPoints) && Number.isFinite(criterionIIMaxScaledPoints);
   const criterionIIScoreStatusClass = !hasCriterionIIScore
@@ -125,6 +146,8 @@ export default function ResultView({ result, candidateText, selectedTask, submis
         : "status-bad";
   const communicationAnalysisStatus = String(safeGet(r, "criterion_II.analysis_status") || "success");
   const communicationAnalysisError = safeGet(r, "criterion_II.analysis_error");
+  const keyPointsAnalysisStatus = String(safeGet(r, "criterion_I.analysis_status") || "success");
+  const keyPointsAnalysisError = safeGet(r, "criterion_I.analysis_error");
   const communicationIndicatorsRaw = safeGet(r, "criterion_II.communication_indicators");
   const communicationIndicators = Array.isArray(communicationIndicatorsRaw) ? communicationIndicatorsRaw : [];
   const mapCommunicationRating = (rating) => {
@@ -143,11 +166,19 @@ export default function ResultView({ result, candidateText, selectedTask, submis
     if (normalized === "weak" || normalized === "missing") return "status-bad";
     return "";
   };
-  const criterionIIIRawPoints = Number(ptsIII);
+  const criterionIIIRawVal = safeGet(r, "criterion_III.points");
+  const criterionIIIRawPoints =
+    criterionIIIRawVal === null || criterionIIIRawVal === undefined || criterionIIIRawVal === ""
+      ? NaN
+      : Number(criterionIIIRawVal);
   const criterionIIIScaledPointsRaw = Number(safeGet(r, "criterion_III.scaled_points"));
   const criterionIIIMaxScaledPointsRaw = Number(safeGet(r, "criterion_III.max_scaled_points"));
   const hasCriterionIIIScaledPoints = Number.isFinite(criterionIIIScaledPointsRaw) && Number.isFinite(criterionIIIMaxScaledPointsRaw);
-  const criterionIIIScaledPoints = hasCriterionIIIScaledPoints ? criterionIIIScaledPointsRaw : criterionIIIRawPoints * 3;
+  const criterionIIIScaledPoints = hasCriterionIIIScaledPoints
+    ? criterionIIIScaledPointsRaw
+    : Number.isFinite(criterionIIIRawPoints)
+      ? criterionIIIRawPoints * 3
+      : NaN;
   const criterionIIIMaxScaledPoints = hasCriterionIIIScaledPoints ? criterionIIIMaxScaledPointsRaw : 15;
   const hasCriterionIIIScore = Number.isFinite(criterionIIIScaledPoints) && Number.isFinite(criterionIIIMaxScaledPoints);
   const criterionIIIScoreStatusClass = !hasCriterionIIIScore
@@ -157,22 +188,32 @@ export default function ResultView({ result, candidateText, selectedTask, submis
       : criterionIIIScaledPoints >= 6
         ? "status-warning"
         : "status-bad";
-  const accuracyDetails = safeGet(r, "criterion_III.accuracy_details");
+  const accuracyAnalysisStatus = String(safeGet(r, "criterion_III.analysis_status") || "success");
+  const accuracyAnalysisError = safeGet(r, "criterion_III.analysis_error");
+  const aspectRatingsFlat =
+    crit3.aspect_ratings !== null && typeof crit3.aspect_ratings === "object" && !Array.isArray(crit3.aspect_ratings)
+      ? crit3.aspect_ratings
+      : null;
+  const accuracyDetailsLegacy = safeGet(r, "criterion_III.accuracy_details");
   const normalizeAccuracyValue = (value) => String(value ?? "").trim().toLowerCase();
   const extractAccuracyAspect = (aspectKey) => {
-    if (!accuracyDetails || typeof accuracyDetails !== "object") return null;
-    const direct = accuracyDetails?.[aspectKey];
+    const fromFlat = aspectRatingsFlat?.[aspectKey];
+    if (typeof fromFlat === "string" && normalizeAccuracyValue(fromFlat)) return { status: fromFlat };
+
+    const legacy = accuracyDetailsLegacy;
+    if (!legacy || typeof legacy !== "object") return null;
+    const direct = legacy?.[aspectKey];
     if (direct && typeof direct === "object" && !Array.isArray(direct)) return direct;
-    const nested = accuracyDetails?.aspects?.[aspectKey];
+    const nested = legacy?.aspects?.[aspectKey];
     if (nested && typeof nested === "object" && !Array.isArray(nested)) return nested;
-    if (Array.isArray(accuracyDetails)) {
-      return accuracyDetails.find((entry) => {
+    if (Array.isArray(legacy)) {
+      return legacy.find((entry) => {
         const key = normalizeAccuracyValue(entry?.aspect ?? entry?.name ?? entry?.type ?? entry?.key);
         return key === normalizeAccuracyValue(aspectKey);
       });
     }
-    if (Array.isArray(accuracyDetails?.aspects)) {
-      return accuracyDetails.aspects.find((entry) => {
+    if (Array.isArray(legacy?.aspects)) {
+      return legacy.aspects.find((entry) => {
         const key = normalizeAccuracyValue(entry?.aspect ?? entry?.name ?? entry?.type ?? entry?.key);
         return key === normalizeAccuracyValue(aspectKey);
       });
@@ -199,8 +240,11 @@ export default function ResultView({ result, candidateText, selectedTask, submis
     { key: "grammar", label: "Grammatik" },
     { key: "syntax", label: "Satzbau" },
     { key: "word_order", label: "Wortstellung" },
+    { key: "verb_forms", label: "Verbformen" },
+    { key: "agreement", label: "Kongruenz" },
     { key: "spelling", label: "Rechtschreibung" },
     { key: "punctuation", label: "Zeichensetzung" },
+    { key: "capitalization", label: "Großschreibung" },
     { key: "comprehension", label: "Verständlichkeit" },
   ].map((indicator) => {
     const detail = extractAccuracyAspect(indicator.key);
@@ -533,6 +577,14 @@ export default function ResultView({ result, candidateText, selectedTask, submis
             </button>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
+                {overallAnalysisStatus === "partial" || overallAnalysisStatus === "failed" ? (
+                  <p className="alert alert--warn" style={{ marginBottom: "0.5rem" }}>
+                    {overallAnalysisStatus === "partial"
+                      ? "Teilbewertung: Mindestens ein Kriterium konnte technisch nicht ausgewertet werden. Die Endnote entfällt."
+                      : "Die Auswertung ist technisch fehlgeschlagen. Es wurde keine gültige Endnote ermittelt."}
+                    {overallAnalysisError ? ` ${overallAnalysisError}` : ""}
+                  </p>
+                ) : null}
                 <p style={{ margin: "0.15rem 0", fontSize: "0.84rem" }}>
                   <strong>Wortzahl:</strong>{" "}
                   <span className={wordCountStatusClass}>
@@ -571,6 +623,13 @@ export default function ResultView({ result, candidateText, selectedTask, submis
             </button>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
+                {keyPointsAnalysisStatus === "failed" ? (
+                  <p className="alert alert--warn" style={{ marginBottom: "0.4rem" }}>
+                    Die Auswertung dieses Kriteriums ist technisch fehlgeschlagen. Es wurde keine Punktzahl für dieses Kriterium
+                    ermittelt.
+                    {keyPointsAnalysisError ? ` ${keyPointsAnalysisError}` : ""}
+                  </p>
+                ) : null}
                 <div className="result-rail-kp-summary">
                   <p className="result-rail-kp-summary__line">
                     <strong>Erfüllte Punkte:</strong> {keyPointSummary?.fulfilledCount ?? "—"}
@@ -635,7 +694,8 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                 </p>
                 {communicationAnalysisStatus === "failed" ? (
                   <p className="alert alert--warn" style={{ marginTop: "0.4rem" }}>
-                    Die Analyse dieses Kriteriums ist fehlgeschlagen. Deshalb wurde hier die niedrigste Bewertung vergeben.
+                    Die Auswertung dieses Kriteriums ist technisch fehlgeschlagen. Es wurde keine Bewertung für dieses Kriterium
+                    ermittelt.
                     {communicationAnalysisError ? ` ${communicationAnalysisError}` : ""}
                   </p>
                 ) : (
@@ -674,12 +734,21 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                   Grammatik, Satzbau und Rechtschreibung
                 </p>
                 <div className="result-rail-kp-summary">
-                  {criterionIIIIndicators.map((indicator) => (
-                    <p key={indicator.key} className="result-rail-kp-summary__line">
-                      <strong>{indicator.label}:</strong>{" "}
-                      <span className={indicator.statusClass}>{indicator.statusLabel}</span>
+                  {accuracyAnalysisStatus === "failed" ? (
+                    <p className="alert alert--warn" style={{ margin: "0 0 0.5rem" }}>
+                      Die Auswertung dieses Kriteriums ist technisch fehlgeschlagen. Es wurde keine Bewertung für dieses Kriterium
+                      ermittelt.
+                      {accuracyAnalysisError ? ` ${accuracyAnalysisError}` : ""}
                     </p>
-                  ))}
+                  ) : null}
+                  {accuracyAnalysisStatus !== "failed"
+                    ? criterionIIIIndicators.map((indicator) => (
+                        <p key={indicator.key} className="result-rail-kp-summary__line">
+                          <strong>{indicator.label}:</strong>{" "}
+                          <span className={indicator.statusClass}>{indicator.statusLabel}</span>
+                        </p>
+                      ))
+                    : null}
                 </div>
                 <p style={{ margin: "0.35rem 0 0", color: "var(--muted)", fontSize: "0.82rem", lineHeight: 1.35 }}>
                   {commentIII || "Keine Details."}

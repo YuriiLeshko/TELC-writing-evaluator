@@ -350,6 +350,12 @@ class CriterionScore(BaseModel):
     analysis_error: str | None = Field(default=None)
     communication_indicators: list[CommunicationIndicator] | None = Field(default=None)
     highlighted_errors: list[GrammarErrorSpan] | None = Field(default=None)
+    aspect_ratings: AccuracyAspectRatings | None = Field(
+        default=None,
+        description=(
+            "Formal-accuracy sub-aspect ratings (Criterion III); set when analysis succeeded."
+        ),
+    )
 
     @model_validator(mode="after")
     def validate_grade_points_mapping(self) -> CriterionScore:
