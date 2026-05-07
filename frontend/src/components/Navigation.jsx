@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import {
   Archive,
+  BookOpen,
   House,
   Menu,
   PanelLeftClose,
@@ -15,6 +16,7 @@ import {
 
 const topLinks = [
   { to: "/", label: "Main", end: true, icon: House },
+  { to: "/assessment-guide", label: "Ratgeber", icon: BookOpen },
   { to: "/training", label: "Training", icon: PencilLine, requiresConsent: true },
   { to: "/archive", label: "Archive", icon: Archive, requiresConsent: true },
 ];

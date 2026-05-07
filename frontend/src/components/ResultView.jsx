@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PanelRightClose, PanelRightOpen, X } from "lucide-react";
 import ErrorHighlightedText from "./ErrorHighlightedText.jsx";
+import InfoLink from "./InfoLink.jsx";
 import { safeGet } from "../utils/safeGet.js";
 
 const RAIL_SECTION_IDS = ["rail-section-score", "rail-section-i", "rail-section-ii", "rail-section-iii", "rail-section-errors"];
@@ -521,7 +522,13 @@ export default function ResultView({ result, candidateText, selectedTask, submis
           </details>
 
           <details className="summary-block result-main-card">
-            <summary>Verbesserte Version</summary>
+            <summary className="summary-with-info">
+              <span>Verbesserte Version</span>
+              <InfoLink
+                sectionId="improved-text"
+                title="Hinweis zur verbesserten Version (Lernhilfe)"
+              />
+            </summary>
             <div className="stack stack--sm" style={{ marginTop: "0.65rem" }}>
               {improved ? (
                 <div className="text-panel">{improved.improved_text || "—"}</div>
@@ -565,6 +572,7 @@ export default function ResultView({ result, candidateText, selectedTask, submis
               id="rail-section-score"
               className={`result-rail-card ${activeSection === "rail-section-score" ? "result-rail-card--active" : ""}`}
             >
+            <div className="result-rail-card__head-with-info">
             <button
               type="button"
               className="result-rail-card__head"
@@ -575,6 +583,8 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                 {r.final_score ?? "—"}/{r.max_score ?? "—"}
               </span>
             </button>
+            <InfoLink sectionId="scoring" title="Endnote und Punktesystem erklärt" />
+            </div>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
                 {overallAnalysisStatus === "partial" || overallAnalysisStatus === "failed" ? (
@@ -583,12 +593,22 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                       ? "Teilbewertung: Mindestens ein Kriterium konnte technisch nicht ausgewertet werden. Die Endnote entfällt."
                       : "Die Auswertung ist technisch fehlgeschlagen. Es wurde keine gültige Endnote ermittelt."}
                     {overallAnalysisError ? ` ${overallAnalysisError}` : ""}
+                    <span className="alert-inline-info">
+                      <InfoLink
+                        sectionId="partial-failed-results"
+                        title="Teilauswertung und technische Fehler"
+                        ariaLabel="Teilauswertung und technische Fehler im Ratgeber"
+                      />
+                    </span>
                   </p>
                 ) : null}
                 <p style={{ margin: "0.15rem 0", fontSize: "0.84rem" }}>
                   <strong>Wortzahl:</strong>{" "}
                   <span className={wordCountStatusClass}>
                     {wc?.value ?? "—"} / {wordCountMin}
+                  </span>
+                  <span className="result-inline-info">
+                    <InfoLink sectionId="word-count" title="Mindest-Wortzahl (150)" />
                   </span>
                 </p>
                 <p style={{ margin: "0.15rem 0", fontSize: "0.84rem" }}>
@@ -615,12 +635,15 @@ export default function ResultView({ result, candidateText, selectedTask, submis
             id="rail-section-i"
             className={`result-rail-card ${activeSection === "rail-section-i" ? "result-rail-card--active" : ""}`}
           >
+            <div className="result-rail-card__head-with-info">
             <button type="button" className="result-rail-card__head" onClick={() => onTileActivate("rail-section-i")}>
               <span className="result-rail-tile__title">Aufgabenerfüllung</span>
               <span className={`result-rail-tile__value ${criterionIScoreStatusClass}`}>
                 {hasCriterionIScore ? `${criterionIScaledPoints} / ${criterionIMaxScaledPoints}` : "— / —"}
               </span>
             </button>
+            <InfoLink sectionId="criterion-i" title="Kriterium I: Aufgabenerfüllung" />
+            </div>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
                 {keyPointsAnalysisStatus === "failed" ? (
@@ -628,6 +651,9 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                     Die Auswertung dieses Kriteriums ist technisch fehlgeschlagen. Es wurde keine Punktzahl für dieses Kriterium
                     ermittelt.
                     {keyPointsAnalysisError ? ` ${keyPointsAnalysisError}` : ""}
+                    <span className="alert-inline-info">
+                      <InfoLink sectionId="partial-failed-results" title="Technisch fehlgeschlagen — kein Note D" />
+                    </span>
                   </p>
                 ) : null}
                 <div className="result-rail-kp-summary">
@@ -678,12 +704,15 @@ export default function ResultView({ result, candidateText, selectedTask, submis
             id="rail-section-ii"
             className={`result-rail-card ${activeSection === "rail-section-ii" ? "result-rail-card--active" : ""}`}
           >
+            <div className="result-rail-card__head-with-info">
             <button type="button" className="result-rail-card__head" onClick={() => onTileActivate("rail-section-ii")}>
               <span className="result-rail-tile__title">Kommunikative Gestaltung</span>
               <span className={`result-rail-tile__value ${criterionIIScoreStatusClass}`}>
                 {hasCriterionIIScore ? `${criterionIIScaledPoints} / ${criterionIIMaxScaledPoints}` : "— / —"}
               </span>
             </button>
+            <InfoLink sectionId="criterion-ii" title="Kriterium II: Kommunikative Gestaltung" />
+            </div>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
                 <p className="metric-card__help" style={{ margin: "0 0 0.35rem" }}>
@@ -697,6 +726,9 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                     Die Auswertung dieses Kriteriums ist technisch fehlgeschlagen. Es wurde keine Bewertung für dieses Kriterium
                     ermittelt.
                     {communicationAnalysisError ? ` ${communicationAnalysisError}` : ""}
+                    <span className="alert-inline-info">
+                      <InfoLink sectionId="partial-failed-results" title="Technisch fehlgeschlagen — kein Note D" />
+                    </span>
                   </p>
                 ) : (
                   <div className="result-rail-kp-details">
@@ -718,6 +750,7 @@ export default function ResultView({ result, candidateText, selectedTask, submis
             id="rail-section-iii"
             className={`result-rail-card ${activeSection === "rail-section-iii" ? "result-rail-card--active" : ""}`}
           >
+            <div className="result-rail-card__head-with-info">
             <button
               type="button"
               className="result-rail-card__head"
@@ -728,6 +761,8 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                 {hasCriterionIIIScore ? `${criterionIIIScaledPoints} / ${criterionIIIMaxScaledPoints}` : "— / —"}
               </span>
             </button>
+            <InfoLink sectionId="criterion-iii" title="Kriterium III: Sprachrichtigkeit" />
+            </div>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
                 <p className="metric-card__help" style={{ margin: "0 0 0.35rem" }}>
@@ -739,6 +774,9 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                       Die Auswertung dieses Kriteriums ist technisch fehlgeschlagen. Es wurde keine Bewertung für dieses Kriterium
                       ermittelt.
                       {accuracyAnalysisError ? ` ${accuracyAnalysisError}` : ""}
+                      <span className="alert-inline-info">
+                        <InfoLink sectionId="partial-failed-results" title="Technisch fehlgeschlagen — kein Note D" />
+                      </span>
                     </p>
                   ) : null}
                   {accuracyAnalysisStatus !== "failed"
@@ -761,6 +799,7 @@ export default function ResultView({ result, candidateText, selectedTask, submis
             id="rail-section-errors"
             className={`result-rail-card ${activeSection === "rail-section-errors" ? "result-rail-card--active" : ""}`}
           >
+            <div className="result-rail-card__head-with-info">
             <button
               type="button"
               className="result-rail-card__head"
@@ -769,6 +808,8 @@ export default function ResultView({ result, candidateText, selectedTask, submis
               <span className="result-rail-tile__title">Markierte Fehler</span>
               <span className="result-rail-tile__value">{errorCount}</span>
             </button>
+            <InfoLink sectionId="highlighted-errors" title="Markierte Fehler erklärt" />
+            </div>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
                 {highlightedErrorItems.length ? (

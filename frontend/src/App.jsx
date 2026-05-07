@@ -7,6 +7,7 @@ import ResultPage from "./pages/ResultPage.jsx";
 import ArchivePage from "./pages/ArchivePage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
+import AssessmentGuide from "./pages/AssessmentGuide.jsx";
 
 const DISCLAIMER_KEY = "telc_disclaimer_accepted";
 
@@ -62,6 +63,7 @@ export default function App() {
             )}
           />
           <Route path="/result" element={<ResultPage />} />
+          <Route path="/assessment-guide" element={<AssessmentGuide />} />
           <Route
             path="/archive"
             element={(

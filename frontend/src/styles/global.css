@@ -1738,3 +1738,115 @@ details.summary-block summary {
 .profile-danger-card {
   border-color: color-mix(in srgb, var(--danger) 45%, var(--border-strong) 55%);
 }
+
+/* ----- Assessment guide + inline help links ----- */
+
+.result-rail-card__head-with-info {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.1rem;
+  width: 100%;
+}
+
+.result-rail-card__head-with-info > .result-rail-card__head {
+  flex: 1;
+  min-width: 0;
+}
+
+.info-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.65rem;
+  height: 1.65rem;
+  margin-top: 0.4rem;
+  margin-right: 0.08rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 92%, transparent);
+  background: transparent;
+  color: var(--muted);
+  text-decoration: none !important;
+  opacity: 0.82;
+  transition: opacity 0.15s, color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.info-link:hover {
+  opacity: 1;
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border) 60%);
+  background: var(--accent);
+}
+
+.info-link:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.result-rail-card--active .info-link {
+  color: color-mix(in srgb, var(--sidebar-active-text) 88%, transparent);
+}
+
+.result-inline-info {
+  display: inline-flex;
+  vertical-align: middle;
+  align-items: center;
+  gap: 0.2rem;
+  margin-left: 0.2rem;
+}
+
+.summary-with-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  cursor: pointer;
+  list-style: none;
+}
+
+.summary-with-info::-webkit-details-marker {
+  display: none;
+}
+
+.assessment-guide__anchor {
+  scroll-margin-top: 1rem;
+}
+
+@media (max-width: 760px) {
+  .assessment-guide__anchor {
+    scroll-margin-top: 4.5rem;
+  }
+}
+
+.assessment-guide__toc {
+  display: grid;
+  gap: 0.35rem 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.assessment-guide__template {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  font-size: 0.88rem;
+  line-height: 1.52;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.page-back-link {
+  display: inline-block;
+  font-size: 0.92rem;
+  margin-bottom: 0.75rem;
+}
+
+.alert-inline-info {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 0.35rem;
+}
