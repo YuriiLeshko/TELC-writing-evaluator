@@ -118,6 +118,17 @@ def _fallback_accuracy_result() -> AccuracyCheckResult:
         ],
         example_errors=[],
         technical_notes=["Technischer Fallback ohne detaillierte Fehleranalyse."],
+        aspect_ratings={
+            "grammar": "problematic",
+            "syntax": "problematic",
+            "word_order": "problematic",
+            "verb_forms": "problematic",
+            "agreement": "problematic",
+            "spelling": "problematic",
+            "punctuation": "problematic",
+            "capitalization": "problematic",
+            "comprehension": "problematic",
+        },
     )
 
 
@@ -169,6 +180,17 @@ async def evaluate_writing(
             punctuation_quality="poor",
             comprehension_affected=True,
             explanation="Skipped due to topic mismatch.",
+            aspect_ratings={
+                "grammar": "problematic",
+                "syntax": "problematic",
+                "word_order": "problematic",
+                "verb_forms": "problematic",
+                "agreement": "problematic",
+                "spelling": "problematic",
+                "punctuation": "problematic",
+                "capitalization": "problematic",
+                "comprehension": "problematic",
+            },
         )
         try:
             improved_text = await generate_improved_text(

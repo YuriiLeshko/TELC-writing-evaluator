@@ -229,15 +229,31 @@ class GrammarErrorSpan(BaseModel):
     text: str = Field(..., min_length=1)
     correction: str = Field(..., min_length=1)
     error_type: str = Field(..., min_length=1)
-    aspect: Literal[
-        "grammar",
-        "syntax",
-        "word_order",
-        "spelling",
-        "punctuation",
-        "comprehension",
-    ] | None = None
     explanation: str = Field(..., min_length=1)
+
+
+AccuracyStatus = Literal[
+    "strong",
+    "adequate",
+    "weak",
+    "problematic",
+]
+
+
+class AccuracyAspectRatings(BaseModel):
+    """Simple per-aspect formal accuracy ratings for Criterion III."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    grammar: AccuracyStatus
+    syntax: AccuracyStatus
+    word_order: AccuracyStatus
+    verb_forms: AccuracyStatus
+    agreement: AccuracyStatus
+    spelling: AccuracyStatus
+    punctuation: AccuracyStatus
+    capitalization: AccuracyStatus
+    comprehension: AccuracyStatus
 
 
 class AccuracyDetail(BaseModel):
@@ -273,11 +289,22 @@ class AccuracyCheckResult(BaseModel):
                 "spelling_quality": "acceptable",
                 "punctuation_quality": "acceptable",
                 "comprehension_affected": False,
-                "explanation": "There are recurring grammar issues, but meaning remains clear.",
-                "positive_feedback": ["Sentence boundaries are generally clear."],
-                "improvement_feedback": ["Case marking is inconsistent in subordinate clauses."],
-                "example_errors": ["Incorrect verb position after connector 'weil' in one sentence."],
-                "technical_notes": ["Verb placement is mostly stable but occasionally inconsistent."],
+                "explanation": "Es gibt wiederkehrende Grammatikprobleme, aber der Inhalt bleibt verständlich.",
+                "positive_feedback": ["Die Satzgrenzen sind insgesamt klar erkennbar."],
+                "improvement_feedback": ["Die Kasusmarkierung ist in Nebensätzen noch uneinheitlich."],
+                "example_errors": ["Nach 'weil' steht das Verb einmal an der falschen Stelle."],
+                "technical_notes": ["Die Verbposition ist meist stabil, aber punktuell inkonsistent."],
+                "aspect_ratings": {
+                    "grammar": "adequate",
+                    "syntax": "strong",
+                    "word_order": "strong",
+                    "verb_forms": "strong",
+                    "agreement": "adequate",
+                    "spelling": "strong",
+                    "punctuation": "strong",
+                    "capitalization": "adequate",
+                    "comprehension": "strong",
+                },
                 "highlighted_errors": [
                     {
                         "text": "ein Kopfhörer",
@@ -300,7 +327,7 @@ class AccuracyCheckResult(BaseModel):
     improvement_feedback: list[str] = Field(default_factory=list)
     example_errors: list[str] = Field(default_factory=list)
     technical_notes: list[str] = Field(default_factory=list)
-    accuracy_details: list[AccuracyDetail] = Field(default_factory=list)
+    aspect_ratings: AccuracyAspectRatings = Field(...)
     highlighted_errors: list[GrammarErrorSpan] = Field(default_factory=list)
 
     @field_validator(
@@ -342,7 +369,6 @@ class CriterionScore(BaseModel):
     analysis_status: Literal["success", "failed"] | None = Field(default=None)
     analysis_error: str | None = Field(default=None)
     communication_indicators: list[CommunicationIndicator] | None = Field(default=None)
-    accuracy_details: list[AccuracyDetail] | None = Field(default=None)
     highlighted_errors: list[GrammarErrorSpan] | None = Field(default=None)
 
     @model_validator(mode="after")

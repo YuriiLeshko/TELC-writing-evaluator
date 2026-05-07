@@ -230,6 +230,17 @@ if __name__ == "__main__":
         punctuation_quality="acceptable",
         comprehension_affected=False,
         explanation="Language is mostly accurate and remains clear throughout.",
+        aspect_ratings={
+            "grammar": "adequate",
+            "syntax": "strong",
+            "word_order": "adequate",
+            "verb_forms": "adequate",
+            "agreement": "adequate",
+            "spelling": "strong",
+            "punctuation": "adequate",
+            "capitalization": "adequate",
+            "comprehension": "strong",
+        },
     )
 
     criterion_i_result, criterion_ii_result, criterion_iii_result, final_score_result = score_all_criteria(

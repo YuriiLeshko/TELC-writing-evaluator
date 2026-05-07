@@ -83,17 +83,7 @@ def _sanitize_result_for_api(result_payload: dict[str, Any]) -> dict[str, Any]:
             "scaled_points": criterion_iii.get("scaled_points"),
             "max_scaled_points": criterion_iii.get("max_scaled_points"),
             "comment": criterion_iii.get("comment"),
-            "accuracy_details": [
-                {
-                    "aspect": item.get("aspect"),
-                    "label": item.get("label"),
-                    "status": item.get("status"),
-                    "error_count": item.get("error_count", 0),
-                    "comment": item.get("comment"),
-                }
-                for item in criterion_iii.get("accuracy_details", [])
-                if isinstance(item, dict)
-            ],
+            "aspect_ratings": criterion_iii.get("aspect_ratings"),
             "highlighted_errors": [
                 {
                     "text": item.get("text"),

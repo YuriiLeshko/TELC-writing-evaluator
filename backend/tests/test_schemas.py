@@ -5,8 +5,9 @@ from pydantic import ValidationError
 
 from backend.evaluation.schemas import (
     AccuracyCheckResult,
-    AccuracyDetail,
+    AccuracyAspectRatings,
     CommunicationIndicator,
+    CommunicationCheckResult,
     CriterionScore,
     GrammarErrorSpan,
     ImprovedTextResult,
@@ -59,10 +60,20 @@ def test_grammar_error_span_validation() -> None:
         text="ein Kopfhörer",
         correction="einen Kopfhörer",
         error_type="Kasusfehler",
-        aspect="word_order",
         explanation="Akkusativ nach Verb.",
     )
     assert span.error_type == "Kasusfehler"
+
+
+def test_grammar_error_span_rejects_aspect_field() -> None:
+    with pytest.raises(ValidationError):
+        GrammarErrorSpan(
+            text="ein Kopfhörer",
+            correction="einen Kopfhörer",
+            error_type="Kasusfehler",
+            explanation="Akkusativ nach Verb.",
+            aspect="word_order",
+        )
 
 
 def test_key_point_detail_validation() -> None:
@@ -138,19 +149,38 @@ def test_communication_check_result_rejects_old_boolean_fields() -> None:
         )
 
 
-def test_accuracy_detail_validation() -> None:
-    detail = AccuracyDetail(
-        aspect="word_order",
-        label="Wortstellung",
-        status="weak",
-        error_count=3,
-        evidence=["weil ich habe ..."],
-        comment="Die Wortstellung ist mehrfach fehlerhaft.",
+def test_accuracy_aspect_ratings_validation() -> None:
+    ratings = AccuracyAspectRatings(
+        grammar="adequate",
+        syntax="strong",
+        word_order="strong",
+        verb_forms="strong",
+        agreement="adequate",
+        spelling="strong",
+        punctuation="strong",
+        capitalization="adequate",
+        comprehension="strong",
     )
-    assert detail.aspect == "word_order"
+    assert ratings.grammar == "adequate"
 
 
-def test_accuracy_check_result_accepts_accuracy_details() -> None:
+def test_accuracy_aspect_ratings_forbids_extra_fields() -> None:
+    with pytest.raises(ValidationError):
+        AccuracyAspectRatings(
+            grammar="adequate",
+            syntax="strong",
+            word_order="strong",
+            verb_forms="strong",
+            agreement="adequate",
+            spelling="strong",
+            punctuation="strong",
+            capitalization="adequate",
+            comprehension="strong",
+            extra_field="forbidden",
+        )
+
+
+def test_accuracy_check_result_accepts_aspect_ratings() -> None:
     result = AccuracyCheckResult(
         grammar_control="good",
         systematic_errors=["Wortstellung"],
@@ -158,27 +188,52 @@ def test_accuracy_check_result_accepts_accuracy_details() -> None:
         punctuation_quality="acceptable",
         comprehension_affected=False,
         explanation="Insgesamt verständlich.",
-        accuracy_details=[
-            AccuracyDetail(
-                aspect="grammar",
-                label="Grammatik",
-                status="adequate",
-                error_count=2,
-                evidence=["ein Kopfhörer"],
-                comment="Nur einzelne Fehler.",
-            )
-        ],
+        aspect_ratings=AccuracyAspectRatings(
+            grammar="adequate",
+            syntax="strong",
+            word_order="weak",
+            verb_forms="strong",
+            agreement="adequate",
+            spelling="adequate",
+            punctuation="adequate",
+            capitalization="adequate",
+            comprehension="strong",
+        ),
         highlighted_errors=[
             GrammarErrorSpan(
                 text="ein Kopfhörer",
                 correction="einen Kopfhörer",
                 error_type="Kasusfehler",
-                aspect="word_order",
                 explanation="Akkusativ nach Verb.",
             )
         ],
     )
-    assert len(result.accuracy_details) == 1
+    assert result.aspect_ratings.word_order == "weak"
+
+
+def test_accuracy_check_result_rejects_accuracy_details_field() -> None:
+    with pytest.raises(ValidationError):
+        AccuracyCheckResult(
+            grammar_control="good",
+            systematic_errors=[],
+            spelling_quality="acceptable",
+            punctuation_quality="acceptable",
+            comprehension_affected=False,
+            explanation="Insgesamt verständlich.",
+            aspect_ratings=AccuracyAspectRatings(
+                grammar="adequate",
+                syntax="strong",
+                word_order="weak",
+                verb_forms="strong",
+                agreement="adequate",
+                spelling="adequate",
+                punctuation="adequate",
+                capitalization="adequate",
+                comprehension="strong",
+            ),
+            accuracy_details=[],
+            highlighted_errors=[],
+        )
 
 
 def test_writing_evaluation_result_serialization() -> None:
@@ -191,7 +246,6 @@ def test_writing_evaluation_result_serialization() -> None:
                 text="ein Kopfhörer",
                 correction="einen Kopfhörer",
                 error_type="Kasusfehler",
-                aspect="word_order",
                 explanation="Akkusativ nach Verb.",
             )
         ],
@@ -249,16 +303,6 @@ def test_writing_evaluation_result_serialization() -> None:
             comment="Kommentar",
             scaled_points=3,
             max_scaled_points=15,
-            accuracy_details=[
-                AccuracyDetail(
-                    aspect="grammar",
-                    label="Grammatik",
-                    status="adequate",
-                    error_count=1,
-                    evidence=["ein Kopfhörer"],
-                    comment="Einzelner Kasusfehler.",
-                )
-            ],
             highlighted_errors=criterion_iii.highlighted_errors,
         ),
         word_count=WordCountCheck(value=170, minimum_required=150, meets_requirement=True),
@@ -279,5 +323,5 @@ def test_writing_evaluation_result_serialization() -> None:
     assert dumped["criterion_II"]["communication_indicators"][0]["aspect"] == "structure"
     assert dumped["criterion_III"]["scaled_points"] == 3
     assert dumped["criterion_III"]["max_scaled_points"] == 15
-    assert dumped["criterion_III"]["accuracy_details"][0]["aspect"] == "grammar"
-    assert dumped["criterion_III"]["highlighted_errors"][0]["aspect"] == "word_order"
+    assert "accuracy_details" not in dumped["criterion_III"]
+    assert "aspect" not in dumped["criterion_III"]["highlighted_errors"][0]

@@ -53,9 +53,10 @@ def test_communication_prompt_contains_required_parts() -> None:
 def test_accuracy_prompt_contains_highlighted_error_rules() -> None:
     prompt = build_accuracy_user_prompt("CANDIDATE")
     assert "CANDIDATE" in prompt
-    assert "accuracy_details" in prompt
+    assert "aspect_ratings" in prompt
     assert "highlighted_errors" in prompt
-    assert '"aspect": "grammar | syntax | word_order | spelling | punctuation | comprehension"' in prompt
+    assert "verb_forms" in prompt
+    assert "capitalization" in prompt
     assert "do not assign grades" in prompt.lower()
     assert "German" in prompt
 

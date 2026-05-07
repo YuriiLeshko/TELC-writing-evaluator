@@ -5,7 +5,6 @@ import pytest
 from backend.evaluation import pipeline
 from backend.evaluation.schemas import (
     AccuracyCheckResult,
-    AccuracyDetail,
     CommunicationIndicator,
     CommunicationCheckResult,
     ImprovedTextResult,
@@ -103,16 +102,17 @@ async def test_pipeline_normal_flow(monkeypatch: pytest.MonkeyPatch, input_data:
             punctuation_quality="good",
             comprehension_affected=False,
             explanation="Ok",
-            accuracy_details=[
-                AccuracyDetail(
-                    aspect="grammar",
-                    label="Grammatik",
-                    status="strong",
-                    error_count=0,
-                    evidence=[],
-                    comment="Keine klaren Grammatikprobleme.",
-                )
-            ],
+            aspect_ratings={
+                "grammar": "strong",
+                "syntax": "strong",
+                "word_order": "strong",
+                "verb_forms": "strong",
+                "agreement": "strong",
+                "spelling": "strong",
+                "punctuation": "strong",
+                "capitalization": "strong",
+                "comprehension": "strong",
+            },
             highlighted_errors=[],
         )
 
@@ -140,8 +140,8 @@ async def test_pipeline_normal_flow(monkeypatch: pytest.MonkeyPatch, input_data:
     assert len(result.criterion_II.communication_indicators) == 1
     assert result.criterion_III.scaled_points == result.criterion_III.points * 3
     assert result.criterion_III.max_scaled_points == 15
-    assert result.criterion_III.accuracy_details is not None
-    assert len(result.criterion_III.accuracy_details) == 1
+    assert result.criterion_III.highlighted_errors is not None
+    assert len(result.criterion_III.highlighted_errors) == 0
     assert calls[0] == "relevance"
     assert "improved" in calls
 
@@ -253,16 +253,17 @@ async def test_pipeline_low_word_count_override(monkeypatch: pytest.MonkeyPatch)
             punctuation_quality="good",
             comprehension_affected=False,
             explanation="Ok",
-            accuracy_details=[
-                AccuracyDetail(
-                    aspect="comprehension",
-                    label="Verständlichkeit",
-                    status="strong",
-                    error_count=0,
-                    evidence=[],
-                    comment="Trotz kurzer Länge verständlich.",
-                )
-            ],
+            aspect_ratings={
+                "grammar": "strong",
+                "syntax": "strong",
+                "word_order": "strong",
+                "verb_forms": "strong",
+                "agreement": "strong",
+                "spelling": "strong",
+                "punctuation": "strong",
+                "capitalization": "strong",
+                "comprehension": "strong",
+            },
             highlighted_errors=[],
         )
 
@@ -314,6 +315,17 @@ async def test_pipeline_communication_fallback_not_forced_to_d(
             punctuation_quality="good",
             comprehension_affected=False,
             explanation="Ok",
+            aspect_ratings={
+                "grammar": "adequate",
+                "syntax": "adequate",
+                "word_order": "adequate",
+                "verb_forms": "adequate",
+                "agreement": "adequate",
+                "spelling": "adequate",
+                "punctuation": "adequate",
+                "capitalization": "adequate",
+                "comprehension": "adequate",
+            },
         )
 
     async def fake_improved(*args, **kwargs):

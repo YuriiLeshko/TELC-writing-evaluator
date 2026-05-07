@@ -4,6 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from backend.evaluation.checks.accuracy import check_accuracy
+from backend.evaluation.checks.accuracy import _normalize_aspect_ratings, _normalize_highlighted_errors
 from backend.evaluation.checks.communication import CommunicationAnalysisFailed, check_communication
 from backend.evaluation.checks.communication import _normalize_rating, _normalize_vocabulary_level
 from backend.evaluation.checks.key_points import check_key_points
@@ -402,6 +403,42 @@ def test_communication_normalizers_return_valid_schema_values() -> None:
     assert _normalize_vocabulary_level("invalid") == "B1"
 
 
+def test_accuracy_normalizers_enforce_order_fragments_and_limit() -> None:
+    ratings = _normalize_aspect_ratings(
+        {
+            "spelling": "weak",
+            "grammar": "strong",
+        }
+    )
+    assert list(ratings.keys()) == [
+        "grammar",
+        "syntax",
+        "word_order",
+        "verb_forms",
+        "agreement",
+        "spelling",
+        "punctuation",
+        "capitalization",
+        "comprehension",
+    ]
+    assert ratings["grammar"] == "strong"
+    assert ratings["spelling"] == "weak"
+    assert ratings["syntax"] == "adequate"
+
+    candidate_text = "ein Kopfhörer ist kaputt und die Lieferung war sehr spät."
+    raw_errors = [
+        {"text": "ein Kopfhörer", "correction": "einen Kopfhörer", "error_type": "Kasus", "explanation": "Akkusativ."},
+        {"text": "nicht im Text", "correction": "X", "error_type": "Erfunden", "explanation": "Soll raus."},
+    ] + [
+        {"text": "die Lieferung", "correction": "der Lieferung", "error_type": f"Typ{i}", "explanation": "Demo."}
+        for i in range(20)
+    ]
+    normalized_errors = _normalize_highlighted_errors(raw_errors, candidate_text)
+    assert len(normalized_errors) == 10
+    assert all(set(item.keys()) == {"text", "correction", "error_type", "explanation"} for item in normalized_errors)
+    assert all(item["text"] in candidate_text for item in normalized_errors)
+
+
 @pytest.mark.asyncio
 async def test_check_accuracy_with_fake_llm(input_data: WritingEvaluationInput) -> None:
     client = FakeLLMClient(
@@ -417,19 +454,17 @@ async def test_check_accuracy_with_fake_llm(input_data: WritingEvaluationInput) 
                 "improvement_feedback": ["Kasus pruefen."],
                 "example_errors": ["ein Kopfhörer -> einen Kopfhörer"],
                 "technical_notes": ["Einige Fehler."],
-                "accuracy_details": [
-                    {
-                        "aspect": "grammar",
-                        "status": "adequate",
-                        "error_count": 1,
-                        "comment": "Nur ein klarer Kasusfehler.",
-                    },
-                    {
-                        "aspect": "comprehension",
-                        "status": "strong",
-                        "comment": "Die Verständlichkeit ist nicht beeinträchtigt.",
-                    },
-                ],
+                "aspect_ratings": {
+                    "grammar": "adequate",
+                    "syntax": "strong",
+                    "word_order": "strong",
+                    "verb_forms": "strong",
+                    "agreement": "adequate",
+                    "spelling": "adequate",
+                    "punctuation": "adequate",
+                    "capitalization": "strong",
+                    "comprehension": "strong",
+                },
                 "highlighted_errors": [
                     {
                         "text": "Candidate",
@@ -443,12 +478,9 @@ async def test_check_accuracy_with_fake_llm(input_data: WritingEvaluationInput) 
     )
     result = await check_accuracy(client, input_data)
     assert isinstance(result, AccuracyCheckResult)
-    assert len(result.accuracy_details) == 6
-    grammar = [item for item in result.accuracy_details if item.aspect == "grammar"][0]
-    assert grammar.label == "Grammatik"
-    assert grammar.error_count == 1
+    assert result.aspect_ratings.grammar == "adequate"
+    assert result.aspect_ratings.comprehension == "strong"
     assert result.highlighted_errors[0].error_type == "Kasusfehler"
-    assert result.highlighted_errors[0].aspect is None
     assert len(client.calls) == 1
     assert client.calls[0]["temperature"] == 0.0
 
@@ -468,22 +500,16 @@ async def test_check_accuracy_derives_missing_label_and_error_count(input_data: 
                 "improvement_feedback": [],
                 "example_errors": [],
                 "technical_notes": [],
-                "accuracy_details": [
-                    {
-                        "aspect": "word_order",
-                        "status": "acceptable",
-                        "comment": "Teilweise uneinheitlich.",
-                    }
-                ],
+                "aspect_ratings": {
+                    "word_order": "acceptable",
+                },
                 "highlighted_errors": [],
             }
         ]
     )
     result = await check_accuracy(client, input_data)
-    word_order = [item for item in result.accuracy_details if item.aspect == "word_order"][0]
-    assert word_order.label == "Wortstellung"
-    assert word_order.status == "adequate"
-    assert word_order.error_count == 0
+    assert result.aspect_ratings.word_order == "adequate"
+    assert result.aspect_ratings.grammar == "adequate"
 
 
 @pytest.mark.asyncio

@@ -3,7 +3,6 @@ from __future__ import annotations
 from backend.evaluation.result_builder import build_final_result
 from backend.evaluation.schemas import (
     AccuracyCheckResult,
-    AccuracyDetail,
     CommunicationIndicator,
     CommunicationCheckResult,
     CriterionScore,
@@ -92,32 +91,24 @@ def _inputs() -> tuple[
         explanation="Verstaendlich.",
         positive_feedback=["Verstaendlich formuliert."],
         improvement_feedback=["Kasus genauer beachten."],
+        aspect_ratings={
+            "grammar": "adequate",
+            "syntax": "strong",
+            "word_order": "adequate",
+            "verb_forms": "adequate",
+            "agreement": "adequate",
+            "spelling": "adequate",
+            "punctuation": "adequate",
+            "capitalization": "adequate",
+            "comprehension": "strong",
+        },
         highlighted_errors=[
             GrammarErrorSpan(
                 text="ein Kopfhörer",
                 correction="einen Kopfhörer",
                 error_type="Kasusfehler",
-                aspect="word_order",
                 explanation="Akkusativ erforderlich.",
             )
-        ],
-        accuracy_details=[
-            AccuracyDetail(
-                aspect="grammar",
-                label="Grammatik",
-                status="adequate",
-                error_count=1,
-                evidence=["ein Kopfhörer"],
-                comment="Ein einzelner Kasusfehler fällt auf.",
-            ),
-            AccuracyDetail(
-                aspect="comprehension",
-                label="Verständlichkeit",
-                status="strong",
-                error_count=0,
-                evidence=[],
-                comment="Der Text bleibt gut verständlich.",
-            ),
         ],
     )
     return relevance, key_points, communication, accuracy
@@ -151,9 +142,9 @@ def test_build_final_result_normal_case() -> None:
     assert len(dumped["criterion_II"]["communication_indicators"]) == 2
     assert dumped["criterion_III"]["scaled_points"] == 9
     assert dumped["criterion_III"]["max_scaled_points"] == 15
-    assert len(dumped["criterion_III"]["accuracy_details"]) == 2
+    assert "accuracy_details" not in dumped["criterion_III"]
     assert dumped["criterion_III"]["highlighted_errors"][0]["error_type"] == "Kasusfehler"
-    assert dumped["criterion_III"]["highlighted_errors"][0]["aspect"] == "word_order"
+    assert "aspect" not in dumped["criterion_III"]["highlighted_errors"][0]
     assert "explanations" not in dumped
     assert dumped["word_count"]["value"] == 160
 

@@ -107,7 +107,6 @@ def _attach_accuracy_errors(
 ) -> CriterionScore:
     """Attach structured accuracy error spans to Criterion III only."""
     criterion_score.highlighted_errors = accuracy.highlighted_errors
-    criterion_score.accuracy_details = accuracy.accuracy_details
     return criterion_score
 
 

@@ -4,7 +4,6 @@ import pytest
 from sqlalchemy import select
 
 from backend.evaluation.schemas import (
-    AccuracyDetail,
     CommunicationIndicator,
     CriterionScore,
     GrammarErrorSpan,
@@ -71,22 +70,11 @@ def _fake_result() -> WritingEvaluationResult:
             comment="III",
             scaled_points=9,
             max_scaled_points=15,
-            accuracy_details=[
-                AccuracyDetail(
-                    aspect="grammar",
-                    label="Grammatik",
-                    status="adequate",
-                    error_count=1,
-                    evidence=["ein Kopfhörer"],
-                    comment="Einzelner Kasusfehler.",
-                )
-            ],
             highlighted_errors=[
                 GrammarErrorSpan(
                     text="ein Kopfhörer",
                     correction="einen Kopfhörer",
                     error_type="Kasusfehler",
-                    aspect="word_order",
                     explanation="Akkusativ nach Verb.",
                 )
             ],
@@ -136,11 +124,7 @@ def test_evaluate_submission_success(test_client, seeded_users, seeded_tasks, db
     assert detail["label"] == "E-Mail-Elemente"
     assert detail["rating"] == "good"
     assert data["result"]["criterion_III"]["scaled_points"] == 9
-    assert len(data["result"]["criterion_III"]["accuracy_details"]) == 1
-    acc_detail = data["result"]["criterion_III"]["accuracy_details"][0]
-    assert acc_detail["aspect"] == "grammar"
-    assert acc_detail["label"] == "Grammatik"
-    assert "evidence" not in acc_detail
+    assert data["result"]["criterion_III"]["aspect_ratings"] is None
     assert "grade" not in data["result"]["criterion_III"]
     assert "points" not in data["result"]["criterion_III"]
     assert data["result"]["criterion_III"]["highlighted_errors"][0]["error_type"] == "Kasusfehler"
@@ -221,7 +205,7 @@ def test_evaluate_submission_result_contract_e2e(
         "scaled_points",
         "max_scaled_points",
         "comment",
-        "accuracy_details",
+        "aspect_ratings",
         "highlighted_errors",
     }
     assert "word_count" in result

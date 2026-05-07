@@ -82,6 +82,17 @@ def make_accuracy(
         punctuation_quality=punctuation_quality,
         comprehension_affected=comprehension_affected,
         explanation="test",
+        aspect_ratings={
+            "grammar": "adequate",
+            "syntax": "adequate",
+            "word_order": "adequate",
+            "verb_forms": "adequate",
+            "agreement": "adequate",
+            "spelling": "adequate",
+            "punctuation": "adequate",
+            "capitalization": "adequate",
+            "comprehension": "adequate",
+        },
     )
 
 
