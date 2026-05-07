@@ -82,6 +82,8 @@ Because of this, frontend does not send tokens yet.
 
 ### SubmissionRead
 
+Frontend-relevant fields for archive/detail navigation:
+
 ```json
 {
   "id": 100,
@@ -90,17 +92,19 @@ Because of this, frontend does not send tokens yet.
   "selected_task_id": 1,
   "candidate_text": "string",
   "result": {},
-  "raw_score": 9,
   "final_score": 27,
   "max_score": 45,
   "word_count": 162,
-  "started_at": "2026-04-30T12:00:00Z",
-  "submitted_at": "2026-04-30T12:05:00Z",
   "duration_seconds": 300,
+  "submitted_at": "2026-04-30T12:05:00Z",
   "status": "success",
   "error_message": null
 }
 ```
+
+Notes:
+- `duration_seconds` is expected on `SubmissionRead` and used as duration fallback in result display.
+- Archive detail flow passes `submission` to `/result` route state.
 
 ---
 
@@ -285,7 +289,7 @@ On success:
   - `submitted_at`
   - `duration_seconds`
 
-Response `200`:
+Response `200` (frontend-facing contract):
 
 ```json
 {
@@ -293,71 +297,151 @@ Response `200`:
   "task_session_id": 10,
   "selected_task_type": "info",
   "selected_task_id": 1,
-  "result": {}
-}
-```
-
-`result` contains the full deterministic evaluation payload. For Criterion I, the response now includes per-key-point detail data for frontend rendering:
-
-```json
-{
-  "criterion_I": {
-    "grade": "B",
-    "points": 3,
-    "scaled_points": 9,
-    "max_scaled_points": 15,
-    "comment": "string",
-    "key_point_details": [
-      {
-        "key_point": "string",
-        "covered": true,
-        "status": "fulfilled",
-        "coverage_quality": "strong",
-        "sentence_count": 2,
-        "development": "detailed",
-        "relevance": "direct",
-        "situation_appropriate": true,
-        "language_level": "B2",
-        "comment": "Kurzer Kommentar auf Deutsch"
-      }
-    ]
+  "result": {
+    "topic_mismatch": false,
+    "situation_mismatch": false,
+    "criterion_I": {
+      "scaled_points": 9,
+      "max_scaled_points": 15,
+      "comment": "Aufgabenerfüllung auf B2-Niveau mit kleinen Lücken.",
+      "task_achievement_summary": {
+        "fulfilled_count": 2,
+        "partially_fulfilled_count": 1,
+        "not_fulfilled_count": 1,
+        "own_idea_count": 0,
+        "overall_level": "B1+",
+        "summary_comment": "2 erfüllt, 1 teilweise erfüllt, 1 nicht erfüllt."
+      },
+      "key_point_details": [
+        {
+          "number": 1,
+          "type": "expected",
+          "key_point": "Problem beschreiben",
+          "status": "fulfilled",
+          "sentence_count": 2,
+          "situation_appropriate": true,
+          "language_level": "B2",
+          "comment": "Klar und passend formuliert."
+        }
+      ]
+    },
+    "criterion_II": {
+      "scaled_points": 9,
+      "max_scaled_points": 15,
+      "comment": "Kommunikation ist insgesamt gut nachvollziehbar.",
+      "communication_details": [
+        {
+          "aspect": "coherence",
+          "label": "Zusammenhang",
+          "status": "adequate",
+          "level": "B1+",
+          "present_items": ["logische Reihenfolge"],
+          "missing_items": ["explizite Übergänge"],
+          "evidence": ["deshalb", "außerdem"],
+          "comment": "Teilweise klare Verknüpfung der Aussagen."
+        }
+      ],
+      "task_achievement_summary": { "overall_level": "B1+" }
+    },
+    "criterion_III": {
+      "scaled_points": 6,
+      "max_scaled_points": 15,
+      "comment": "Formale Korrektheit schwankt, Verständlichkeit bleibt erhalten.",
+      "accuracy_details": [
+        {
+          "aspect": "grammar",
+          "label": "Grammatik",
+          "status": "adequate",
+          "error_count": 2,
+          "comment": "Einige Kasus- und Verbfehler."
+        }
+      ],
+      "highlighted_errors": [
+        {
+          "text": "ein Kopfhörer",
+          "correction": "einen Kopfhörer",
+          "error_type": "Kasusfehler",
+          "explanation": "Nach dem Verb steht hier der Akkusativ."
+        }
+      ]
+    },
+    "word_count": {
+      "value": 162,
+      "minimum_required": 150,
+      "meets_requirement": true
+    },
+    "final_score": 24,
+    "max_score": 45,
+    "improved_text": {
+      "improved_text": "Sehr geehrte Damen und Herren, ...",
+      "changes_summary": ["Grammatik verbessert", "Register formeller gestaltet"]
+    }
   }
 }
 ```
 
-Notes:
-- `key_point_details` contains one item per expected key point.
-- These details are intended for frontend display of Criterion I coverage quality.
-- Scoring rules and final score calculation remain deterministic and unchanged.
+Required response fields:
+- `submission_id`
+- `task_session_id`
+- `selected_task_type`
+- `selected_task_id`
+- `result`
 
-For Criterion II, the response now also includes detailed communicative-design analysis:
+Required `result` fields:
+- `topic_mismatch` (`true` = Thema unpassend)
+- `situation_mismatch` (`true` = Situation unpassend)
+- `criterion_I`
+- `criterion_II`
+- `criterion_III`
+- `word_count`
+- `final_score`
+- `max_score`
+- `improved_text`
 
-```json
-{
-  "criterion_II": {
-    "grade": "B",
-    "points": 3,
-    "scaled_points": 9,
-    "max_scaled_points": 15,
-    "comment": "string",
-    "communication_details": [
-      {
-        "aspect": "coherence",
-        "label": "Gedanklicher Zusammenhang",
-        "status": "adequate",
-        "level": null,
-        "present_items": ["string"],
-        "missing_items": ["string"],
-        "evidence": ["string"],
-        "comment": "Kurzer deutscher Kommentar"
-      }
-    ]
-  }
-}
-```
+Optional `result` fields:
+- `raw_score` (only if frontend starts using it)
+- `duration_seconds` (optional in `result`; frontend currently falls back to `submission.duration_seconds`)
 
-`communication_details` fields:
-- `aspect`
+#### `result.criterion_I` (Aufgabenerfüllung)
+
+Required:
+- `scaled_points`
+- `max_scaled_points`
+- `comment`
+- `task_achievement_summary`
+- `key_point_details`
+
+`task_achievement_summary` fields:
+- `fulfilled_count`
+- `partially_fulfilled_count`
+- `not_fulfilled_count`
+- `own_idea_count`
+- `overall_level`
+- `summary_comment`
+
+`key_point_details[]` fields:
+- `number`
+- `type`
+- `key_point`
+- `status`
+- `sentence_count`
+- `situation_appropriate`
+- `language_level`
+- `comment`
+
+#### `result.criterion_II` (Kommunikative Gestaltung)
+
+Required:
+- `scaled_points`
+- `max_scaled_points`
+- `comment`
+- `communication_details`
+
+Optional:
+- `task_achievement_summary.overall_level` (frontend uses this if present)
+
+`communication_details[]` fields:
+- `aspect` (`email_elements`, `structure`, `coherence`, `cohesion`, `register`, `vocabulary`, `sentence_variety`)
 - `label`
 - `status`
 - `level`
@@ -366,62 +450,51 @@ For Criterion II, the response now also includes detailed communicative-design a
 - `evidence`
 - `comment`
 
-Additional notes:
-- `communication_details` contains one item per communicative aspect.
-- Criterion II scoring remains deterministic and unchanged.
+#### `result.criterion_III` (Formale Korrektheit)
 
-For Criterion III, the response includes grouped formal-accuracy analysis and highlightable errors:
+Required:
+- `scaled_points`
+- `max_scaled_points`
+- `comment`
+- `accuracy_details`
+- `highlighted_errors`
 
-```json
-{
-  "criterion_III": {
-    "grade": "C",
-    "points": 1,
-    "scaled_points": 3,
-    "max_scaled_points": 15,
-    "comment": "string",
-    "accuracy_details": [
-      {
-        "aspect": "grammar",
-        "label": "Grammatik",
-        "status": "adequate",
-        "error_count": 1,
-        "evidence": ["ein Kopfhörer"],
-        "comment": "Kurzer deutscher Kommentar"
-      }
-    ],
-    "highlighted_errors": [
-      {
-        "text": "ein Kopfhörer",
-        "correction": "einen Kopfhörer",
-        "error_type": "Kasusfehler",
-        "aspect": "agreement",
-        "explanation": "Kurze deutsche Erklärung"
-      }
-    ]
-  }
-}
-```
-
-`accuracy_details` fields:
-- `aspect`
+`accuracy_details[]` fields:
+- `aspect` (`grammar`, `syntax`, `word_order`, `spelling`, `punctuation`, `comprehension`)
 - `label`
 - `status`
 - `error_count`
-- `evidence`
 - `comment`
 
-`highlighted_errors` (`GrammarErrorSpan`) fields:
+`highlighted_errors[]` fields:
 - `text`
 - `correction`
 - `error_type`
-- `aspect`
 - `explanation`
 
-Additional Criterion III notes:
-- `accuracy_details` is for grouped grammar analysis.
-- `highlighted_errors` is for frontend text-highlighting and error lists.
-- Criterion III scoring remains deterministic and unchanged.
+Constraints:
+- `text` must be an exact short fragment from `candidate_text` (not whole paragraphs).
+- Maximum `10` highlighted errors; if no clear errors exist, return `[]`.
+
+#### `result.word_count`
+
+Required:
+- `value`
+- `minimum_required`
+- `meets_requirement`
+
+#### `result.improved_text`
+
+Required:
+- `improved_text`
+- `changes_summary`
+
+Timing source for `duration_seconds`:
+- Primary source: `submission.duration_seconds`.
+- Computed from task-session lifecycle:
+  - session/submission `started_at` (when session starts),
+  - session/submission `submitted_at` (when evaluate succeeds),
+  - `duration_seconds = int(submitted_at - started_at)` in seconds.
 
 Errors:
 
@@ -730,3 +803,6 @@ Reactivate task (`is_active = true`).
   2. user chooses `info` or `complaint`
   3. `POST /submissions/evaluate`
 - Current API is demo-auth driven; replace with JWT flow in next phase.
+- Archive compatibility:
+  - "Details anzeigen" in archive navigates to `/result`.
+  - Route state passes `result`, `candidate_text`, `submission`, and (when available) `session`, `selectedTaskType`, `selectedTask`.

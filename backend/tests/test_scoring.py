@@ -267,6 +267,19 @@ def test_criterion_ii_simple_sentence_variety_is_c() -> None:
     assert score.grade == "B"
 
 
+def test_criterion_ii_neutral_fallback_profile_is_c_not_d() -> None:
+    score = score_criterion_ii(
+        make_relevance(),
+        make_communication(
+            register_quality="mostly_appropriate",
+            coherence_quality="acceptable",
+            vocabulary_level="B1",
+            sentence_variety="simple",
+        ),
+    )
+    assert score.grade == "C"
+
+
 def test_criterion_iii_strong_grammar_with_max_one_systematic_error_is_a() -> None:
     score = score_criterion_iii(
         make_relevance(),

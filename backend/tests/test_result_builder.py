@@ -39,25 +39,21 @@ def _inputs() -> tuple[
         improvement_feedback=["Mehr Details nennen."],
         key_point_details=[
             KeyPointDetail(
+                number=1,
+                type="expected",
                 key_point="P1",
-                covered=True,
                 status="fulfilled",
-                coverage_quality="strong",
                 sentence_count=2,
-                development="detailed",
-                relevance="direct",
                 situation_appropriate=True,
                 language_level="B2",
                 comment="P1 wird klar und detailliert erläutert.",
             ),
             KeyPointDetail(
+                number=2,
+                type="expected",
                 key_point="P2",
-                covered=True,
                 status="fulfilled",
-                coverage_quality="adequate",
                 sentence_count=2,
-                development="sufficient",
-                relevance="direct",
                 situation_appropriate=True,
                 language_level="B1+",
                 comment="P2 ist vorhanden und ausreichend entwickelt.",
@@ -115,7 +111,7 @@ def _inputs() -> tuple[
                 text="ein Kopfhörer",
                 correction="einen Kopfhörer",
                 error_type="Kasusfehler",
-                aspect="agreement",
+                aspect="word_order",
                 explanation="Akkusativ erforderlich.",
             )
         ],
@@ -160,6 +156,8 @@ def test_build_final_result_normal_case() -> None:
     assert dumped["criterion_I"]["scaled_points"] == 9
     assert dumped["criterion_I"]["max_scaled_points"] == 15
     assert len(dumped["criterion_I"]["key_point_details"]) == 2
+    assert dumped["criterion_I"]["task_achievement_summary"]["fulfilled_count"] == 2
+    assert dumped["criterion_I"]["task_achievement_summary"]["own_idea_count"] == 1
     assert dumped["criterion_II"]["scaled_points"] == 9
     assert dumped["criterion_II"]["max_scaled_points"] == 15
     assert len(dumped["criterion_II"]["communication_details"]) == 2
@@ -167,7 +165,7 @@ def test_build_final_result_normal_case() -> None:
     assert dumped["criterion_III"]["max_scaled_points"] == 15
     assert len(dumped["criterion_III"]["accuracy_details"]) == 2
     assert dumped["criterion_III"]["highlighted_errors"][0]["error_type"] == "Kasusfehler"
-    assert dumped["criterion_III"]["highlighted_errors"][0]["aspect"] == "agreement"
+    assert dumped["criterion_III"]["highlighted_errors"][0]["aspect"] == "word_order"
     assert "explanations" not in dumped
     assert dumped["word_count"]["value"] == 160
 

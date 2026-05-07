@@ -42,7 +42,7 @@ def test_accuracy_prompt_contains_highlighted_error_rules() -> None:
     assert "CANDIDATE" in prompt
     assert "accuracy_details" in prompt
     assert "highlighted_errors" in prompt
-    assert '"aspect": "grammar | syntax | word_order | verb_forms | agreement | spelling | punctuation | capitalization"' in prompt
+    assert '"aspect": "grammar | syntax | word_order | spelling | punctuation | comprehension"' in prompt
     assert "do not assign grades" in prompt.lower()
     assert "German" in prompt
 

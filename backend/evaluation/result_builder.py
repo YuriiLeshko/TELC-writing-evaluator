@@ -12,6 +12,7 @@ from backend.evaluation.schemas import (
     WordCountCheck,
     ImprovedTextResult,
     WritingEvaluationResult,
+    TaskAchievementSummary,
 )
 
 
@@ -42,6 +43,39 @@ def _build_criterion_i_comment(key_points: KeyPointCheckResult) -> str:
             "Zur Verbesserung sollten mehr konkrete aufgabenbezogene Details ergänzt werden.",
         )
     return f"{positive} {improvement}"
+
+
+def _build_task_achievement_summary(key_points: KeyPointCheckResult) -> TaskAchievementSummary:
+    """Build frontend-facing Criterion I summary from normalized details."""
+    details = key_points.key_point_details or []
+    expected_details = [d for d in details if d.type == "expected"]
+    own_idea_count = len(key_points.own_ideas)
+
+    fulfilled_count = len([d for d in expected_details if d.status == "fulfilled"])
+    partially_fulfilled_count = len([d for d in expected_details if d.status == "partially_fulfilled"])
+    not_fulfilled_count = len([d for d in expected_details if d.status == "not_fulfilled"])
+
+    level_priority = {"A2": 1, "B1": 2, "B1+": 3, "B2": 4}
+    best_level: str | None = None
+    for detail in details:
+        lvl = detail.language_level
+        if lvl is None:
+            continue
+        if best_level is None or level_priority[lvl] > level_priority[best_level]:
+            best_level = lvl
+
+    summary_comment = (
+        f"{fulfilled_count} erfüllt, {partially_fulfilled_count} teilweise erfüllt, "
+        f"{not_fulfilled_count} nicht erfüllt."
+    )
+    return TaskAchievementSummary(
+        fulfilled_count=fulfilled_count,
+        partially_fulfilled_count=partially_fulfilled_count,
+        not_fulfilled_count=not_fulfilled_count,
+        own_idea_count=own_idea_count,
+        overall_level=best_level,
+        summary_comment=summary_comment,
+    )
 
 
 def _build_criterion_ii_comment(communication: CommunicationCheckResult) -> str:
@@ -110,6 +144,7 @@ def build_final_result(
     criterion_i.scaled_points = criterion_i.points * 3
     criterion_i.max_scaled_points = 15
     criterion_i.key_point_details = key_points.key_point_details
+    criterion_i.task_achievement_summary = _build_task_achievement_summary(key_points)
     criterion_ii.comment = _build_criterion_ii_comment(communication)
     criterion_ii.scaled_points = criterion_ii.points * 3
     criterion_ii.max_scaled_points = 15

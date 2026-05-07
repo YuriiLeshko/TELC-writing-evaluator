@@ -12,6 +12,7 @@ from backend.evaluation.schemas import (
     ImprovedTextResult,
     KeyPointCheckResult,
     KeyPointDetail,
+    TaskAchievementSummary,
     WordCountCheck,
     WritingEvaluationInput,
     WritingEvaluationResult,
@@ -58,7 +59,7 @@ def test_grammar_error_span_validation() -> None:
         text="ein Kopfhörer",
         correction="einen Kopfhörer",
         error_type="Kasusfehler",
-        aspect="agreement",
+        aspect="word_order",
         explanation="Akkusativ nach Verb.",
     )
     assert span.error_type == "Kasusfehler"
@@ -66,13 +67,11 @@ def test_grammar_error_span_validation() -> None:
 
 def test_key_point_detail_validation() -> None:
     detail = KeyPointDetail(
+        number=1,
+        type="expected",
         key_point="Problem beschreiben",
-        covered=True,
         status="fulfilled",
-        coverage_quality="strong",
         sentence_count=2,
-        development="detailed",
-        relevance="direct",
         situation_appropriate=True,
         language_level="B2",
         comment="Der Leitpunkt wird klar und passend ausgearbeitet.",
@@ -88,13 +87,11 @@ def test_key_point_check_result_accepts_key_point_details() -> None:
         explanation="Leitpunkte teilweise erfüllt.",
         key_point_details=[
             KeyPointDetail(
+                number=1,
+                type="expected",
                 key_point="Problem beschreiben",
-                covered=True,
                 status="fulfilled",
-                coverage_quality="adequate",
                 sentence_count=2,
-                development="sufficient",
-                relevance="direct",
                 situation_appropriate=True,
                 language_level="B1+",
                 comment="Der Punkt ist vorhanden und ausreichend entwickelt.",
@@ -153,7 +150,7 @@ def test_accuracy_check_result_accepts_accuracy_details() -> None:
                 text="ein Kopfhörer",
                 correction="einen Kopfhörer",
                 error_type="Kasusfehler",
-                aspect="agreement",
+                aspect="word_order",
                 explanation="Akkusativ nach Verb.",
             )
         ],
@@ -171,7 +168,7 @@ def test_writing_evaluation_result_serialization() -> None:
                 text="ein Kopfhörer",
                 correction="einen Kopfhörer",
                 error_type="Kasusfehler",
-                aspect="agreement",
+                aspect="word_order",
                 explanation="Akkusativ nach Verb.",
             )
         ],
@@ -187,18 +184,24 @@ def test_writing_evaluation_result_serialization() -> None:
             max_scaled_points=15,
             key_point_details=[
                 KeyPointDetail(
+                    number=1,
+                    type="expected",
                     key_point="Problem beschreiben",
-                    covered=True,
                     status="fulfilled",
-                    coverage_quality="strong",
                     sentence_count=3,
-                    development="detailed",
-                    relevance="direct",
                     situation_appropriate=True,
                     language_level="B2",
                     comment="Sehr präzise und ausführlich dargestellt.",
                 )
             ],
+            task_achievement_summary=TaskAchievementSummary(
+                fulfilled_count=1,
+                partially_fulfilled_count=0,
+                not_fulfilled_count=0,
+                own_idea_count=0,
+                overall_level="B2",
+                summary_comment="1 erfüllt, 0 teilweise erfüllt, 0 nicht erfüllt.",
+            ),
         ),
         criterion_II=CriterionScore(
             grade="B",
@@ -255,4 +258,4 @@ def test_writing_evaluation_result_serialization() -> None:
     assert dumped["criterion_III"]["scaled_points"] == 3
     assert dumped["criterion_III"]["max_scaled_points"] == 15
     assert dumped["criterion_III"]["accuracy_details"][0]["aspect"] == "grammar"
-    assert dumped["criterion_III"]["highlighted_errors"][0]["aspect"] == "agreement"
+    assert dumped["criterion_III"]["highlighted_errors"][0]["aspect"] == "word_order"

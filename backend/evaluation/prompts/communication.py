@@ -160,7 +160,7 @@ communication_details:
 - Use these German labels:
   - email_elements -> "E-Mail-Elemente"
   - structure -> "Struktur"
-  - coherence -> "Gedanklicher Zusammenhang"
+  - coherence -> "Zusammenhang"
   - cohesion -> "Verknüpfungen"
   - register -> "Register und Stil"
   - vocabulary -> "Wortschatz"

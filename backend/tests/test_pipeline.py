@@ -42,37 +42,31 @@ async def test_pipeline_normal_flow(monkeypatch: pytest.MonkeyPatch, input_data:
             explanation="Ok",
             key_point_details=[
                 KeyPointDetail(
+                    number=1,
+                    type="expected",
                     key_point="P1",
-                    covered=True,
                     status="fulfilled",
-                    coverage_quality="strong",
                     sentence_count=2,
-                    development="detailed",
-                    relevance="direct",
                     situation_appropriate=True,
                     language_level="B2",
                     comment="P1 ist klar entwickelt.",
                 ),
                 KeyPointDetail(
+                    number=2,
+                    type="expected",
                     key_point="P2",
-                    covered=True,
                     status="fulfilled",
-                    coverage_quality="adequate",
                     sentence_count=2,
-                    development="sufficient",
-                    relevance="direct",
                     situation_appropriate=True,
                     language_level="B1+",
                     comment="P2 ist ausreichend vorhanden.",
                 ),
                 KeyPointDetail(
+                    number=3,
+                    type="expected",
                     key_point="P3",
-                    covered=False,
                     status="not_fulfilled",
-                    coverage_quality="missing",
                     sentence_count=0,
-                    development="missing",
-                    relevance="irrelevant",
                     situation_appropriate=False,
                     language_level=None,
                     comment="P3 fehlt.",
@@ -97,7 +91,7 @@ async def test_pipeline_normal_flow(monkeypatch: pytest.MonkeyPatch, input_data:
             communication_details=[
                 CommunicationDetail(
                     aspect="coherence",
-                    label="Gedanklicher Zusammenhang",
+                    label="Zusammenhang",
                     status="adequate",
                     level=None,
                     present_items=["logische Reihenfolge"],
@@ -207,37 +201,31 @@ async def test_pipeline_low_word_count_override(monkeypatch: pytest.MonkeyPatch)
             explanation="Ok",
             key_point_details=[
                 KeyPointDetail(
+                    number=1,
+                    type="expected",
                     key_point="P1",
-                    covered=True,
                     status="fulfilled",
-                    coverage_quality="strong",
                     sentence_count=2,
-                    development="detailed",
-                    relevance="direct",
                     situation_appropriate=True,
                     language_level="B2",
                     comment="P1 vorhanden.",
                 ),
                 KeyPointDetail(
+                    number=2,
+                    type="expected",
                     key_point="P2",
-                    covered=True,
                     status="fulfilled",
-                    coverage_quality="strong",
                     sentence_count=2,
-                    development="detailed",
-                    relevance="direct",
                     situation_appropriate=True,
                     language_level="B2",
                     comment="P2 vorhanden.",
                 ),
                 KeyPointDetail(
+                    number=3,
+                    type="expected",
                     key_point="P3",
-                    covered=True,
                     status="fulfilled",
-                    coverage_quality="strong",
                     sentence_count=2,
-                    development="detailed",
-                    relevance="direct",
                     situation_appropriate=True,
                     language_level="B2",
                     comment="P3 vorhanden.",
@@ -307,3 +295,51 @@ async def test_pipeline_low_word_count_override(monkeypatch: pytest.MonkeyPatch)
     assert result.criterion_II.grade == "D"
     assert result.criterion_III.grade == "D"
     assert result.final_score == 0
+
+
+@pytest.mark.asyncio
+async def test_pipeline_communication_fallback_not_forced_to_d(
+    monkeypatch: pytest.MonkeyPatch, input_data: WritingEvaluationInput
+) -> None:
+    long_input_data = WritingEvaluationInput(
+        task_text=input_data.task_text,
+        expected_key_points=input_data.expected_key_points,
+        candidate_text="Dies ist ein ausreichend langer Beispieltext " * 30,
+    )
+
+    async def fake_relevance(*args, **kwargs):
+        return RelevanceCheckResult(topic_mismatch=False, situation_mismatch=False, explanation="Ok")
+
+    async def fake_key(*args, **kwargs):
+        return KeyPointCheckResult(
+            fulfilled_key_points=["P1", "P2"],
+            own_ideas=[],
+            invalid_points=[],
+            explanation="Ok",
+        )
+
+    async def fake_comm(*args, **kwargs):
+        raise RuntimeError("LLM communication failed")
+
+    async def fake_acc(*args, **kwargs):
+        return AccuracyCheckResult(
+            grammar_control="good",
+            systematic_errors=[],
+            spelling_quality="good",
+            punctuation_quality="good",
+            comprehension_affected=False,
+            explanation="Ok",
+        )
+
+    async def fake_improved(*args, **kwargs):
+        return ImprovedTextResult(improved_text="Verbessert", changes_summary=["Hinweis"])
+
+    monkeypatch.setattr(pipeline, "check_relevance", fake_relevance)
+    monkeypatch.setattr(pipeline, "check_key_points", fake_key)
+    monkeypatch.setattr(pipeline, "check_communication", fake_comm)
+    monkeypatch.setattr(pipeline, "check_accuracy", fake_acc)
+    monkeypatch.setattr(pipeline, "generate_improved_text", fake_improved)
+
+    result = await pipeline.evaluate_writing(input_data=long_input_data, llm_client=object())
+    assert result.criterion_II.grade == "C"
+    assert result.criterion_II.points == 1

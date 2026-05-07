@@ -10,6 +10,7 @@ from backend.evaluation.schemas import (
     GrammarErrorSpan,
     ImprovedTextResult,
     KeyPointDetail,
+    TaskAchievementSummary,
     WordCountCheck,
     WritingEvaluationResult,
 )
@@ -26,15 +27,21 @@ def _fake_result() -> WritingEvaluationResult:
             comment="I",
             scaled_points=9,
             max_scaled_points=15,
+            task_achievement_summary=TaskAchievementSummary(
+                fulfilled_count=1,
+                partially_fulfilled_count=0,
+                not_fulfilled_count=0,
+                own_idea_count=0,
+                overall_level="B2",
+                summary_comment="1 erfüllt, 0 teilweise erfüllt, 0 nicht erfüllt.",
+            ),
             key_point_details=[
                 KeyPointDetail(
+                    number=1,
+                    type="expected",
                     key_point="P1",
-                    covered=True,
                     status="fulfilled",
-                    coverage_quality="strong",
                     sentence_count=2,
-                    development="detailed",
-                    relevance="direct",
                     situation_appropriate=True,
                     language_level="B2",
                     comment="P1 wird klar erfüllt.",
@@ -81,7 +88,7 @@ def _fake_result() -> WritingEvaluationResult:
                     text="ein Kopfhörer",
                     correction="einen Kopfhörer",
                     error_type="Kasusfehler",
-                    aspect="agreement",
+                    aspect="word_order",
                     explanation="Akkusativ nach Verb.",
                 )
             ],
@@ -116,11 +123,32 @@ def test_evaluate_submission_success(test_client, seeded_users, seeded_tasks, db
     assert data["result"]["final_score"] == 27
     assert data["result"]["criterion_I"]["scaled_points"] == 9
     assert len(data["result"]["criterion_I"]["key_point_details"]) == 1
+    assert "grade" not in data["result"]["criterion_I"]
+    assert "points" not in data["result"]["criterion_I"]
+    assert data["result"]["criterion_I"]["task_achievement_summary"]["fulfilled_count"] == 1
+    assert data["result"]["criterion_I"]["key_point_details"][0]["number"] == 1
+    assert data["result"]["criterion_I"]["key_point_details"][0]["type"] == "expected"
     assert data["result"]["criterion_II"]["scaled_points"] == 9
     assert len(data["result"]["criterion_II"]["communication_details"]) == 1
+    assert "grade" not in data["result"]["criterion_II"]
+    assert "points" not in data["result"]["criterion_II"]
+    detail = data["result"]["criterion_II"]["communication_details"][0]
+    assert detail["aspect"] == "email_elements"
+    assert detail["label"] == "E-Mail-Elemente"
+    assert detail["status"] == "strong"
+    assert isinstance(detail["present_items"], list)
+    assert isinstance(detail["missing_items"], list)
+    assert isinstance(detail["evidence"], list)
     assert data["result"]["criterion_III"]["scaled_points"] == 9
     assert len(data["result"]["criterion_III"]["accuracy_details"]) == 1
-    assert data["result"]["criterion_III"]["highlighted_errors"][0]["aspect"] == "agreement"
+    acc_detail = data["result"]["criterion_III"]["accuracy_details"][0]
+    assert acc_detail["aspect"] == "grammar"
+    assert acc_detail["label"] == "Grammatik"
+    assert "evidence" not in acc_detail
+    assert "grade" not in data["result"]["criterion_III"]
+    assert "points" not in data["result"]["criterion_III"]
+    assert data["result"]["criterion_III"]["highlighted_errors"][0]["error_type"] == "Kasusfehler"
+    assert "aspect" not in data["result"]["criterion_III"]["highlighted_errors"][0]
 
     user = seeded_users["user"]
     db_session.refresh(user)
@@ -140,8 +168,79 @@ def test_evaluate_submission_success(test_client, seeded_users, seeded_tasks, db
     assert submission.duration_seconds >= 0
     assert submission.duration_seconds == session.duration_seconds
     assert submission.result_json["criterion_I"]["max_scaled_points"] == 15
+    assert submission.result_json["criterion_I"]["task_achievement_summary"]["fulfilled_count"] == 1
+    assert "grade" not in submission.result_json["criterion_I"]
+    assert "points" not in submission.result_json["criterion_I"]
     assert submission.result_json["criterion_II"]["max_scaled_points"] == 15
+    assert submission.result_json["criterion_II"]["communication_details"][0]["label"] == "E-Mail-Elemente"
+    assert "grade" not in submission.result_json["criterion_II"]
+    assert "points" not in submission.result_json["criterion_II"]
     assert submission.result_json["criterion_III"]["max_scaled_points"] == 15
+    assert "grade" not in submission.result_json["criterion_III"]
+    assert "points" not in submission.result_json["criterion_III"]
+    assert "aspect" not in submission.result_json["criterion_III"]["highlighted_errors"][0]
+
+
+def test_evaluate_submission_result_contract_e2e(
+    test_client,
+    seeded_users,
+    seeded_tasks,
+    db_session,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    async def fake_evaluate(*args, **kwargs):
+        return _fake_result()
+
+    monkeypatch.setattr("backend.routers.submissions.evaluate_writing", fake_evaluate)
+
+    session_id = test_client.post("/task-sessions/start").json()["session"]["id"]
+    evaluate_resp = test_client.post(
+        "/submissions/evaluate",
+        json={
+            "task_session_id": session_id,
+            "selected_task_type": "info",
+            "candidate_text": "Antworttext",
+        },
+    )
+    assert evaluate_resp.status_code == 200
+    payload = evaluate_resp.json()
+    result = payload["result"]
+
+    assert set(result["criterion_I"].keys()) == {
+        "scaled_points",
+        "max_scaled_points",
+        "comment",
+        "task_achievement_summary",
+        "key_point_details",
+    }
+    assert set(result["criterion_II"].keys()) == {
+        "scaled_points",
+        "max_scaled_points",
+        "comment",
+        "communication_details",
+    }
+    assert set(result["criterion_III"].keys()) == {
+        "scaled_points",
+        "max_scaled_points",
+        "comment",
+        "accuracy_details",
+        "highlighted_errors",
+    }
+    assert "word_count" in result
+    assert "improved_text" in result
+
+    submission = db_session.get(Submission, payload["submission_id"])
+    assert submission is not None
+    saved = submission.result_json
+    assert saved["criterion_I"] == result["criterion_I"]
+    assert saved["criterion_II"] == result["criterion_II"]
+    assert saved["criterion_III"] == result["criterion_III"]
+
+    list_resp = test_client.get("/submissions/my")
+    assert list_resp.status_code == 200
+    listed = list_resp.json()
+    assert listed and listed[0]["duration_seconds"] is not None
+    assert listed[0]["duration_seconds"] >= 0
 
 
 def test_evaluate_submission_no_counter_left(test_client, seeded_users, seeded_tasks, db_session) -> None:

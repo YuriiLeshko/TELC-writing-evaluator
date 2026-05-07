@@ -82,16 +82,27 @@ class KeyPointDetail(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    number: int | None = None
+    type: Literal["expected", "own_idea"] = "expected"
     key_point: str
-    covered: bool
     status: Literal["fulfilled", "partially_fulfilled", "not_fulfilled"]
-    coverage_quality: Literal["strong", "adequate", "weak", "missing"]
-    sentence_count: int
-    development: Literal["detailed", "sufficient", "too_short", "unclear", "missing"]
-    relevance: Literal["direct", "partial", "irrelevant"]
-    situation_appropriate: bool
+    sentence_count: int = 0
+    situation_appropriate: bool | None = None
     language_level: Literal["B2", "B1+", "B1", "A2"] | None = None
     comment: str
+
+
+class TaskAchievementSummary(BaseModel):
+    """Frontend-facing Criterion I summary metrics."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    fulfilled_count: int = 0
+    partially_fulfilled_count: int = 0
+    not_fulfilled_count: int = 0
+    own_idea_count: int = 0
+    overall_level: Literal["B2", "B1+", "B1", "A2"] | None = None
+    summary_comment: str
 
 
 class KeyPointCheckResult(BaseModel):
@@ -232,12 +243,10 @@ class GrammarErrorSpan(BaseModel):
         "grammar",
         "syntax",
         "word_order",
-        "verb_forms",
-        "agreement",
         "spelling",
         "punctuation",
-        "capitalization",
-    ]
+        "comprehension",
+    ] | None = None
     explanation: str = Field(..., min_length=1)
 
 
@@ -250,11 +259,8 @@ class AccuracyDetail(BaseModel):
         "grammar",
         "syntax",
         "word_order",
-        "verb_forms",
-        "agreement",
         "spelling",
         "punctuation",
-        "capitalization",
         "comprehension",
     ]
     label: str
@@ -341,6 +347,7 @@ class CriterionScore(BaseModel):
     comment: str | None = Field(default=None)
     scaled_points: int | None = Field(default=None)
     max_scaled_points: int | None = Field(default=None)
+    task_achievement_summary: TaskAchievementSummary | None = Field(default=None)
     key_point_details: list[KeyPointDetail] | None = Field(default=None)
     communication_details: list[CommunicationDetail] | None = Field(default=None)
     accuracy_details: list[AccuracyDetail] | None = Field(default=None)

@@ -112,11 +112,11 @@ def _fallback_communication_result() -> CommunicationCheckResult:
         has_body_structure=False,
         has_conclusion=False,
         has_closing=False,
-        register_quality="inappropriate",
-        coherence_quality="incoherent",
-        vocabulary_level="A2",
+        register_quality="mostly_appropriate",
+        coherence_quality="acceptable",
+        vocabulary_level="B1",
         sentence_variety="simple",
-        explanation="Automatischer Fallback: Kommunikationsanalyse war wegen LLM-Ausfall nicht verfügbar.",
+        explanation="Automatischer Fallback: Kommunikationsanalyse wurde mit neutralen Standardwerten durchgeführt.",
         positive_feedback=[],
         improvement_feedback=[
             "Bitte später erneut prüfen, damit Struktur und Register korrekt bewertet werden können."
@@ -124,6 +124,7 @@ def _fallback_communication_result() -> CommunicationCheckResult:
         linking_devices=[],
         complex_connectors=[],
         language_level_comment="Technischer Fallback ohne belastbare Sprachstandsanalyse.",
+        communication_details=[],
     )
 
 
@@ -237,19 +238,40 @@ async def evaluate_writing(
     key_points_result, communication_result, accuracy_result = checks
 
     if isinstance(key_points_result, Exception):
-        logger.exception("Key-points check failed, using fallback result.")
+        logger.error(
+            "Key-points check failed, using fallback result.",
+            exc_info=(
+                type(key_points_result),
+                key_points_result,
+                key_points_result.__traceback__,
+            ),
+        )
         key_points = _fallback_key_points_result()
     else:
         key_points = key_points_result
 
     if isinstance(communication_result, Exception):
-        logger.exception("Communication check failed, using fallback result.")
+        logger.error(
+            "Communication check failed, using fallback result.",
+            exc_info=(
+                type(communication_result),
+                communication_result,
+                communication_result.__traceback__,
+            ),
+        )
         communication = _fallback_communication_result()
     else:
         communication = communication_result
 
     if isinstance(accuracy_result, Exception):
-        logger.exception("Accuracy check failed, using fallback result.")
+        logger.error(
+            "Accuracy check failed, using fallback result.",
+            exc_info=(
+                type(accuracy_result),
+                accuracy_result,
+                accuracy_result.__traceback__,
+            ),
+        )
         accuracy = _fallback_accuracy_result()
     else:
         accuracy = accuracy_result
