@@ -77,6 +77,34 @@ class RelevanceCheckResult(BaseModel):
     improvement_feedback: list[str] = Field(default_factory=list)
 
 
+class KeyPointDetail(BaseModel):
+    """Structured per-key-point TELC task-achievement analysis."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    number: int | None = None
+    type: Literal["expected", "own_idea"] = "expected"
+    key_point: str
+    status: Literal["fulfilled", "partially_fulfilled", "not_fulfilled"]
+    sentence_count: int = 0
+    situation_appropriate: bool | None = None
+    language_level: Literal["B2", "B1+", "B1", "A2"] | None = None
+    comment: str
+
+
+class TaskAchievementSummary(BaseModel):
+    """Frontend-facing Criterion I summary metrics."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    fulfilled_count: int = 0
+    partially_fulfilled_count: int = 0
+    not_fulfilled_count: int = 0
+    own_idea_count: int = 0
+    overall_level: Literal["B2", "B1+", "B1", "A2"] | None = None
+    summary_comment: str
+
+
 class KeyPointCheckResult(BaseModel):
     """Structured LLM output for key-point extraction and validation."""
 
@@ -101,6 +129,7 @@ class KeyPointCheckResult(BaseModel):
     explanation: str = Field(..., min_length=1)
     positive_feedback: list[str] = Field(default_factory=list)
     improvement_feedback: list[str] = Field(default_factory=list)
+    key_point_details: list[KeyPointDetail] = Field(default_factory=list)
 
     @field_validator(
         "fulfilled_key_points",
@@ -116,6 +145,25 @@ class KeyPointCheckResult(BaseModel):
         if any(not item for item in cleaned):
             raise ValueError("list fields must not contain empty strings")
         return cleaned
+
+
+class CommunicationIndicator(BaseModel):
+    """Simplified per-aspect communicative indicator for Criterion II."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    aspect: Literal[
+        "email_elements",
+        "structure",
+        "coherence",
+        "cohesion",
+        "register",
+        "vocabulary",
+        "sentence_variety",
+    ]
+    label: str
+    rating: Literal["excellent", "good", "acceptable", "weak", "missing"]
+    comment: str
 
 
 class CommunicationCheckResult(BaseModel):
@@ -137,11 +185,14 @@ class CommunicationCheckResult(BaseModel):
                 "vocabulary_level": "B2",
                 "sentence_variety": "some_variety",
                 "explanation": "The email has the expected structure and appropriate register.",
-                "positive_feedback": ["The structure is complete and easy to follow."],
-                "improvement_feedback": ["Use more complex connectors to improve textual flow."],
-                "linking_devices": ["leider", "deshalb"],
-                "complex_connectors": ["dass", "entweder ... oder"],
-                "language_level_comment": "Lexis is mostly precise and functionally close to B2.",
+                "communication_indicators": [
+                    {
+                        "aspect": "email_elements",
+                        "label": "E-Mail-Elemente",
+                        "rating": "good",
+                        "comment": "Die wichtigsten E-Mail-Bausteine sind vorhanden.",
+                    }
+                ],
             }
         },
     )
@@ -157,25 +208,7 @@ class CommunicationCheckResult(BaseModel):
     vocabulary_level: Literal["B2", "B1+", "B1", "A2"] = Field(...)
     sentence_variety: Literal["varied", "some_variety", "simple"] = Field(...)
     explanation: str = Field(..., min_length=1)
-    positive_feedback: list[str] = Field(default_factory=list)
-    improvement_feedback: list[str] = Field(default_factory=list)
-    linking_devices: list[str] = Field(default_factory=list)
-    complex_connectors: list[str] = Field(default_factory=list)
-    language_level_comment: str = Field(default="")
-
-    @field_validator(
-        "positive_feedback",
-        "improvement_feedback",
-        "linking_devices",
-        "complex_connectors",
-    )
-    @classmethod
-    def validate_communication_lists(cls, value: list[str]) -> list[str]:
-        """Ensure communication feedback and connector lists are clean strings."""
-        cleaned = [item.strip() for item in value]
-        if any(not item for item in cleaned):
-            raise ValueError("communication list fields must not contain empty strings")
-        return cleaned
+    communication_indicators: list[CommunicationIndicator] = Field(default_factory=list)
 
 
 class GrammarErrorSpan(BaseModel):
@@ -186,7 +219,35 @@ class GrammarErrorSpan(BaseModel):
     text: str = Field(..., min_length=1)
     correction: str = Field(..., min_length=1)
     error_type: str = Field(..., min_length=1)
+    aspect: Literal[
+        "grammar",
+        "syntax",
+        "word_order",
+        "spelling",
+        "punctuation",
+        "comprehension",
+    ] | None = None
     explanation: str = Field(..., min_length=1)
+
+
+class AccuracyDetail(BaseModel):
+    """Structured grouped formal-accuracy analysis for Criterion III."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    aspect: Literal[
+        "grammar",
+        "syntax",
+        "word_order",
+        "spelling",
+        "punctuation",
+        "comprehension",
+    ]
+    label: str
+    status: Literal["strong", "adequate", "weak", "problematic"]
+    error_count: int = 0
+    evidence: list[str] = Field(default_factory=list)
+    comment: str
 
 
 class AccuracyCheckResult(BaseModel):
@@ -229,6 +290,7 @@ class AccuracyCheckResult(BaseModel):
     improvement_feedback: list[str] = Field(default_factory=list)
     example_errors: list[str] = Field(default_factory=list)
     technical_notes: list[str] = Field(default_factory=list)
+    accuracy_details: list[AccuracyDetail] = Field(default_factory=list)
     highlighted_errors: list[GrammarErrorSpan] = Field(default_factory=list)
 
     @field_validator(
@@ -263,6 +325,14 @@ class CriterionScore(BaseModel):
     grade: Literal["A", "B", "C", "D"] = Field(...)
     points: int = Field(..., ge=0, le=5)
     comment: str | None = Field(default=None)
+    scaled_points: int | None = Field(default=None)
+    max_scaled_points: int | None = Field(default=None)
+    task_achievement_summary: TaskAchievementSummary | None = Field(default=None)
+    key_point_details: list[KeyPointDetail] | None = Field(default=None)
+    analysis_status: Literal["success", "failed"] | None = Field(default=None)
+    analysis_error: str | None = Field(default=None)
+    communication_indicators: list[CommunicationIndicator] | None = Field(default=None)
+    accuracy_details: list[AccuracyDetail] | None = Field(default=None)
     highlighted_errors: list[GrammarErrorSpan] | None = Field(default=None)
 
     @model_validator(mode="after")

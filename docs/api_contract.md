@@ -82,6 +82,8 @@ Because of this, frontend does not send tokens yet.
 
 ### SubmissionRead
 
+Frontend-relevant fields for archive/detail navigation:
+
 ```json
 {
   "id": 100,
@@ -90,17 +92,19 @@ Because of this, frontend does not send tokens yet.
   "selected_task_id": 1,
   "candidate_text": "string",
   "result": {},
-  "raw_score": 9,
   "final_score": 27,
   "max_score": 45,
   "word_count": 162,
-  "started_at": "2026-04-30T12:00:00Z",
-  "submitted_at": "2026-04-30T12:05:00Z",
   "duration_seconds": 300,
+  "submitted_at": "2026-04-30T12:05:00Z",
   "status": "success",
   "error_message": null
 }
 ```
+
+Notes:
+- `duration_seconds` is expected on `SubmissionRead` and used as duration fallback in result display.
+- Archive detail flow passes `submission` to `/result` route state.
 
 ---
 
@@ -149,16 +153,21 @@ Response:
 
 ### PATCH `/users/me`
 
-Update own email and/or password.
+Update own `username`, `email`, and/or `password`.
 
 Request body (at least one field):
 
 ```json
 {
+  "username": "updated-user",
   "email": "updated@example.com",
   "password": "new-password"
 }
 ```
+
+Notes:
+- If `password` is empty (`""`), password is not changed.
+- Admin-only fields are ignored on this endpoint (`role`, `is_active`, counters, next-task indexes).
 
 Response:
 
@@ -203,6 +212,12 @@ Response `200`:
   "display_title": "Modelltest 10"
 }
 ```
+
+Timing behavior:
+- `started_at` is set when the session is created by `POST /task-sessions/start`.
+- The timer starts at session creation time, not when the user confirms task choice.
+- `submitted_at` and `duration_seconds` remain `null` until a successful submission.
+- `duration_seconds` is computed as `int((submitted_at - started_at).total_seconds())`.
 
 Errors:
 
@@ -269,8 +284,12 @@ On success:
 - marks session as submitted
 - sets `submitted_at`, `duration_seconds`, `selected_task_type`, `selected_task_id`
 - decrements `available_submissions` by 1
+- stores the same timing triplet in both `TaskSession` and `Submission`:
+  - `started_at`
+  - `submitted_at`
+  - `duration_seconds`
 
-Response `200`:
+Response `200` (frontend-facing contract):
 
 ```json
 {
@@ -278,9 +297,196 @@ Response `200`:
   "task_session_id": 10,
   "selected_task_type": "info",
   "selected_task_id": 1,
-  "result": {}
+  "result": {
+    "topic_mismatch": false,
+    "situation_mismatch": false,
+    "criterion_I": {
+      "scaled_points": 9,
+      "max_scaled_points": 15,
+      "comment": "Aufgabenerfüllung auf B2-Niveau mit kleinen Lücken.",
+      "task_achievement_summary": {
+        "fulfilled_count": 2,
+        "partially_fulfilled_count": 1,
+        "not_fulfilled_count": 1,
+        "own_idea_count": 0,
+        "overall_level": "B1+",
+        "summary_comment": "2 erfüllt, 1 teilweise erfüllt, 1 nicht erfüllt."
+      },
+      "key_point_details": [
+        {
+          "number": 1,
+          "type": "expected",
+          "key_point": "Problem beschreiben",
+          "status": "fulfilled",
+          "sentence_count": 2,
+          "situation_appropriate": true,
+          "language_level": "B2",
+          "comment": "Klar und passend formuliert."
+        }
+      ]
+    },
+    "criterion_II": {
+      "scaled_points": 9,
+      "max_scaled_points": 15,
+      "comment": "Kommunikation ist insgesamt gut nachvollziehbar.",
+      "analysis_status": "success",
+      "analysis_error": null,
+      "communication_indicators": [
+        {
+          "aspect": "coherence",
+          "label": "Zusammenhang",
+          "rating": "acceptable",
+          "comment": "Teilweise klare Verknüpfung der Aussagen."
+        }
+      ]
+    },
+    "criterion_III": {
+      "scaled_points": 6,
+      "max_scaled_points": 15,
+      "comment": "Formale Korrektheit schwankt, Verständlichkeit bleibt erhalten.",
+      "accuracy_details": [
+        {
+          "aspect": "grammar",
+          "label": "Grammatik",
+          "status": "adequate",
+          "error_count": 2,
+          "comment": "Einige Kasus- und Verbfehler."
+        }
+      ],
+      "highlighted_errors": [
+        {
+          "text": "ein Kopfhörer",
+          "correction": "einen Kopfhörer",
+          "error_type": "Kasusfehler",
+          "explanation": "Nach dem Verb steht hier der Akkusativ."
+        }
+      ]
+    },
+    "word_count": {
+      "value": 162,
+      "minimum_required": 150,
+      "meets_requirement": true
+    },
+    "final_score": 24,
+    "max_score": 45,
+    "improved_text": {
+      "improved_text": "Sehr geehrte Damen und Herren, ...",
+      "changes_summary": ["Grammatik verbessert", "Register formeller gestaltet"]
+    }
+  }
 }
 ```
+
+Required response fields:
+- `submission_id`
+- `task_session_id`
+- `selected_task_type`
+- `selected_task_id`
+- `result`
+
+Required `result` fields:
+- `topic_mismatch` (`true` = Thema unpassend)
+- `situation_mismatch` (`true` = Situation unpassend)
+- `criterion_I`
+- `criterion_II`
+- `criterion_III`
+- `word_count`
+- `final_score`
+- `max_score`
+- `improved_text`
+
+Optional `result` fields:
+- `raw_score` (only if frontend starts using it)
+- `duration_seconds` (optional in `result`; frontend currently falls back to `submission.duration_seconds`)
+
+#### `result.criterion_I` (Aufgabenerfüllung)
+
+Required:
+- `scaled_points`
+- `max_scaled_points`
+- `comment`
+- `task_achievement_summary`
+- `key_point_details`
+
+`task_achievement_summary` fields:
+- `fulfilled_count`
+- `partially_fulfilled_count`
+- `not_fulfilled_count`
+- `own_idea_count`
+- `overall_level`
+- `summary_comment`
+
+`key_point_details[]` fields:
+- `number`
+- `type`
+- `key_point`
+- `status`
+- `sentence_count`
+- `situation_appropriate`
+- `language_level`
+- `comment`
+
+#### `result.criterion_II` (Kommunikative Gestaltung)
+
+Required:
+- `scaled_points`
+- `max_scaled_points`
+- `comment`
+- `analysis_status` (`success` | `failed`)
+- `analysis_error` (`string | null`)
+- `communication_indicators`
+
+`communication_indicators[]` fields:
+- `aspect` (`email_elements`, `structure`, `coherence`, `cohesion`, `register`, `vocabulary`, `sentence_variety`)
+- `label`
+- `rating` (`excellent`, `good`, `acceptable`, `weak`, `missing`)
+- `comment`
+
+#### `result.criterion_III` (Formale Korrektheit)
+
+Required:
+- `scaled_points`
+- `max_scaled_points`
+- `comment`
+- `accuracy_details`
+- `highlighted_errors`
+
+`accuracy_details[]` fields:
+- `aspect` (`grammar`, `syntax`, `word_order`, `spelling`, `punctuation`, `comprehension`)
+- `label`
+- `status`
+- `error_count`
+- `comment`
+
+`highlighted_errors[]` fields:
+- `text`
+- `correction`
+- `error_type`
+- `explanation`
+
+Constraints:
+- `text` must be an exact short fragment from `candidate_text` (not whole paragraphs).
+- Maximum `10` highlighted errors; if no clear errors exist, return `[]`.
+
+#### `result.word_count`
+
+Required:
+- `value`
+- `minimum_required`
+- `meets_requirement`
+
+#### `result.improved_text`
+
+Required:
+- `improved_text`
+- `changes_summary`
+
+Timing source for `duration_seconds`:
+- Primary source: `submission.duration_seconds`.
+- Computed from task-session lifecycle:
+  - session/submission `started_at` (when session starts),
+  - session/submission `submitted_at` (when evaluate succeeds),
+  - `duration_seconds = int(submitted_at - started_at)` in seconds.
 
 Errors:
 
@@ -330,6 +536,11 @@ Error:
 Prefix: `/admin`
 
 All endpoints require demo admin helper.
+
+Action semantics:
+- **Deactivate** = soft status change (`is_active = false`).
+- **Activate** = status change (`is_active = true`).
+- **Delete** = hard deletion from database (only when entity is not already used).
 
 Auth-related errors:
 
@@ -386,8 +597,10 @@ Partial update supported for:
 
 #### DELETE `/admin/users/{user_id}`
 
-- hard delete if no related sessions/submissions
-- otherwise sets `is_active = false`
+- hard delete only if no related sessions/submissions
+- if related sessions/submissions exist: request is rejected, user is not modified
+- admin cannot delete themselves
+- admin users cannot be deleted
 
 Responses:
 
@@ -397,9 +610,9 @@ Responses:
 
 or
 
-```json
-{ "status": "deactivated" }
-```
+- `409`: `"User cannot be deleted because related sessions or submissions exist. Deactivate the user instead."`
+- `400`: `"Admin cannot delete themselves."`
+- `403`: `"Admin users cannot be deleted."`
 
 #### PATCH `/admin/users/{user_id}/counters`
 
@@ -439,14 +652,18 @@ Request:
 
 ```json
 {
-  "task_number": 2,
   "source_text": "string",
   "situation_text": "string",
   "instruction_text": "string",
-  "expected_key_points": ["string"],
-  "is_active": true
+  "expected_key_points": ["string"]
 }
 ```
+
+Notes:
+- `task_number` is auto-assigned by backend (`max(task_number) + 1` per task type).
+- Frontend should not send `task_number` when creating a task.
+- New tasks are created as inactive by default (`is_active = false`).
+- Frontend should not send `is_active` during create.
 
 - `200`: `InfoTaskRead`
 - `400`: `"Info task number already exists."`
@@ -473,11 +690,27 @@ Partial update:
 
 #### DELETE `/admin/info-tasks/{task_id}`
 
-Soft delete via `is_active = false`.
+Hard delete (record removal) only for unused tasks.
 
 ```json
-{ "status": "deactivated", "task_id": 2 }
+{ "status": "deleted", "task_id": 2 }
 ```
+
+- `409`: `"Task cannot be deleted because it is already used. Deactivate it instead."`
+
+#### PATCH `/admin/info-tasks/{task_id}/deactivate`
+
+Soft deactivate task (`is_active = false`).
+
+- `200`: `InfoTaskRead`
+- `404`: `"Info task not found."`
+
+#### PATCH `/admin/info-tasks/{task_id}/activate`
+
+Reactivate task (`is_active = true`).
+
+- `200`: `InfoTaskRead`
+- `404`: `"Info task not found."`
 
 ---
 
@@ -493,14 +726,18 @@ Request:
 
 ```json
 {
-  "task_number": 2,
   "source_text": "string",
   "situation_text": "string",
   "instruction_text": "string",
-  "expected_key_points": ["string"],
-  "is_active": true
+  "expected_key_points": ["string"]
 }
 ```
+
+Notes:
+- `task_number` is auto-assigned by backend (`max(task_number) + 1` per task type).
+- Frontend should not send `task_number` when creating a task.
+- New tasks are created as inactive by default (`is_active = false`).
+- Frontend should not send `is_active` during create.
 
 - `200`: `ComplaintTaskRead`
 - `400`: `"Complaint task number already exists."`
@@ -527,21 +764,37 @@ Partial update:
 
 #### DELETE `/admin/complaint-tasks/{task_id}`
 
-Soft delete via `is_active = false`.
+Hard delete (record removal) only for unused tasks.
 
 ```json
-{ "status": "deactivated", "task_id": 2 }
+{ "status": "deleted", "task_id": 2 }
 ```
+
+- `409`: `"Task cannot be deleted because it is already used. Deactivate it instead."`
+
+#### PATCH `/admin/complaint-tasks/{task_id}/deactivate`
+
+Soft deactivate task (`is_active = false`).
+
+- `200`: `ComplaintTaskRead`
+- `404`: `"Complaint task not found."`
+
+#### PATCH `/admin/complaint-tasks/{task_id}/activate`
+
+Reactivate task (`is_active = true`).
+
+- `200`: `ComplaintTaskRead`
+- `404`: `"Complaint task not found."`
 
 ---
 
 ## Frontend Notes
 
-- Use `/users/me` to render current counters:
-  - `available_sessions`
-  - `available_submissions`
 - To start workflow:
   1. `POST /task-sessions/start`
   2. user chooses `info` or `complaint`
   3. `POST /submissions/evaluate`
 - Current API is demo-auth driven; replace with JWT flow in next phase.
+- Archive compatibility:
+  - "Details anzeigen" in archive navigates to `/result`.
+  - Route state passes `result`, `candidate_text`, `submission`, and (when available) `session`, `selectedTaskType`, `selectedTask`.

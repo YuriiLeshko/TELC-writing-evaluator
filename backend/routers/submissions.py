@@ -55,6 +55,59 @@ def parse_key_points(value: Any) -> list[str]:
     return []
 
 
+def _sanitize_result_for_api(result_payload: dict[str, Any]) -> dict[str, Any]:
+    """Keep criteria response aligned with frontend-facing contract."""
+    sanitized = dict(result_payload)
+    criterion_i = sanitized.get("criterion_I")
+    if isinstance(criterion_i, dict):
+        sanitized["criterion_I"] = {
+            "scaled_points": criterion_i.get("scaled_points"),
+            "max_scaled_points": criterion_i.get("max_scaled_points"),
+            "comment": criterion_i.get("comment"),
+            "task_achievement_summary": criterion_i.get("task_achievement_summary"),
+            "key_point_details": criterion_i.get("key_point_details", []),
+        }
+    criterion_ii = sanitized.get("criterion_II")
+    if isinstance(criterion_ii, dict):
+        sanitized["criterion_II"] = {
+            "scaled_points": criterion_ii.get("scaled_points"),
+            "max_scaled_points": criterion_ii.get("max_scaled_points"),
+            "comment": criterion_ii.get("comment"),
+            "analysis_status": criterion_ii.get("analysis_status", "success"),
+            "analysis_error": criterion_ii.get("analysis_error"),
+            "communication_indicators": criterion_ii.get("communication_indicators", []),
+        }
+    criterion_iii = sanitized.get("criterion_III")
+    if isinstance(criterion_iii, dict):
+        sanitized["criterion_III"] = {
+            "scaled_points": criterion_iii.get("scaled_points"),
+            "max_scaled_points": criterion_iii.get("max_scaled_points"),
+            "comment": criterion_iii.get("comment"),
+            "accuracy_details": [
+                {
+                    "aspect": item.get("aspect"),
+                    "label": item.get("label"),
+                    "status": item.get("status"),
+                    "error_count": item.get("error_count", 0),
+                    "comment": item.get("comment"),
+                }
+                for item in criterion_iii.get("accuracy_details", [])
+                if isinstance(item, dict)
+            ],
+            "highlighted_errors": [
+                {
+                    "text": item.get("text"),
+                    "correction": item.get("correction"),
+                    "error_type": item.get("error_type"),
+                    "explanation": item.get("explanation"),
+                }
+                for item in criterion_iii.get("highlighted_errors", [])
+                if isinstance(item, dict)
+            ],
+        }
+    return sanitized
+
+
 def submission_to_schema(submission: Submission) -> SubmissionRead:
     result_value = submission.result_json if isinstance(submission.result_json, dict) else {}
     return SubmissionRead(
@@ -121,6 +174,7 @@ async def evaluate_submission(
 
     try:
         result = await evaluate_writing(input_data)
+        result_payload = _sanitize_result_for_api(result.model_dump(mode="json"))
         submitted_at = datetime.now(timezone.utc)
         started_at = session.started_at
         if started_at.tzinfo is None:
@@ -141,12 +195,12 @@ async def evaluate_submission(
             selected_task_type=payload.selected_task_type,
             selected_task_id=selected_task.id,
             candidate_text=payload.candidate_text,
-            result_json=result.model_dump(mode="json"),
+            result_json=result_payload,
             raw_score=result.raw_score,
             final_score=result.final_score,
             max_score=result.max_score,
             word_count=result.word_count.value if result.word_count else None,
-            started_at=session.started_at,
+            started_at=started_at,
             submitted_at=submitted_at,
             duration_seconds=duration_seconds,
             status="success",
@@ -160,9 +214,15 @@ async def evaluate_submission(
             task_session_id=submission.task_session_id,
             selected_task_type=submission.selected_task_type,
             selected_task_id=submission.selected_task_id,
-            result=result.model_dump(mode="json"),
+            result=result_payload,
         )
     except Exception as exc:
+        failed_submitted_at = datetime.now(timezone.utc)
+        failed_started_at = session.started_at
+        if failed_started_at.tzinfo is None:
+            failed_started_at = failed_started_at.replace(tzinfo=timezone.utc)
+        failed_duration_seconds = int((failed_submitted_at - failed_started_at).total_seconds())
+        failed_duration_seconds = max(failed_duration_seconds, 0)
         failed_submission = Submission(
             user_id=current_user.id,
             task_session_id=session.id,
@@ -170,9 +230,11 @@ async def evaluate_submission(
             selected_task_id=selected_task.id,
             candidate_text=payload.candidate_text,
             result_json={},
+            started_at=failed_started_at,
+            submitted_at=failed_submitted_at,
+            duration_seconds=failed_duration_seconds,
             status="failed",
             error_message=str(exc),
-            submitted_at=datetime.now(timezone.utc),
         )
         db.add(failed_submission)
         db.commit()

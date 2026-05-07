@@ -1,14 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PanelRightClose, PanelRightOpen, X } from "lucide-react";
 import ErrorHighlightedText from "./ErrorHighlightedText.jsx";
-import Badge from "./Badge.jsx";
 import { safeGet } from "../utils/safeGet.js";
 
 const RAIL_SECTION_IDS = ["rail-section-score", "rail-section-i", "rail-section-ii", "rail-section-iii", "rail-section-errors"];
 
-const ERR_PREVIEW_MAX = 8;
-
-export default function ResultView({ result, candidateText, selectedTask }) {
+export default function ResultView({ result, candidateText, selectedTask, submission }) {
   const [railCollapsed, setRailCollapsed] = useState(false);
   const [railMobileOpen, setRailMobileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState(RAIL_SECTION_IDS[0]);
@@ -32,21 +29,271 @@ export default function ResultView({ result, candidateText, selectedTask }) {
   const r = result && typeof result === "object" ? result : {};
   const crit3 = r.criterion_III || {};
   const highlighted = crit3.highlighted_errors || [];
-  const expectedKeyPoints = Array.isArray(selectedTask?.expected_key_points) ? selectedTask.expected_key_points : [];
+  const rawExpectedKeyPoints = selectedTask?.expected_key_points;
+  const normalizePointText = (value) =>
+    String(value ?? "")
+      .trim()
+      .replace(/^\s*\d+[\).\-\s:]+/, "")
+      .replace(/\s+/g, " ")
+      .toLowerCase();
+  const expectedKeyPoints = (() => {
+    if (Array.isArray(rawExpectedKeyPoints)) {
+      return rawExpectedKeyPoints
+        .map((point) => String(point ?? "").trim())
+        .filter(Boolean)
+        .map((point) => point.replace(/^\s*\d+[\).\-\s:]+/, "").trim());
+    }
+    if (typeof rawExpectedKeyPoints === "string") {
+      return rawExpectedKeyPoints
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => line.replace(/^\s*\d+[\).\-\s:]+/, "").trim());
+    }
+    return [];
+  })();
+  const expectedPointIndexByText = expectedKeyPoints.reduce((acc, point, index) => {
+    const normalized = normalizePointText(point);
+    if (normalized && !(normalized in acc)) acc[normalized] = index + 1;
+    return acc;
+  }, {});
 
   const wc = r.word_count;
   const improved = r.improved_text;
+  const finalScore = Number(r.final_score);
+  const maxScore = Number(r.max_score);
+  const hasValidScoreRatio = Number.isFinite(finalScore) && Number.isFinite(maxScore) && maxScore > 0;
+  const scoreRatio = hasValidScoreRatio ? finalScore / maxScore : null;
+  const scoreStatusClass =
+    scoreRatio == null ? "" : scoreRatio >= 0.8 ? "status-good" : scoreRatio >= 0.6 ? "status-warning" : "status-bad";
+  const wordCountValue = Number(wc?.value);
+  const hasWordCount = Number.isFinite(wordCountValue);
+  const wordCountMin = 150;
+  const wordCountOk = hasWordCount ? wordCountValue >= wordCountMin : null;
+  const wordCountStatusClass = wordCountOk == null ? "" : wordCountOk ? "status-good" : "status-bad";
+  const topicMismatch = Boolean(r.topic_mismatch);
+  const situationMismatch = Boolean(r.situation_mismatch);
+  const resultDurationSeconds = Number(r.duration_seconds);
+  const submissionDurationSeconds = Number(submission?.duration_seconds);
+  const durationSeconds = Number.isFinite(resultDurationSeconds)
+    ? resultDurationSeconds
+    : Number.isFinite(submissionDurationSeconds)
+      ? submissionDurationSeconds
+      : null;
+  const durationOverTarget = Number.isFinite(durationSeconds) ? durationSeconds > 30 * 60 : null;
+  const durationStatusClass = durationOverTarget == null ? "" : durationOverTarget ? "status-bad" : "status-good";
+  const durationMinutesLabel = (() => {
+    if (!Number.isFinite(durationSeconds)) return "—";
+    const safeSeconds = Math.max(0, Math.floor(durationSeconds));
+    const totalMinutes = Math.ceil(safeSeconds / 60);
+    return String(totalMinutes);
+  })();
 
   const errorCount = Array.isArray(highlighted) ? highlighted.length : 0;
-  const gradeI = safeGet(r, "criterion_I.grade");
   const ptsI = safeGet(r, "criterion_I.points");
-  const gradeII = safeGet(r, "criterion_II.grade");
   const ptsII = safeGet(r, "criterion_II.points");
-  const gradeIII = safeGet(r, "criterion_III.grade");
   const ptsIII = safeGet(r, "criterion_III.points");
   const commentI = safeGet(r, "criterion_I.comment");
   const commentII = safeGet(r, "criterion_II.comment");
   const commentIII = safeGet(r, "criterion_III.comment");
+  const criterionIScaledPointsRaw = Number(safeGet(r, "criterion_I.scaled_points"));
+  const criterionIMaxScaledPointsRaw = Number(safeGet(r, "criterion_I.max_scaled_points"));
+  const hasScaledPoints = Number.isFinite(criterionIScaledPointsRaw) && Number.isFinite(criterionIMaxScaledPointsRaw);
+  const criterionIScaledPoints = hasScaledPoints ? criterionIScaledPointsRaw : Number(ptsI) * 3;
+  const criterionIMaxScaledPoints = hasScaledPoints ? criterionIMaxScaledPointsRaw : 15;
+  const hasCriterionIScore = Number.isFinite(criterionIScaledPoints) && Number.isFinite(criterionIMaxScaledPoints);
+  const criterionIScoreStatusClass = !hasCriterionIScore
+    ? ""
+    : criterionIScaledPoints >= 12
+      ? "status-good"
+      : criterionIScaledPoints >= 6
+        ? "status-warning"
+        : "status-bad";
+  const criterionIIRawPoints = Number(ptsII);
+  const criterionIIScaledPointsRaw = Number(safeGet(r, "criterion_II.scaled_points"));
+  const criterionIIMaxScaledPointsRaw = Number(safeGet(r, "criterion_II.max_scaled_points"));
+  const hasCriterionIIScaledPoints = Number.isFinite(criterionIIScaledPointsRaw) && Number.isFinite(criterionIIMaxScaledPointsRaw);
+  const criterionIIScaledPoints = hasCriterionIIScaledPoints ? criterionIIScaledPointsRaw : criterionIIRawPoints * 3;
+  const criterionIIMaxScaledPoints = hasCriterionIIScaledPoints ? criterionIIMaxScaledPointsRaw : 15;
+  const hasCriterionIIScore = Number.isFinite(criterionIIScaledPoints) && Number.isFinite(criterionIIMaxScaledPoints);
+  const criterionIIScoreStatusClass = !hasCriterionIIScore
+    ? ""
+    : criterionIIScaledPoints >= 12
+      ? "status-good"
+      : criterionIIScaledPoints >= 6
+        ? "status-warning"
+        : "status-bad";
+  const communicationAnalysisStatus = String(safeGet(r, "criterion_II.analysis_status") || "success");
+  const communicationAnalysisError = safeGet(r, "criterion_II.analysis_error");
+  const communicationIndicatorsRaw = safeGet(r, "criterion_II.communication_indicators");
+  const communicationIndicators = Array.isArray(communicationIndicatorsRaw) ? communicationIndicatorsRaw : [];
+  const mapCommunicationRating = (rating) => {
+    const normalized = String(rating ?? "").trim().toLowerCase();
+    if (normalized === "excellent") return "sehr gut";
+    if (normalized === "good") return "gut";
+    if (normalized === "acceptable") return "akzeptabel";
+    if (normalized === "weak") return "schwach";
+    if (normalized === "missing") return "fehlt";
+    return "—";
+  };
+  const communicationRatingClass = (rating) => {
+    const normalized = String(rating ?? "").trim().toLowerCase();
+    if (normalized === "excellent" || normalized === "good") return "status-good";
+    if (normalized === "acceptable") return "status-warning";
+    if (normalized === "weak" || normalized === "missing") return "status-bad";
+    return "";
+  };
+  const criterionIIIRawPoints = Number(ptsIII);
+  const criterionIIIScaledPointsRaw = Number(safeGet(r, "criterion_III.scaled_points"));
+  const criterionIIIMaxScaledPointsRaw = Number(safeGet(r, "criterion_III.max_scaled_points"));
+  const hasCriterionIIIScaledPoints = Number.isFinite(criterionIIIScaledPointsRaw) && Number.isFinite(criterionIIIMaxScaledPointsRaw);
+  const criterionIIIScaledPoints = hasCriterionIIIScaledPoints ? criterionIIIScaledPointsRaw : criterionIIIRawPoints * 3;
+  const criterionIIIMaxScaledPoints = hasCriterionIIIScaledPoints ? criterionIIIMaxScaledPointsRaw : 15;
+  const hasCriterionIIIScore = Number.isFinite(criterionIIIScaledPoints) && Number.isFinite(criterionIIIMaxScaledPoints);
+  const criterionIIIScoreStatusClass = !hasCriterionIIIScore
+    ? ""
+    : criterionIIIScaledPoints >= 12
+      ? "status-good"
+      : criterionIIIScaledPoints >= 6
+        ? "status-warning"
+        : "status-bad";
+  const accuracyDetails = safeGet(r, "criterion_III.accuracy_details");
+  const normalizeAccuracyValue = (value) => String(value ?? "").trim().toLowerCase();
+  const extractAccuracyAspect = (aspectKey) => {
+    if (!accuracyDetails || typeof accuracyDetails !== "object") return null;
+    const direct = accuracyDetails?.[aspectKey];
+    if (direct && typeof direct === "object" && !Array.isArray(direct)) return direct;
+    const nested = accuracyDetails?.aspects?.[aspectKey];
+    if (nested && typeof nested === "object" && !Array.isArray(nested)) return nested;
+    if (Array.isArray(accuracyDetails)) {
+      return accuracyDetails.find((entry) => {
+        const key = normalizeAccuracyValue(entry?.aspect ?? entry?.name ?? entry?.type ?? entry?.key);
+        return key === normalizeAccuracyValue(aspectKey);
+      });
+    }
+    if (Array.isArray(accuracyDetails?.aspects)) {
+      return accuracyDetails.aspects.find((entry) => {
+        const key = normalizeAccuracyValue(entry?.aspect ?? entry?.name ?? entry?.type ?? entry?.key);
+        return key === normalizeAccuracyValue(aspectKey);
+      });
+    }
+    return null;
+  };
+  const mapAccuracyStatus = (status) => {
+    const normalized = normalizeAccuracyValue(status);
+    if (!normalized) return "—";
+    if (normalized === "strong") return "gut";
+    if (normalized === "adequate") return "ausreichend";
+    if (normalized === "weak") return "schwach";
+    if (normalized === "problematic") return "problematisch";
+    return "—";
+  };
+  const accuracyStatusClass = (status) => {
+    const normalized = normalizeAccuracyValue(status);
+    if (normalized === "strong") return "status-good";
+    if (normalized === "adequate") return "status-warning";
+    if (["weak", "problematic"].includes(normalized)) return "status-bad";
+    return "";
+  };
+  const criterionIIIIndicators = [
+    { key: "grammar", label: "Grammatik" },
+    { key: "syntax", label: "Satzbau" },
+    { key: "word_order", label: "Wortstellung" },
+    { key: "spelling", label: "Rechtschreibung" },
+    { key: "punctuation", label: "Zeichensetzung" },
+    { key: "comprehension", label: "Verständlichkeit" },
+  ].map((indicator) => {
+    const detail = extractAccuracyAspect(indicator.key);
+    const rawStatus = detail?.status ?? safeGet(r, `criterion_III.${indicator.key}_quality`);
+    const statusLabel = mapAccuracyStatus(rawStatus);
+    const statusClass = accuracyStatusClass(rawStatus);
+    return { ...indicator, statusLabel, statusClass };
+  });
+  const keyPointDetails = safeGet(r, "criterion_I.key_point_details");
+  const hasKeyPointDetails = Array.isArray(keyPointDetails) && keyPointDetails.length > 0;
+  const criterionILevel =
+    safeGet(r, "criterion_I.level") ??
+    safeGet(r, "criterion_I.overall_level") ??
+    safeGet(r, "criterion_I.language_level");
+  const keyPointSummary = (() => {
+    if (!hasKeyPointDetails) return null;
+    let fulfilledCount = 0;
+    let bestAvailableLevel = null;
+    const levelPriority = { A1: 1, A2: 2, B1: 3, "B1+": 4, B2: 5, "B2+": 6, C1: 7, "C1+": 8, C2: 9 };
+    const normalizeLevel = (value) => {
+      if (value == null) return null;
+      const raw = String(value).trim().toUpperCase();
+      return raw || null;
+    };
+
+    keyPointDetails.forEach((detail) => {
+      const status = String(detail?.status ?? "").trim().toLowerCase();
+      const isOwnIdea =
+        detail?.own_idea === true ||
+        detail?.is_own_idea === true ||
+        String(detail?.type ?? "").trim().toLowerCase() === "own_idea" ||
+        String(detail?.point_type ?? "").trim().toLowerCase() === "own_idea";
+      const normalizedLevel = normalizeLevel(detail?.language_level);
+      if (normalizedLevel && (!bestAvailableLevel || (levelPriority[normalizedLevel] ?? 0) > (levelPriority[bestAvailableLevel] ?? 0))) {
+        bestAvailableLevel = normalizedLevel;
+      }
+
+      if (!isOwnIdea && status === "fulfilled") fulfilledCount += 1;
+    });
+
+    const summaryLevel =
+      safeGet(r, "criterion_I.task_achievement_summary.overall_level") ??
+      (criterionILevel != null && criterionILevel !== "" ? String(criterionILevel) : null) ??
+      bestAvailableLevel ??
+      "—";
+
+    return {
+      fulfilledCount,
+      overallLevel: summaryLevel,
+    };
+  })();
+
+  const keyPointDetailCards = (() => {
+    if (!hasKeyPointDetails) return [];
+    let regularPointNumber = 0;
+    const statusToGerman = (status) => {
+      const normalized = String(status ?? "").trim().toLowerCase();
+      if (normalized === "fulfilled") return "erfüllt";
+      if (normalized === "partially_fulfilled") return "teilweise erfüllt";
+      if (normalized === "not_fulfilled") return "nicht erfüllt";
+      return "—";
+    };
+
+    return keyPointDetails.map((detail, idx) => {
+      const isOwnIdea =
+        detail?.own_idea === true ||
+        detail?.is_own_idea === true ||
+        String(detail?.type ?? "").trim().toLowerCase() === "own_idea" ||
+        String(detail?.point_type ?? "").trim().toLowerCase() === "own_idea";
+
+      const keyPointText = String(detail?.key_point ?? detail?.key_point_text ?? "—").trim() || "—";
+      const statusLabel = statusToGerman(detail?.status);
+      const sentenceCount = Number(detail?.sentence_count);
+      const sentenceCountLabel = Number.isFinite(sentenceCount) ? String(sentenceCount) : "—";
+      const languageLevel = String(detail?.language_level ?? "—").trim() || "—";
+      const situationAppropriate = detail?.situation_appropriate;
+      const situationLabel = situationAppropriate === true ? "Ja" : situationAppropriate === false ? "Nein" : "—";
+      const comment = String(detail?.comment ?? "").trim() || "—";
+
+      const title = isOwnIdea ? "Eigener Aspekt" : `Punkt ${++regularPointNumber}`;
+
+      return {
+        id: `${isOwnIdea ? "own" : "point"}-${idx}`,
+        title,
+        keyPointText,
+        statusLabel,
+        sentenceCountLabel,
+        languageLevel,
+        situationLabel,
+        comment,
+      };
+    });
+  })();
 
   const scrollRailTo = useCallback((id) => {
     const root = railTilesRef.current;
@@ -116,33 +363,55 @@ export default function ResultView({ result, candidateText, selectedTask }) {
     .filter(Boolean)
     .join(" ");
 
-  const fmtGradePts = (g, p) => {
-    const gStr = g != null && g !== "" ? String(g) : "—";
-    const pStr = p ?? "—";
-    return `${gStr} · ${pStr}`;
+  const highlightedErrorItems = (Array.isArray(highlighted) ? highlighted : []).map((err, idx) => {
+    const errorType = String(err?.error_type ?? "").trim();
+    const title = errorType ? `Fehler ${idx + 1} · ${errorType}` : `Fehler ${idx + 1}`;
+    return {
+      id: `error-${idx}`,
+      title,
+      text: String(err?.text ?? "").trim() || "—",
+      explanation: String(err?.explanation ?? "").trim() || "—",
+      correction: String(err?.correction ?? "").trim() || "—",
+    };
+  });
+
+  const formatValue = (value) => {
+    if (value == null || value === "") return "—";
+    if (typeof value === "boolean") return value ? "true" : "false";
+    if (typeof value === "number" || typeof value === "string") return String(value);
+    return null;
   };
 
-  const formatErrLine = (err) =>
-    typeof err === "object" ? `${err.text || "?"} — ${err.error_type || ""}: ${err.explanation || ""}` : String(err);
-
-  const errPreview = Array.isArray(highlighted) ? highlighted.slice(0, ERR_PREVIEW_MAX) : [];
-  const errMore = Math.max(0, (highlighted?.length ?? 0) - ERR_PREVIEW_MAX);
-
-  const criterionBody = (subtitle, grade, pts, comment) => (
-    <div className="result-rail-card__body">
-      {subtitle ? (
-        <p className="metric-card__help" style={{ margin: "0 0 0.4rem" }}>
-          {subtitle}
-        </p>
-      ) : null}
-      <p style={{ margin: 0, fontSize: "0.86rem" }}>
-        <strong>Note:</strong> {grade ?? "—"} &nbsp;|&nbsp; <strong>Punkte:</strong> {pts ?? "—"}
-      </p>
-      <p style={{ margin: "0.45rem 0 0", color: "var(--muted)", fontSize: "0.86rem", lineHeight: 1.45 }}>
-        {comment || "Keine Details."}
-      </p>
-    </div>
-  );
+  const renderDataTree = (value, depth = 0) => {
+    const scalar = formatValue(value);
+    if (scalar != null) return <span>{scalar}</span>;
+    if (Array.isArray(value)) {
+      if (!value.length) return <span>—</span>;
+      return (
+        <ul className={`result-rail-data-list result-rail-data-list--depth-${Math.min(depth + 1, 3)}`}>
+          {value.map((item, idx) => (
+            <li key={`${depth}-arr-${idx}`}>
+              <span className="result-rail-data-key">[{idx}]</span>: {renderDataTree(item, depth + 1)}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    if (typeof value === "object") {
+      const entries = Object.entries(value);
+      if (!entries.length) return <span>—</span>;
+      return (
+        <ul className={`result-rail-data-list result-rail-data-list--depth-${Math.min(depth + 1, 3)}`}>
+          {entries.map(([k, v]) => (
+            <li key={`${depth}-obj-${k}`}>
+              <span className="result-rail-data-key">{k}</span>: {renderDataTree(v, depth + 1)}
+            </li>
+          ))}
+        </ul>
+      );
+    }
+    return <span>{String(value)}</span>;
+  };
 
   return (
     <div
@@ -162,7 +431,7 @@ export default function ResultView({ result, candidateText, selectedTask }) {
 
       <div className="result-page-shell">
         <main className="result-main stack">
-          <details className="summary-block result-main-card" open>
+          <details className="summary-block result-main-card">
             <summary>Aufgabentext anzeigen</summary>
             <div className="stack stack--sm" style={{ marginTop: "0.65rem" }}>
               <div>
@@ -187,11 +456,11 @@ export default function ResultView({ result, candidateText, selectedTask }) {
                 <strong>Mögliche Punkte / Erwartete Schwerpunkte</strong>
                 <div className="text-panel" style={{ marginTop: "0.35rem" }}>
                   {expectedKeyPoints.length ? (
-                    <ul className="changes-list">
+                    <ol className="changes-list">
                       {expectedKeyPoints.map((point, index) => (
                         <li key={`kp-${index}`}>{point}</li>
                       ))}
-                    </ul>
+                    </ol>
                   ) : (
                     "—"
                   )}
@@ -207,7 +476,7 @@ export default function ResultView({ result, candidateText, selectedTask }) {
             </div>
           </details>
 
-          <details className="summary-block result-main-card" open>
+          <details className="summary-block result-main-card">
             <summary>Verbesserte Version</summary>
             <div className="stack stack--sm" style={{ marginTop: "0.65rem" }}>
               {improved ? (
@@ -269,31 +538,34 @@ export default function ResultView({ result, candidateText, selectedTask }) {
               onClick={() => onTileActivate("rail-section-score")}
             >
               <span className="result-rail-tile__title">Endnote</span>
-              <span className="result-rail-tile__value">
+              <span className={`result-rail-tile__value ${scoreStatusClass}`}>
                 {r.final_score ?? "—"}/{r.max_score ?? "—"}
               </span>
             </button>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
                 <p style={{ margin: "0.15rem 0", fontSize: "0.84rem" }}>
-                  <strong>Rohpunkte:</strong> {r.raw_score ?? "—"}
+                  <strong>Wortzahl:</strong>{" "}
+                  <span className={wordCountStatusClass}>
+                    {wc?.value ?? "—"} / {wordCountMin}
+                  </span>
                 </p>
                 <p style={{ margin: "0.15rem 0", fontSize: "0.84rem" }}>
-                  <strong>Wortanzahl:</strong> {wc?.value ?? "—"}
-                  {wc?.minimum_required != null ? ` (Min. ${wc.minimum_required})` : ""}
+                  <strong>Zeit:</strong>{" "}
+                  <span className={durationStatusClass}>
+                    {durationMinutesLabel === "—" ? "—" : `${durationMinutesLabel} Min.`}
+                  </span>
                 </p>
                 <p style={{ margin: "0.15rem 0", fontSize: "0.84rem" }}>
-                  <strong>Topic mismatch:</strong> {String(r.topic_mismatch ?? "—")}
+                  <strong>Thema passend:</strong>{" "}
+                  <span className={topicMismatch ? "status-bad" : "status-good"}>{topicMismatch ? "Schlecht" : "Gut"}</span>
                 </p>
                 <p style={{ margin: "0.15rem 0", fontSize: "0.84rem" }}>
-                  <strong>Situation mismatch:</strong> {String(r.situation_mismatch ?? "—")}
+                  <strong>Situation passend:</strong>{" "}
+                  <span className={situationMismatch ? "status-bad" : "status-good"}>
+                    {situationMismatch ? "Schlecht" : "Gut"}
+                  </span>
                 </p>
-                <div className="row" style={{ gap: "0.3rem", marginTop: "0.35rem" }}>
-                  {r.topic_mismatch ? <Badge variant="warning">Themenabweichung</Badge> : null}
-                  {r.situation_mismatch ? <Badge variant="warning">Situationsabweichung</Badge> : null}
-                  {wc && wc.meets_requirement === true ? <Badge variant="success">Wortanzahl erfüllt</Badge> : null}
-                  {wc && wc.meets_requirement === false ? <Badge variant="warning">Wortanzahl zu kurz</Badge> : null}
-                </div>
               </div>
             ) : null}
           </div>
@@ -303,10 +575,55 @@ export default function ResultView({ result, candidateText, selectedTask }) {
             className={`result-rail-card ${activeSection === "rail-section-i" ? "result-rail-card--active" : ""}`}
           >
             <button type="button" className="result-rail-card__head" onClick={() => onTileActivate("rail-section-i")}>
-              <span className="result-rail-tile__title">Kriterium I</span>
-              <span className="result-rail-tile__value">{fmtGradePts(gradeI, ptsI)}</span>
+              <span className="result-rail-tile__title">Aufgabenerfüllung</span>
+              <span className={`result-rail-tile__value ${criterionIScoreStatusClass}`}>
+                {hasCriterionIScore ? `${criterionIScaledPoints} / ${criterionIMaxScaledPoints}` : "— / —"}
+              </span>
             </button>
-            {railBodyVisible ? criterionBody("Task Achievement", gradeI, ptsI, commentI) : null}
+            {railBodyVisible ? (
+              <div className="result-rail-card__body">
+                <div className="result-rail-kp-summary">
+                  <p className="result-rail-kp-summary__line">
+                    <strong>Erfüllte Punkte:</strong> {keyPointSummary?.fulfilledCount ?? "—"}
+                  </p>
+                  <p className="result-rail-kp-summary__line">
+                    <strong>Sprachniveau:</strong> {keyPointSummary?.overallLevel ?? "—"}
+                  </p>
+                </div>
+                <p style={{ margin: "0.35rem 0 0", color: "var(--muted)", fontSize: "0.82rem", lineHeight: 1.35 }}>
+                  {commentI || "Keine Details."}
+                </p>
+                {keyPointDetailCards.length ? (
+                  <div className="result-rail-kp-details">
+                    {keyPointDetailCards.map((point) => (
+                      <details key={point.id} className="result-rail-kp-item">
+                        <summary className="result-rail-kp-item__summary">{point.title}</summary>
+                        <div className="result-rail-kp-item__body">
+                          <p className="result-rail-kp-item__line">
+                            <strong>Inhalt:</strong> {point.keyPointText}
+                          </p>
+                          <p className="result-rail-kp-item__line">
+                            <strong>Status:</strong> {point.statusLabel}
+                          </p>
+                          <p className="result-rail-kp-item__line">
+                            <strong>Sätze:</strong> {point.sentenceCountLabel}
+                          </p>
+                          <p className="result-rail-kp-item__line">
+                            <strong>Sprachniveau:</strong> {point.languageLevel}
+                          </p>
+                          <p className="result-rail-kp-item__line">
+                            <strong>Zur Situation passend:</strong> {point.situationLabel}
+                          </p>
+                          <p className="result-rail-kp-item__line">
+                            <strong>Kommentar:</strong> {point.comment}
+                          </p>
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <div
@@ -314,10 +631,38 @@ export default function ResultView({ result, candidateText, selectedTask }) {
             className={`result-rail-card ${activeSection === "rail-section-ii" ? "result-rail-card--active" : ""}`}
           >
             <button type="button" className="result-rail-card__head" onClick={() => onTileActivate("rail-section-ii")}>
-              <span className="result-rail-tile__title">Kriterium II</span>
-              <span className="result-rail-tile__value">{fmtGradePts(gradeII, ptsII)}</span>
+              <span className="result-rail-tile__title">Kommunikative Gestaltung</span>
+              <span className={`result-rail-tile__value ${criterionIIScoreStatusClass}`}>
+                {hasCriterionIIScore ? `${criterionIIScaledPoints} / ${criterionIIMaxScaledPoints}` : "— / —"}
+              </span>
             </button>
-            {railBodyVisible ? criterionBody("Communicative Design", gradeII, ptsII, commentII) : null}
+            {railBodyVisible ? (
+              <div className="result-rail-card__body">
+                <p className="metric-card__help" style={{ margin: "0 0 0.35rem" }}>
+                  Struktur, Stil und Wortschatz
+                </p>
+                <p style={{ margin: "0.35rem 0 0", color: "var(--muted)", fontSize: "0.82rem", lineHeight: 1.35 }}>
+                  {commentII || "Keine Details."}
+                </p>
+                {communicationAnalysisStatus === "failed" ? (
+                  <p className="alert alert--warn" style={{ marginTop: "0.4rem" }}>
+                    Die Analyse dieses Kriteriums ist fehlgeschlagen. Deshalb wurde hier die niedrigste Bewertung vergeben.
+                    {communicationAnalysisError ? ` ${communicationAnalysisError}` : ""}
+                  </p>
+                ) : (
+                  <div className="result-rail-kp-details">
+                    {communicationIndicators.map((item, idx) => (
+                      <div key={`${item?.aspect || "aspect"}-${idx}`} className="result-rail-kp-detail">
+                        <p className="result-rail-kp-detail__line">
+                          <strong>{item?.label || "Aspekt"}:</strong>{" "}
+                          <span className={communicationRatingClass(item?.rating)}>{mapCommunicationRating(item?.rating)}</span>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null}
           </div>
 
           <div
@@ -329,10 +674,29 @@ export default function ResultView({ result, candidateText, selectedTask }) {
               className="result-rail-card__head"
               onClick={() => onTileActivate("rail-section-iii")}
             >
-              <span className="result-rail-tile__title">Kriterium III</span>
-              <span className="result-rail-tile__value">{fmtGradePts(gradeIII, ptsIII)}</span>
+              <span className="result-rail-tile__title">Formale Korrektheit</span>
+              <span className={`result-rail-tile__value ${criterionIIIScoreStatusClass}`}>
+                {hasCriterionIIIScore ? `${criterionIIIScaledPoints} / ${criterionIIIMaxScaledPoints}` : "— / —"}
+              </span>
             </button>
-            {railBodyVisible ? criterionBody("Formal Accuracy", gradeIII, ptsIII, commentIII) : null}
+            {railBodyVisible ? (
+              <div className="result-rail-card__body">
+                <p className="metric-card__help" style={{ margin: "0 0 0.35rem" }}>
+                  Grammatik, Satzbau und Rechtschreibung
+                </p>
+                <div className="result-rail-kp-summary">
+                  {criterionIIIIndicators.map((indicator) => (
+                    <p key={indicator.key} className="result-rail-kp-summary__line">
+                      <strong>{indicator.label}:</strong>{" "}
+                      <span className={indicator.statusClass}>{indicator.statusLabel}</span>
+                    </p>
+                  ))}
+                </div>
+                <p style={{ margin: "0.35rem 0 0", color: "var(--muted)", fontSize: "0.82rem", lineHeight: 1.35 }}>
+                  {commentIII || "Keine Details."}
+                </p>
+              </div>
+            ) : null}
           </div>
 
           <div
@@ -344,24 +708,30 @@ export default function ResultView({ result, candidateText, selectedTask }) {
               className="result-rail-card__head"
               onClick={() => onTileActivate("rail-section-errors")}
             >
-              <span className="result-rail-tile__title">Fehler</span>
+              <span className="result-rail-tile__title">Markierte Fehler</span>
               <span className="result-rail-tile__value">{errorCount}</span>
             </button>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
-                {errPreview.length ? (
-                  <>
-                    <ul className="analysis-errors-list result-rail-card__err-list">
-                      {errPreview.map((err, i) => (
-                        <li key={i}>{formatErrLine(err)}</li>
-                      ))}
-                    </ul>
-                    {errMore > 0 ? (
-                      <p className="metric-card__help" style={{ margin: "0.35rem 0 0" }}>
-                        +{errMore} weitere
-                      </p>
-                    ) : null}
-                  </>
+                {highlightedErrorItems.length ? (
+                  <div className="result-rail-kp-details">
+                    {highlightedErrorItems.map((error) => (
+                      <details key={error.id} className="result-rail-error-item">
+                        <summary className="result-rail-error-item__summary">{error.title}</summary>
+                        <div className="result-rail-error-item__body">
+                          <p className="result-rail-error-item__line result-rail-error-item__line--error">
+                            <strong>Fehler:</strong> {error.text}
+                          </p>
+                          <p className="result-rail-error-item__line">
+                            <strong>Erklärung:</strong> {error.explanation}
+                          </p>
+                          <p className="result-rail-error-item__line result-rail-error-item__line--correction">
+                            <strong>Korrektur:</strong> {error.correction}
+                          </p>
+                        </div>
+                      </details>
+                    ))}
+                  </div>
                 ) : (
                   <p className="metric-card__help" style={{ margin: 0 }}>
                     Keine markierten Fehler.

@@ -3,12 +3,15 @@ from __future__ import annotations
 from backend.evaluation.result_builder import build_final_result
 from backend.evaluation.schemas import (
     AccuracyCheckResult,
+    AccuracyDetail,
+    CommunicationIndicator,
     CommunicationCheckResult,
     CriterionScore,
     FinalScore,
     GrammarErrorSpan,
     ImprovedTextResult,
     KeyPointCheckResult,
+    KeyPointDetail,
     RelevanceCheckResult,
     WordCountCheck,
 )
@@ -34,6 +37,28 @@ def _inputs() -> tuple[
         explanation="Zwei Leitpunkte.",
         positive_feedback=["Leitpunkte gut umgesetzt."],
         improvement_feedback=["Mehr Details nennen."],
+        key_point_details=[
+            KeyPointDetail(
+                number=1,
+                type="expected",
+                key_point="P1",
+                status="fulfilled",
+                sentence_count=2,
+                situation_appropriate=True,
+                language_level="B2",
+                comment="P1 wird klar und detailliert erläutert.",
+            ),
+            KeyPointDetail(
+                number=2,
+                type="expected",
+                key_point="P2",
+                status="fulfilled",
+                sentence_count=2,
+                situation_appropriate=True,
+                language_level="B1+",
+                comment="P2 ist vorhanden und ausreichend entwickelt.",
+            ),
+        ],
     )
     communication = CommunicationCheckResult(
         has_subject=True,
@@ -47,8 +72,20 @@ def _inputs() -> tuple[
         vocabulary_level="B2",
         sentence_variety="some_variety",
         explanation="Strukturiert.",
-        positive_feedback=["Gute Struktur."],
-        improvement_feedback=["Mehr Konnektoren verwenden."],
+        communication_indicators=[
+            CommunicationIndicator(
+                aspect="structure",
+                label="Struktur",
+                rating="excellent",
+                comment="Die Struktur ist klar und logisch aufgebaut.",
+            ),
+            CommunicationIndicator(
+                aspect="sentence_variety",
+                label="Satzvielfalt",
+                rating="acceptable",
+                comment="Es gibt etwas Variation, aber noch Wiederholungen.",
+            ),
+        ],
     )
     accuracy = AccuracyCheckResult(
         grammar_control="good",
@@ -64,8 +101,27 @@ def _inputs() -> tuple[
                 text="ein Kopfhörer",
                 correction="einen Kopfhörer",
                 error_type="Kasusfehler",
+                aspect="word_order",
                 explanation="Akkusativ erforderlich.",
             )
+        ],
+        accuracy_details=[
+            AccuracyDetail(
+                aspect="grammar",
+                label="Grammatik",
+                status="adequate",
+                error_count=1,
+                evidence=["ein Kopfhörer"],
+                comment="Ein einzelner Kasusfehler fällt auf.",
+            ),
+            AccuracyDetail(
+                aspect="comprehension",
+                label="Verständlichkeit",
+                status="strong",
+                error_count=0,
+                evidence=[],
+                comment="Der Text bleibt gut verständlich.",
+            ),
         ],
     )
     return relevance, key_points, communication, accuracy
@@ -87,7 +143,21 @@ def test_build_final_result_normal_case() -> None:
     )
     dumped = result.model_dump(mode="json")
     assert "comment" in dumped["criterion_I"]
+    assert dumped["criterion_I"]["scaled_points"] == 9
+    assert dumped["criterion_I"]["max_scaled_points"] == 15
+    assert len(dumped["criterion_I"]["key_point_details"]) == 2
+    assert dumped["criterion_I"]["task_achievement_summary"]["fulfilled_count"] == 2
+    assert dumped["criterion_I"]["task_achievement_summary"]["own_idea_count"] == 1
+    assert dumped["criterion_II"]["scaled_points"] == 9
+    assert dumped["criterion_II"]["max_scaled_points"] == 15
+    assert dumped["criterion_II"]["analysis_status"] == "success"
+    assert dumped["criterion_II"]["analysis_error"] is None
+    assert len(dumped["criterion_II"]["communication_indicators"]) == 2
+    assert dumped["criterion_III"]["scaled_points"] == 9
+    assert dumped["criterion_III"]["max_scaled_points"] == 15
+    assert len(dumped["criterion_III"]["accuracy_details"]) == 2
     assert dumped["criterion_III"]["highlighted_errors"][0]["error_type"] == "Kasusfehler"
+    assert dumped["criterion_III"]["highlighted_errors"][0]["aspect"] == "word_order"
     assert "explanations" not in dumped
     assert dumped["word_count"]["value"] == 160
 

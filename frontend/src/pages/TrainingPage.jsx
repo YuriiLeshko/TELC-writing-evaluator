@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { BookOpen, Loader2, PenLine } from "lucide-react";
 import Card from "../components/Card.jsx";
 import Button from "../components/Button.jsx";
@@ -8,8 +8,9 @@ import TaskCard from "../components/TaskCard.jsx";
 import Timer from "../components/Timer.jsx";
 import LoadingState from "../components/LoadingState.jsx";
 import Badge from "../components/Badge.jsx";
-import { startTaskSession, submitEvaluation } from "../api/client.js";
+import { startTaskSession, submitEvaluation, updateTaskSessionSelection } from "../api/client.js";
 import { countWords } from "../utils/text.js";
+import { getElapsedSeconds } from "../utils/date.js";
 
 const EVALUATION_STAGES = [
   "Ihr Text wird an den Server gesendet …",
@@ -19,8 +20,22 @@ const EVALUATION_STAGES = [
   "Vorschläge zur Verbesserung werden erstellt …",
 ];
 
+function resolveSelectedTaskType(session, locationState) {
+  const raw =
+    session?.selected_task_type ??
+    session?.selectedTaskType ??
+    session?.selected_task ??
+    session?.selectedTask ??
+    locationState?.selectedTaskType ??
+    locationState?.selected_task_type ??
+    null;
+  const normalized = typeof raw === "string" ? raw.trim().toLowerCase() : null;
+  return normalized === "info" || normalized === "complaint" ? normalized : null;
+}
+
 export default function TrainingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const scrollRef = useRef(null);
   const panelARef = useRef(null);
   const panelBRef = useRef(null);
@@ -33,9 +48,11 @@ export default function TrainingPage() {
   const [candidateText, setCandidateText] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmingSelection, setConfirmingSelection] = useState(false);
   const [evalStageIndex, setEvalStageIndex] = useState(0);
   const [error, setError] = useState(null);
   const [mobileTab, setMobileTab] = useState("info");
+  const [continuedSession, setContinuedSession] = useState(false);
 
   useEffect(() => {
     if (!submitting) {
@@ -47,6 +64,26 @@ export default function TrainingPage() {
     }, 2800);
     return () => clearInterval(id);
   }, [submitting]);
+
+  useEffect(() => {
+    const resumedSession = location.state?.activeSession;
+    if (!resumedSession || currentSession) return;
+    const resumedTaskType = resolveSelectedTaskType(resumedSession, location.state);
+    const resumedDraft =
+      resumedSession.candidate_text ??
+      resumedSession.draft_text ??
+      resumedSession.text_draft ??
+      "";
+    setCurrentSession(resumedSession);
+    setDisplayTitle("Aktive Sitzung (fortgesetzt)");
+    setStartedAt(resumedSession.started_at || null);
+    setSelectedTaskType(resumedTaskType);
+    setSelectionConfirmed(Boolean(resumedTaskType));
+    setCandidateText(typeof resumedDraft === "string" ? resumedDraft : "");
+    setMobileTab(resumedTaskType === "complaint" ? "complaint" : "info");
+    setContinuedSession(true);
+    setError(null);
+  }, [location.state, currentSession]);
 
   const start = useCallback(async () => {
     setError(null);
@@ -68,8 +105,23 @@ export default function TrainingPage() {
     }
   }, []);
 
-  const onConfirmSelection = () => {
-    setSelectionConfirmed(true);
+  const onConfirmSelection = async () => {
+    setError(null);
+    if (!currentSession?.id || !selectedTaskType) {
+      setError("Sitzung oder Aufgabe fehlt.");
+      return;
+    }
+    setConfirmingSelection(true);
+    try {
+      const updatedSession = await updateTaskSessionSelection(currentSession.id, selectedTaskType);
+      setCurrentSession(updatedSession ?? currentSession);
+      setSelectedTaskType(updatedSession?.selected_task_type || selectedTaskType);
+      setSelectionConfirmed(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setConfirmingSelection(false);
+    }
   };
 
   const onSubmit = async () => {
@@ -85,10 +137,12 @@ export default function TrainingPage() {
     }
     setSubmitting(true);
     try {
+      const elapsedSeconds = getElapsedSeconds(startedAt);
       const data = await submitEvaluation({
         task_session_id: currentSession.id,
         selected_task_type: selectedTaskType,
         candidate_text: candidateText,
+        duration_seconds: elapsedSeconds,
       });
       const task =
         selectedTaskType === "info" ? currentSession.info_task : currentSession.complaint_task;
@@ -101,6 +155,7 @@ export default function TrainingPage() {
           selectedTaskType,
           selectedTask: task,
           submissionId: data?.submission_id,
+          submission: { duration_seconds: elapsedSeconds },
         },
       });
     } catch (e) {
@@ -172,6 +227,11 @@ export default function TrainingPage() {
               <Timer startedAt={startedAt} />
               <Badge variant="neutral">Session #{currentSession.id}</Badge>
             </div>
+            {continuedSession ? (
+              <p className="metric-card__help" style={{ margin: "0.55rem 0 0" }}>
+                Sie setzen eine bereits gestartete Sitzung fort. Der Timer läuft seit Sitzungsbeginn.
+              </p>
+            ) : null}
           </Card>
 
           <div className="task-tabs task-tabs--mobile">
@@ -213,7 +273,7 @@ export default function TrainingPage() {
                   lockedSelected={selectionLocked && selectedTaskType === "info"}
                   showConfirm={selectedTaskType === "info"}
                   onConfirm={onConfirmSelection}
-                  confirmDisabled={false}
+                  confirmDisabled={confirmingSelection}
                 />
               </div>
             ) : null}
@@ -232,7 +292,7 @@ export default function TrainingPage() {
                   lockedSelected={selectionLocked && selectedTaskType === "complaint"}
                   showConfirm={selectedTaskType === "complaint"}
                   onConfirm={onConfirmSelection}
-                  confirmDisabled={false}
+                  confirmDisabled={confirmingSelection}
                 />
               </div>
             ) : null}
@@ -263,7 +323,7 @@ export default function TrainingPage() {
                 </div>
               ) : null}
               <div className="row row--end" style={{ marginTop: "0.75rem" }}>
-                <Button type="button" variant="primary" onClick={onSubmit} disabled={submitting}>
+                <Button type="button" variant="primary" onClick={onSubmit} disabled={submitting || confirmingSelection}>
                   {submitting ? "Wird bewertet…" : "Einreichen & bewerten"}
                 </Button>
               </div>

@@ -103,30 +103,6 @@ def _fallback_key_points_result() -> KeyPointCheckResult:
     )
 
 
-def _fallback_communication_result() -> CommunicationCheckResult:
-    """Return safe communication fallback when LLM check fails."""
-    return CommunicationCheckResult(
-        has_subject=False,
-        has_greeting=False,
-        has_introduction=False,
-        has_body_structure=False,
-        has_conclusion=False,
-        has_closing=False,
-        register_quality="inappropriate",
-        coherence_quality="incoherent",
-        vocabulary_level="A2",
-        sentence_variety="simple",
-        explanation="Automatischer Fallback: Kommunikationsanalyse war wegen LLM-Ausfall nicht verfügbar.",
-        positive_feedback=[],
-        improvement_feedback=[
-            "Bitte später erneut prüfen, damit Struktur und Register korrekt bewertet werden können."
-        ],
-        linking_devices=[],
-        complex_connectors=[],
-        language_level_comment="Technischer Fallback ohne belastbare Sprachstandsanalyse.",
-    )
-
-
 def _fallback_accuracy_result() -> AccuracyCheckResult:
     """Return safe formal-accuracy fallback when LLM check fails."""
     return AccuracyCheckResult(
@@ -237,19 +213,59 @@ async def evaluate_writing(
     key_points_result, communication_result, accuracy_result = checks
 
     if isinstance(key_points_result, Exception):
-        logger.exception("Key-points check failed, using fallback result.")
+        logger.error(
+            "Key-points check failed, using fallback result.",
+            exc_info=(
+                type(key_points_result),
+                key_points_result,
+                key_points_result.__traceback__,
+            ),
+        )
         key_points = _fallback_key_points_result()
     else:
         key_points = key_points_result
 
+    communication_analysis_failed = False
+    communication_analysis_error = ""
     if isinstance(communication_result, Exception):
-        logger.exception("Communication check failed, using fallback result.")
-        communication = _fallback_communication_result()
+        logger.error(
+            "Communication check failed.",
+            exc_info=(
+                type(communication_result),
+                communication_result,
+                communication_result.__traceback__,
+            ),
+        )
+        communication_analysis_failed = True
+        communication_analysis_error = (
+            "Die kommunikative Gestaltung konnte technisch nicht zuverlässig analysiert werden."
+        )
+        communication = CommunicationCheckResult(
+            has_subject=False,
+            has_greeting=False,
+            has_introduction=False,
+            has_body_structure=False,
+            has_conclusion=False,
+            has_closing=False,
+            register_quality="inappropriate",
+            coherence_quality="incoherent",
+            vocabulary_level="A2",
+            sentence_variety="simple",
+            explanation=communication_analysis_error,
+            communication_indicators=[],
+        )
     else:
         communication = communication_result
 
     if isinstance(accuracy_result, Exception):
-        logger.exception("Accuracy check failed, using fallback result.")
+        logger.error(
+            "Accuracy check failed, using fallback result.",
+            exc_info=(
+                type(accuracy_result),
+                accuracy_result,
+                accuracy_result.__traceback__,
+            ),
+        )
         accuracy = _fallback_accuracy_result()
     else:
         accuracy = accuracy_result
@@ -272,6 +288,13 @@ async def evaluate_writing(
         criterion_ii,
         criterion_iii,
     )
+    if communication_analysis_failed:
+        criterion_ii = make_score("D")
+        final_score = calculate_final_score(
+            criterion_i,
+            criterion_ii,
+            criterion_iii,
+        )
     try:
         improved_text = await generate_improved_text(
             llm_client=llm_client,
@@ -300,6 +323,8 @@ async def evaluate_writing(
         final_score=final_score,
         word_count=word_count_check,
         improved_text=improved_text,
+        communication_analysis_status="failed" if communication_analysis_failed else "success",
+        communication_analysis_error=communication_analysis_error if communication_analysis_failed else None,
     )
 
 

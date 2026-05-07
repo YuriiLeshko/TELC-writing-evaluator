@@ -53,6 +53,7 @@ class UserRegister(BaseModel):
 
 
 class UserSelfUpdate(BaseModel):
+    username: str | None = None
     email: str | None = None
     password: str | None = None
 
@@ -82,6 +83,7 @@ class InfoTaskRead(BaseModel):
     situation_text: str
     instruction_text: str
     expected_key_points: list[str]
+    is_active: bool
 
 
 class ComplaintTaskRead(BaseModel):
@@ -93,15 +95,16 @@ class ComplaintTaskRead(BaseModel):
     situation_text: str
     instruction_text: str
     expected_key_points: list[str]
+    is_active: bool
 
 
 class InfoTaskCreate(BaseModel):
-    task_number: int
+    task_number: int | None = None
     source_text: str
     situation_text: str
     instruction_text: str
     expected_key_points: list[str]
-    is_active: bool = True
+    is_active: bool = False
 
 
 class InfoTaskUpdate(BaseModel):
@@ -114,12 +117,12 @@ class InfoTaskUpdate(BaseModel):
 
 
 class ComplaintTaskCreate(BaseModel):
-    task_number: int
+    task_number: int | None = None
     source_text: str
     situation_text: str
     instruction_text: str
     expected_key_points: list[str]
-    is_active: bool = True
+    is_active: bool = False
 
 
 class ComplaintTaskUpdate(BaseModel):
@@ -147,6 +150,10 @@ class TaskSessionRead(BaseModel):
 class StartTaskSessionResponse(BaseModel):
     session: TaskSessionRead
     display_title: str
+
+
+class TaskSessionSelectionUpdateRequest(BaseModel):
+    selected_task_type: Literal["info", "complaint"]
 
 
 class SubmitEvaluationRequest(BaseModel):

@@ -69,7 +69,7 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 REQUEST_TIMEOUT_SECONDS = 20.0
 RETRY_ATTEMPTS = 2
 DEFAULT_TEMPERATURE = 0.2
-DEFAULT_MAX_TOKENS = 1000
+DEFAULT_MAX_TOKENS = 2500
 
 
 class LLMClient:
@@ -278,12 +278,22 @@ class LLMClient:
     @staticmethod
     def _extract_content(data: dict[str, Any]) -> str:
         try:
-            content = data["choices"][0]["message"]["content"]
+            choice = data["choices"][0]
+            content = choice["message"]["content"]
         except (KeyError, IndexError, TypeError) as exc:
             raise LLMResponseError("Unexpected OpenRouter response structure.") from exc
 
         if not isinstance(content, str):
             raise LLMResponseError("LLM response content is not a string.")
+
+        finish_reason = choice.get("finish_reason")
+        usage = data.get("usage", {})
+        logger.info(
+            "LLM diagnostics: finish_reason=%s prompt_tokens=%s completion_tokens=%s",
+            finish_reason,
+            usage.get("prompt_tokens"),
+            usage.get("completion_tokens"),
+        )
 
         return content
 

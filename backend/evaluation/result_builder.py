@@ -12,6 +12,7 @@ from backend.evaluation.schemas import (
     WordCountCheck,
     ImprovedTextResult,
     WritingEvaluationResult,
+    TaskAchievementSummary,
 )
 
 
@@ -44,24 +45,42 @@ def _build_criterion_i_comment(key_points: KeyPointCheckResult) -> str:
     return f"{positive} {improvement}"
 
 
+def _build_task_achievement_summary(key_points: KeyPointCheckResult) -> TaskAchievementSummary:
+    """Build frontend-facing Criterion I summary from normalized details."""
+    details = key_points.key_point_details or []
+    expected_details = [d for d in details if d.type == "expected"]
+    own_idea_count = len(key_points.own_ideas)
+
+    fulfilled_count = len([d for d in expected_details if d.status == "fulfilled"])
+    partially_fulfilled_count = len([d for d in expected_details if d.status == "partially_fulfilled"])
+    not_fulfilled_count = len([d for d in expected_details if d.status == "not_fulfilled"])
+
+    level_priority = {"A2": 1, "B1": 2, "B1+": 3, "B2": 4}
+    best_level: str | None = None
+    for detail in details:
+        lvl = detail.language_level
+        if lvl is None:
+            continue
+        if best_level is None or level_priority[lvl] > level_priority[best_level]:
+            best_level = lvl
+
+    summary_comment = (
+        f"{fulfilled_count} erfüllt, {partially_fulfilled_count} teilweise erfüllt, "
+        f"{not_fulfilled_count} nicht erfüllt."
+    )
+    return TaskAchievementSummary(
+        fulfilled_count=fulfilled_count,
+        partially_fulfilled_count=partially_fulfilled_count,
+        not_fulfilled_count=not_fulfilled_count,
+        own_idea_count=own_idea_count,
+        overall_level=best_level,
+        summary_comment=summary_comment,
+    )
+
+
 def _build_criterion_ii_comment(communication: CommunicationCheckResult) -> str:
     """Create concise Criterion II comment from communication evidence."""
-    positive = _first_or_default(
-        communication.positive_feedback,
-        "Der Text hat eine klare E-Mail-Struktur und ein überwiegend passendes Register.",
-    )
-    if communication.sentence_variety == "simple":
-        improvement = "Zur Verbesserung sollten abwechslungsreichere Satzstrukturen verwendet werden."
-    elif communication.vocabulary_level in {"B1", "A2"}:
-        improvement = "Zur Verbesserung sollte ein breiterer und präziserer Wortschatz auf B2-Niveau genutzt werden."
-    elif not communication.complex_connectors:
-        improvement = "Zur Verbesserung sollten mehr komplexe Konnektoren zur Stärkung der Kohärenz verwendet werden."
-    else:
-        improvement = _first_or_default(
-            communication.improvement_feedback,
-            "Zur Verbesserung sollten Übergänge zwischen den Gedanken expliziter formuliert werden.",
-        )
-    return f"{positive} {improvement}"
+    return communication.explanation.strip() or "Die kommunikative Gestaltung wurde ausgewertet."
 
 
 def _build_criterion_iii_comment(accuracy: AccuracyCheckResult) -> str:
@@ -88,6 +107,7 @@ def _attach_accuracy_errors(
 ) -> CriterionScore:
     """Attach structured accuracy error spans to Criterion III only."""
     criterion_score.highlighted_errors = accuracy.highlighted_errors
+    criterion_score.accuracy_details = accuracy.accuracy_details
     return criterion_score
 
 
@@ -103,11 +123,26 @@ def build_final_result(
     final_score: FinalScore,
     word_count: WordCountCheck | None = None,
     improved_text: ImprovedTextResult,
+    communication_analysis_status: str = "success",
+    communication_analysis_error: str | None = None,
 ) -> WritingEvaluationResult:
     """Build final result with concise criterion-level comments."""
     criterion_i.comment = _build_criterion_i_comment(key_points)
+    criterion_i.scaled_points = criterion_i.points * 3
+    criterion_i.max_scaled_points = 15
+    criterion_i.key_point_details = key_points.key_point_details
+    criterion_i.task_achievement_summary = _build_task_achievement_summary(key_points)
     criterion_ii.comment = _build_criterion_ii_comment(communication)
+    criterion_ii.scaled_points = criterion_ii.points * 3
+    criterion_ii.max_scaled_points = 15
+    criterion_ii.analysis_status = "failed" if communication_analysis_status == "failed" else "success"
+    criterion_ii.analysis_error = communication_analysis_error
+    criterion_ii.communication_indicators = (
+        communication.communication_indicators if criterion_ii.analysis_status == "success" else []
+    )
     criterion_iii.comment = _build_criterion_iii_comment(accuracy)
+    criterion_iii.scaled_points = criterion_iii.points * 3
+    criterion_iii.max_scaled_points = 15
     criterion_iii = _attach_accuracy_errors(criterion_iii, accuracy)
     if word_count is not None and not word_count.meets_requirement:
         note = " Die Endpunktzahl ist jedoch 0, weil der Text unter 150 Wörtern liegt."

@@ -4,7 +4,7 @@ import ResultView from "../components/ResultView.jsx";
 export default function ResultPage() {
   const location = useLocation();
   const state = location.state || {};
-  const { result, candidateText, session, selectedTaskType, selectedTask } = state;
+  const { result, candidateText, session, selectedTaskType, selectedTask, submission } = state;
 
   const task =
     selectedTask ||
@@ -40,7 +40,7 @@ export default function ResultPage() {
   return (
     <div className="stack">
       <h1 className="page-title">Ergebnis</h1>
-      <ResultView result={result} candidateText={candidateText || ""} selectedTask={task} />
+      <ResultView result={result} candidateText={candidateText || ""} selectedTask={task} submission={submission} />
     </div>
   );
 }

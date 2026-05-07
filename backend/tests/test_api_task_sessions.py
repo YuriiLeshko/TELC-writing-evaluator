@@ -8,6 +8,9 @@ def test_start_task_session_updates_counters(test_client, seeded_users, seeded_t
     assert response.status_code == 200
     data = response.json()
     assert data["session"]["status"] == "started"
+    assert data["session"]["started_at"] is not None
+    assert data["session"]["submitted_at"] is None
+    assert data["session"]["duration_seconds"] is None
 
     user = seeded_users["user"]
     db_session.refresh(user)
@@ -31,6 +34,8 @@ def test_get_active_sessions(test_client, seeded_users, seeded_tasks, db_session
     response = test_client.get("/task-sessions/active")
     assert response.status_code == 200
     assert len(response.json()) == 1
+    assert response.json()[0]["started_at"] is not None
+    assert response.json()[0]["duration_seconds"] is None
 
 
 def test_delete_started_session(test_client, seeded_users, seeded_tasks, db_session) -> None:
@@ -54,3 +59,32 @@ def test_delete_submitted_session_returns_400(test_client, seeded_users, seeded_
     response = test_client.delete(f"/task-sessions/{session.id}")
     assert response.status_code == 400
     assert response.json()["detail"] == "Submitted sessions cannot be deleted."
+
+
+def test_update_task_session_selection_persists_choice(test_client, seeded_users, seeded_tasks, db_session) -> None:
+    created = test_client.post("/task-sessions/start").json()["session"]["id"]
+    response = test_client.patch(f"/task-sessions/{created}/selection", json={"selected_task_type": "complaint"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["selected_task_type"] == "complaint"
+
+    session = db_session.get(TaskSession, created)
+    assert session is not None
+    assert session.selected_task_type == "complaint"
+    assert session.selected_task_id == seeded_tasks["complaint_task"].id
+
+
+def test_update_task_session_selection_rejects_submitted(test_client, seeded_users, seeded_tasks, db_session) -> None:
+    session = TaskSession(
+        user_id=seeded_users["user"].id,
+        info_task_id=seeded_tasks["info_task"].id,
+        complaint_task_id=seeded_tasks["complaint_task"].id,
+        status="submitted",
+    )
+    db_session.add(session)
+    db_session.commit()
+    db_session.refresh(session)
+
+    response = test_client.patch(f"/task-sessions/{session.id}/selection", json={"selected_task_type": "info"})
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Only active sessions can be updated."
