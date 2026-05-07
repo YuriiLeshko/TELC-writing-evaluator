@@ -22,9 +22,14 @@ async def check_relevance(
     llm_client: LLMClient,
     input_data: WritingEvaluationInput,
 ) -> RelevanceCheckResult:
-    """Check whether the candidate text matches topic and communicative situation."""
+    """Check whether the candidate text matches topic and communicative situation.
+
+    expected_key_points are passed only as task context.
+    They must not be evaluated as fulfillment criteria here.
+    """
     user_prompt = build_relevance_user_prompt(
         task_text=input_data.task_text,
+        expected_key_points=input_data.expected_key_points,
         candidate_text=input_data.candidate_text,
     )
 

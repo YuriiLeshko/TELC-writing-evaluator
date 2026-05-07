@@ -4,7 +4,9 @@ import pytest
 from pydantic import ValidationError
 
 from backend.evaluation.checks.accuracy import check_accuracy
-from backend.evaluation.checks.communication import CommunicationAnalysisFailed, check_communication
+from backend.evaluation.checks.accuracy import _normalize_aspect_ratings, _normalize_highlighted_errors
+from backend.evaluation.checks.communication import check_communication
+from backend.evaluation.checks.communication import _normalize_rating, _normalize_vocabulary_level
 from backend.evaluation.checks.key_points import check_key_points
 from backend.evaluation.checks.relevance import check_relevance
 from backend.evaluation.schemas import (
@@ -14,7 +16,19 @@ from backend.evaluation.schemas import (
     RelevanceCheckResult,
     WritingEvaluationInput,
 )
+from backend.evaluation.prompts.communication import REPAIR_INSTRUCTION
 from backend.tests.conftest import FakeLLMClient
+
+
+_COMM_VALID_PAYLOAD = {
+    "email_structure_quality": "excellent",
+    "coherence_quality": "good",
+    "cohesion_quality": "missing",
+    "register_quality": "good",
+    "vocabulary_level": "B2",
+    "sentence_variety_quality": "acceptable",
+    "explanation": "Gut.",
+}
 
 
 @pytest.fixture
@@ -122,21 +136,92 @@ async def test_check_key_points_derives_missing_number(input_data: WritingEvalua
 
 
 @pytest.mark.asyncio
+async def test_check_key_points_applies_deterministic_status_rules(
+    input_data: WritingEvaluationInput,
+) -> None:
+    client = FakeLLMClient(
+        [
+            {
+                # Intentionally contradictory LLM output; checker must normalize deterministically.
+                "fulfilled_key_points": ["P1", "P2"],
+                "own_ideas": ["Eigene Idee"],
+                "invalid_points": [],
+                "explanation": "Teilweise.",
+                "positive_feedback": ["Punkte erkannt."],
+                "improvement_feedback": ["Mehr ausführen."],
+                "key_point_details": [
+                    {
+                        "number": 1,
+                        "type": "expected",
+                        "key_point": "P1",
+                        "status": "fulfilled",
+                        "sentence_count": 1,
+                        "situation_appropriate": "ja",
+                        "language_level": "B2",
+                        "comment": "Nur kurz erwähnt.",
+                    },
+                    {
+                        "number": 2,
+                        "type": "expected",
+                        "key_point": "P2",
+                        "status": "fulfilled",
+                        "sentence_count": 0,
+                        "situation_appropriate": "true",
+                        "language_level": "B1+",
+                        "comment": "Nicht ausgebaut.",
+                    },
+                    {
+                        "number": 99,
+                        "type": "expected",
+                        "key_point": "P2",
+                        "status": "fulfilled",
+                        "sentence_count": 3,
+                        "situation_appropriate": "nein",
+                        "language_level": "B1+",
+                        "comment": "Situativ unpassend.",
+                    },
+                    {
+                        "number": None,
+                        "type": "own_idea",
+                        "key_point": "Soll ignoriert werden",
+                        "status": "fulfilled",
+                        "sentence_count": 5,
+                        "situation_appropriate": True,
+                        "language_level": "B2",
+                        "comment": "LLM should not return own ideas in expected details.",
+                    },
+                ],
+            }
+        ]
+    )
+    result = await check_key_points(client, input_data)
+
+    expected_details = [d for d in result.key_point_details if d.type == "expected"]
+    own_idea_details = [d for d in result.key_point_details if d.type == "own_idea"]
+
+    # fulfilled + sentence_count=1 -> partially_fulfilled
+    assert expected_details[0].key_point == "P1"
+    assert expected_details[0].status == "partially_fulfilled"
+
+    # sentence_count=0 -> not_fulfilled
+    assert expected_details[1].key_point == "P2"
+    assert expected_details[1].status == "not_fulfilled"
+
+    # fulfilled_key_points rebuilt from normalized expected details
+    assert result.fulfilled_key_points == []
+
+    # own ideas are appended as own_idea details exactly once
+    assert len(own_idea_details) == 1
+    assert own_idea_details[0].key_point == "Eigene Idee"
+    assert own_idea_details[0].type == "own_idea"
+
+
+@pytest.mark.asyncio
 async def test_check_communication_with_fake_llm(input_data: WritingEvaluationInput) -> None:
     client = FakeLLMClient(
         [
             {
-                "has_subject": True,
-                "has_greeting": True,
-                "has_introduction": True,
-                "has_body_structure": True,
-                "has_conclusion": True,
-                "has_closing": True,
-                "register_quality": "appropriate",
-                "coherence_quality": "good",
-                "vocabulary_level": "B2",
-                "sentence_variety": "some_variety",
-                "explanation": "Gut.",
+                **_COMM_VALID_PAYLOAD,
                 "communication_indicators": [
                     {
                         "aspect": "email_elements",
@@ -156,6 +241,11 @@ async def test_check_communication_with_fake_llm(input_data: WritingEvaluationIn
     )
     result = await check_communication(client, input_data)
     assert isinstance(result, CommunicationCheckResult)
+    assert result.email_structure_quality == "excellent"
+    assert result.coherence_quality == "good"
+    assert result.cohesion_quality == "missing"
+    assert result.register_quality == "good"
+    assert result.sentence_variety_quality == "acceptable"
     assert len(result.communication_indicators) == 7
     expected_aspects = {
         "email_elements",
@@ -176,17 +266,7 @@ async def test_check_communication_normalizes_missing_label_and_rating(input_dat
     client = FakeLLMClient(
         [
             {
-                "has_subject": True,
-                "has_greeting": True,
-                "has_introduction": True,
-                "has_body_structure": True,
-                "has_conclusion": True,
-                "has_closing": True,
-                "register_quality": "appropriate",
-                "coherence_quality": "good",
-                "vocabulary_level": "B2",
-                "sentence_variety": "some_variety",
-                "explanation": "Gut.",
+                **_COMM_VALID_PAYLOAD,
                 "communication_indicators": [
                     {
                         "aspect": "coherence",
@@ -205,102 +285,83 @@ async def test_check_communication_normalizes_missing_label_and_rating(input_dat
 
 
 @pytest.mark.asyncio
-async def test_check_communication_retries_and_then_raises(input_data: WritingEvaluationInput) -> None:
+async def test_check_communication_invalid_indicators_raises(input_data: WritingEvaluationInput) -> None:
     client = FakeLLMClient(
         [
             {
-                "has_subject": True,
-                "has_greeting": True,
-                "has_introduction": True,
-                "has_body_structure": True,
-                "has_conclusion": True,
-                "has_closing": True,
-                "register_quality": "appropriate",
-                "coherence_quality": "good",
-                "vocabulary_level": "B2",
-                "sentence_variety": "some_variety",
-                "explanation": "Gut.",
+                **_COMM_VALID_PAYLOAD,
                 "communication_indicators": "invalid",
-            },
-            {
-                "has_subject": True,
-                "has_greeting": True,
-                "has_introduction": True,
-                "has_body_structure": True,
-                "has_conclusion": True,
-                "has_closing": True,
-                "register_quality": "appropriate",
-                "coherence_quality": "good",
-                "vocabulary_level": "B2",
-                "sentence_variety": "some_variety",
-                "explanation": "Gut.",
-                "communication_indicators": "still-invalid",
-            },
-            {
-                "has_subject": True,
-                "has_greeting": True,
-                "has_introduction": True,
-                "has_body_structure": True,
-                "has_conclusion": True,
-                "has_closing": True,
-                "register_quality": "appropriate",
-                "coherence_quality": "good",
-                "vocabulary_level": "B2",
-                "sentence_variety": "some_variety",
-                "explanation": "Gut.",
-                "communication_indicators": "nope",
             },
         ]
     )
-    with pytest.raises(CommunicationAnalysisFailed):
+    with pytest.raises(ValueError, match="communication_indicators"):
         await check_communication(client, input_data)
-    assert len(client.calls) == 3
+    assert len(client.calls) == 1
 
 
 @pytest.mark.asyncio
-async def test_check_communication_retries_then_succeeds(input_data: WritingEvaluationInput) -> None:
+async def test_check_communication_appends_repair_instruction_when_requested(
+    input_data: WritingEvaluationInput,
+) -> None:
     client = FakeLLMClient(
         [
             {
-                "has_subject": True,
-                "has_greeting": True,
-                "has_introduction": True,
-                "has_body_structure": True,
-                "has_conclusion": True,
-                "has_closing": True,
-                "register_quality": "appropriate",
-                "coherence_quality": "good",
-                "vocabulary_level": "B2",
-                "sentence_variety": "some_variety",
-                "explanation": "Gut.",
-                "communication_indicators": "invalid",
-            },
-            {
-                "has_subject": True,
-                "has_greeting": True,
-                "has_introduction": True,
-                "has_body_structure": True,
-                "has_conclusion": True,
-                "has_closing": True,
-                "register_quality": "appropriate",
-                "coherence_quality": "good",
-                "vocabulary_level": "B2",
-                "sentence_variety": "some_variety",
-                "explanation": "Gut.",
-                "communication_indicators": [
-                    {
-                        "aspect": "email_elements",
-                        "label": "E-Mail-Elemente",
-                        "rating": "good",
-                        "comment": "Die Grundelemente sind vorhanden.",
-                    }
-                ],
+                **_COMM_VALID_PAYLOAD,
+                "communication_indicators": [],
             },
         ]
     )
-    result = await check_communication(client, input_data)
-    assert len(client.calls) == 2
-    assert len(result.communication_indicators) == 7
+    await check_communication(client, input_data, append_schema_repair_hint=True)
+    prompt = client.calls[0]["user_prompt"]
+    assert REPAIR_INSTRUCTION.split("\n", 1)[0] in prompt
+
+
+def test_communication_normalizers_return_valid_schema_values() -> None:
+    assert _normalize_rating(None) == "missing"
+    assert _normalize_rating("strong") == "excellent"
+    assert _normalize_rating("ok") == "acceptable"
+    assert _normalize_rating("poor") == "weak"
+    assert _normalize_rating("unknown-value") == "weak"
+
+    assert _normalize_vocabulary_level(" b2 ") == "B2"
+    assert _normalize_vocabulary_level("b1+") == "B1+"
+    assert _normalize_vocabulary_level("invalid") == "B1"
+
+
+def test_accuracy_normalizers_enforce_order_fragments_and_limit() -> None:
+    ratings = _normalize_aspect_ratings(
+        {
+            "spelling": "weak",
+            "grammar": "strong",
+        }
+    )
+    assert list(ratings.keys()) == [
+        "grammar",
+        "syntax",
+        "word_order",
+        "verb_forms",
+        "agreement",
+        "spelling",
+        "punctuation",
+        "capitalization",
+        "comprehension",
+    ]
+    assert ratings["grammar"] == "strong"
+    assert ratings["spelling"] == "weak"
+    assert ratings["syntax"] == "adequate"
+
+    candidate_text = "ein Kopfhörer ist kaputt und die Lieferung war sehr spät."
+    raw_errors = [
+        {"text": "ein Kopfhörer", "correction": "einen Kopfhörer", "error_type": "Kasus", "explanation": "Akkusativ."},
+        {"text": "nicht im Text", "correction": "X", "error_type": "Erfunden", "explanation": "Soll raus."},
+    ] + [
+        {"text": "die Lieferung", "correction": "der Lieferung", "error_type": f"Typ{i}", "explanation": "Demo."}
+        for i in range(20)
+    ]
+    normalized_errors = _normalize_highlighted_errors(raw_errors, candidate_text)
+    assert len(normalized_errors) == 10
+    assert all(set(item.keys()) == {"text", "correction", "error_type", "explanation"} for item in normalized_errors)
+    assert all(item["text"] in candidate_text for item in normalized_errors)
 
 
 @pytest.mark.asyncio
@@ -318,19 +379,17 @@ async def test_check_accuracy_with_fake_llm(input_data: WritingEvaluationInput) 
                 "improvement_feedback": ["Kasus pruefen."],
                 "example_errors": ["ein Kopfhörer -> einen Kopfhörer"],
                 "technical_notes": ["Einige Fehler."],
-                "accuracy_details": [
-                    {
-                        "aspect": "grammar",
-                        "status": "adequate",
-                        "error_count": 1,
-                        "comment": "Nur ein klarer Kasusfehler.",
-                    },
-                    {
-                        "aspect": "comprehension",
-                        "status": "strong",
-                        "comment": "Die Verständlichkeit ist nicht beeinträchtigt.",
-                    },
-                ],
+                "aspect_ratings": {
+                    "grammar": "adequate",
+                    "syntax": "strong",
+                    "word_order": "strong",
+                    "verb_forms": "strong",
+                    "agreement": "adequate",
+                    "spelling": "adequate",
+                    "punctuation": "adequate",
+                    "capitalization": "strong",
+                    "comprehension": "strong",
+                },
                 "highlighted_errors": [
                     {
                         "text": "Candidate",
@@ -344,12 +403,9 @@ async def test_check_accuracy_with_fake_llm(input_data: WritingEvaluationInput) 
     )
     result = await check_accuracy(client, input_data)
     assert isinstance(result, AccuracyCheckResult)
-    assert len(result.accuracy_details) == 6
-    grammar = [item for item in result.accuracy_details if item.aspect == "grammar"][0]
-    assert grammar.label == "Grammatik"
-    assert grammar.error_count == 1
+    assert result.aspect_ratings.grammar == "adequate"
+    assert result.aspect_ratings.comprehension == "strong"
     assert result.highlighted_errors[0].error_type == "Kasusfehler"
-    assert result.highlighted_errors[0].aspect is None
     assert len(client.calls) == 1
     assert client.calls[0]["temperature"] == 0.0
 
@@ -369,22 +425,16 @@ async def test_check_accuracy_derives_missing_label_and_error_count(input_data: 
                 "improvement_feedback": [],
                 "example_errors": [],
                 "technical_notes": [],
-                "accuracy_details": [
-                    {
-                        "aspect": "word_order",
-                        "status": "acceptable",
-                        "comment": "Teilweise uneinheitlich.",
-                    }
-                ],
+                "aspect_ratings": {
+                    "word_order": "acceptable",
+                },
                 "highlighted_errors": [],
             }
         ]
     )
     result = await check_accuracy(client, input_data)
-    word_order = [item for item in result.accuracy_details if item.aspect == "word_order"][0]
-    assert word_order.label == "Wortstellung"
-    assert word_order.status == "adequate"
-    assert word_order.error_count == 0
+    assert result.aspect_ratings.word_order == "adequate"
+    assert result.aspect_ratings.grammar == "adequate"
 
 
 @pytest.mark.asyncio

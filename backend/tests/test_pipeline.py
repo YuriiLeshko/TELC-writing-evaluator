@@ -5,7 +5,6 @@ import pytest
 from backend.evaluation import pipeline
 from backend.evaluation.schemas import (
     AccuracyCheckResult,
-    AccuracyDetail,
     CommunicationIndicator,
     CommunicationCheckResult,
     ImprovedTextResult,
@@ -31,7 +30,13 @@ async def test_pipeline_normal_flow(monkeypatch: pytest.MonkeyPatch, input_data:
 
     async def fake_relevance(*args, **kwargs):
         calls.append("relevance")
-        return RelevanceCheckResult(topic_mismatch=False, situation_mismatch=False, explanation="Ok")
+        return RelevanceCheckResult(
+            topic_mismatch=False,
+            situation_mismatch=False,
+            explanation="Ok",
+            positive_feedback=["Passt."],
+            improvement_feedback=["Kleiner Hinweis."],
+        )
 
     async def fake_key(*args, **kwargs):
         calls.append("key")
@@ -77,16 +82,12 @@ async def test_pipeline_normal_flow(monkeypatch: pytest.MonkeyPatch, input_data:
     async def fake_comm(*args, **kwargs):
         calls.append("comm")
         return CommunicationCheckResult(
-            has_subject=True,
-            has_greeting=True,
-            has_introduction=True,
-            has_body_structure=True,
-            has_conclusion=True,
-            has_closing=True,
-            register_quality="appropriate",
+            email_structure_quality="good",
             coherence_quality="good",
+            cohesion_quality="acceptable",
+            register_quality="good",
             vocabulary_level="B2",
-            sentence_variety="some_variety",
+            sentence_variety_quality="acceptable",
             explanation="Ok",
             communication_indicators=[
                 CommunicationIndicator(
@@ -107,22 +108,23 @@ async def test_pipeline_normal_flow(monkeypatch: pytest.MonkeyPatch, input_data:
             punctuation_quality="good",
             comprehension_affected=False,
             explanation="Ok",
-            accuracy_details=[
-                AccuracyDetail(
-                    aspect="grammar",
-                    label="Grammatik",
-                    status="strong",
-                    error_count=0,
-                    evidence=[],
-                    comment="Keine klaren Grammatikprobleme.",
-                )
-            ],
+            aspect_ratings={
+                "grammar": "strong",
+                "syntax": "strong",
+                "word_order": "strong",
+                "verb_forms": "strong",
+                "agreement": "strong",
+                "spelling": "strong",
+                "punctuation": "strong",
+                "capitalization": "strong",
+                "comprehension": "strong",
+            },
             highlighted_errors=[],
         )
 
     async def fake_improved(*args, **kwargs):
         calls.append("improved")
-        return ImprovedTextResult(improved_text="Verbessert", changes_summary=["Satzbau"])
+        return ImprovedTextResult(improved_text="Verbessert")
 
     monkeypatch.setattr(pipeline, "check_relevance", fake_relevance)
     monkeypatch.setattr(pipeline, "check_key_points", fake_key)
@@ -144,8 +146,8 @@ async def test_pipeline_normal_flow(monkeypatch: pytest.MonkeyPatch, input_data:
     assert len(result.criterion_II.communication_indicators) == 1
     assert result.criterion_III.scaled_points == result.criterion_III.points * 3
     assert result.criterion_III.max_scaled_points == 15
-    assert result.criterion_III.accuracy_details is not None
-    assert len(result.criterion_III.accuracy_details) == 1
+    assert result.criterion_III.highlighted_errors is not None
+    assert len(result.criterion_III.highlighted_errors) == 0
     assert calls[0] == "relevance"
     assert "improved" in calls
 
@@ -156,7 +158,13 @@ async def test_pipeline_topic_mismatch_short_circuit(monkeypatch: pytest.MonkeyP
 
     async def fake_relevance(*args, **kwargs):
         calls.append("relevance")
-        return RelevanceCheckResult(topic_mismatch=True, situation_mismatch=True, explanation="Thema verfehlt")
+        return RelevanceCheckResult(
+            topic_mismatch=True,
+            situation_mismatch=True,
+            explanation="Thema verfehlt",
+            positive_feedback=["Thema verfehlt."],
+            improvement_feedback=["Aufgabenbezug herstellen."],
+        )
 
     async def fake_fail(*args, **kwargs):
         calls.append("unexpected")
@@ -164,7 +172,7 @@ async def test_pipeline_topic_mismatch_short_circuit(monkeypatch: pytest.MonkeyP
 
     async def fake_improved(*args, **kwargs):
         calls.append("improved")
-        return ImprovedTextResult(improved_text="Verbessert", changes_summary=["Hinweis"])
+        return ImprovedTextResult(improved_text="Verbessert")
 
     monkeypatch.setattr(pipeline, "check_relevance", fake_relevance)
     monkeypatch.setattr(pipeline, "check_key_points", fake_fail)
@@ -176,7 +184,7 @@ async def test_pipeline_topic_mismatch_short_circuit(monkeypatch: pytest.MonkeyP
     assert result.criterion_I.grade == "D"
     assert result.criterion_II.grade == "D"
     assert result.criterion_III.grade == "D"
-    assert calls == ["relevance", "improved"]
+    assert calls == ["relevance"]
 
 
 @pytest.mark.asyncio
@@ -188,7 +196,13 @@ async def test_pipeline_low_word_count_override(monkeypatch: pytest.MonkeyPatch)
     )
 
     async def fake_relevance(*args, **kwargs):
-        return RelevanceCheckResult(topic_mismatch=False, situation_mismatch=False, explanation="Ok")
+        return RelevanceCheckResult(
+            topic_mismatch=False,
+            situation_mismatch=False,
+            explanation="Ok",
+            positive_feedback=["Passt."],
+            improvement_feedback=["Kleiner Hinweis."],
+        )
 
     async def fake_key(*args, **kwargs):
         return KeyPointCheckResult(
@@ -232,16 +246,12 @@ async def test_pipeline_low_word_count_override(monkeypatch: pytest.MonkeyPatch)
 
     async def fake_comm(*args, **kwargs):
         return CommunicationCheckResult(
-            has_subject=True,
-            has_greeting=True,
-            has_introduction=True,
-            has_body_structure=True,
-            has_conclusion=True,
-            has_closing=True,
-            register_quality="appropriate",
-            coherence_quality="strong",
+            email_structure_quality="excellent",
+            coherence_quality="excellent",
+            cohesion_quality="excellent",
+            register_quality="excellent",
             vocabulary_level="B2",
-            sentence_variety="varied",
+            sentence_variety_quality="excellent",
             explanation="Ok",
             communication_indicators=[
                 CommunicationIndicator(
@@ -261,21 +271,22 @@ async def test_pipeline_low_word_count_override(monkeypatch: pytest.MonkeyPatch)
             punctuation_quality="good",
             comprehension_affected=False,
             explanation="Ok",
-            accuracy_details=[
-                AccuracyDetail(
-                    aspect="comprehension",
-                    label="Verständlichkeit",
-                    status="strong",
-                    error_count=0,
-                    evidence=[],
-                    comment="Trotz kurzer Länge verständlich.",
-                )
-            ],
+            aspect_ratings={
+                "grammar": "strong",
+                "syntax": "strong",
+                "word_order": "strong",
+                "verb_forms": "strong",
+                "agreement": "strong",
+                "spelling": "strong",
+                "punctuation": "strong",
+                "capitalization": "strong",
+                "comprehension": "strong",
+            },
             highlighted_errors=[],
         )
 
     async def fake_improved(*args, **kwargs):
-        return ImprovedTextResult(improved_text="Verbessert", changes_summary=["Hinweis"])
+        return ImprovedTextResult(improved_text="Verbessert")
 
     monkeypatch.setattr(pipeline, "check_relevance", fake_relevance)
     monkeypatch.setattr(pipeline, "check_key_points", fake_key)
@@ -301,7 +312,13 @@ async def test_pipeline_communication_fallback_not_forced_to_d(
     )
 
     async def fake_relevance(*args, **kwargs):
-        return RelevanceCheckResult(topic_mismatch=False, situation_mismatch=False, explanation="Ok")
+        return RelevanceCheckResult(
+            topic_mismatch=False,
+            situation_mismatch=False,
+            explanation="Ok",
+            positive_feedback=["Passt."],
+            improvement_feedback=["Kleiner Hinweis."],
+        )
 
     async def fake_key(*args, **kwargs):
         return KeyPointCheckResult(
@@ -322,10 +339,21 @@ async def test_pipeline_communication_fallback_not_forced_to_d(
             punctuation_quality="good",
             comprehension_affected=False,
             explanation="Ok",
+            aspect_ratings={
+                "grammar": "adequate",
+                "syntax": "adequate",
+                "word_order": "adequate",
+                "verb_forms": "adequate",
+                "agreement": "adequate",
+                "spelling": "adequate",
+                "punctuation": "adequate",
+                "capitalization": "adequate",
+                "comprehension": "adequate",
+            },
         )
 
     async def fake_improved(*args, **kwargs):
-        return ImprovedTextResult(improved_text="Verbessert", changes_summary=["Hinweis"])
+        return ImprovedTextResult(improved_text="Verbessert")
 
     monkeypatch.setattr(pipeline, "check_relevance", fake_relevance)
     monkeypatch.setattr(pipeline, "check_key_points", fake_key)
@@ -334,8 +362,166 @@ async def test_pipeline_communication_fallback_not_forced_to_d(
     monkeypatch.setattr(pipeline, "generate_improved_text", fake_improved)
 
     result = await pipeline.evaluate_writing(input_data=long_input_data, llm_client=object())
-    assert result.criterion_II.grade == "D"
-    assert result.criterion_II.points == 0
+    assert result.analysis_status == "partial"
+    assert result.final_score is None
+    assert result.criterion_II.grade is None
+    assert result.criterion_II.points is None
     assert result.criterion_II.analysis_status == "failed"
     assert result.criterion_II.analysis_error is not None
-    assert result.criterion_II.communication_indicators == []
+    assert result.criterion_II.communication_indicators is None
+
+
+@pytest.mark.asyncio
+async def test_pipeline_retries_checker_then_succeeds(
+    monkeypatch: pytest.MonkeyPatch, input_data: WritingEvaluationInput
+) -> None:
+    calls = {"key": 0}
+
+    async def fake_relevance(*args, **kwargs):
+        return RelevanceCheckResult(
+            topic_mismatch=False,
+            situation_mismatch=False,
+            explanation="Ok",
+            positive_feedback=["Passt."],
+            improvement_feedback=["Kleiner Hinweis."],
+        )
+
+    async def flaky_key(*args, **kwargs):
+        calls["key"] += 1
+        if calls["key"] < 3:
+            raise RuntimeError("temporary key failure")
+        return KeyPointCheckResult(
+            fulfilled_key_points=["P1", "P2"],
+            own_ideas=[],
+            invalid_points=[],
+            explanation="Ok",
+        )
+
+    async def fake_comm(*args, **kwargs):
+        return CommunicationCheckResult(
+            email_structure_quality="good",
+            coherence_quality="good",
+            cohesion_quality="good",
+            register_quality="good",
+            vocabulary_level="B2",
+            sentence_variety_quality="good",
+            explanation="Ok",
+        )
+
+    async def fake_acc(*args, **kwargs):
+        return AccuracyCheckResult(
+            grammar_control="good",
+            systematic_errors=[],
+            spelling_quality="good",
+            punctuation_quality="good",
+            comprehension_affected=False,
+            explanation="Ok",
+            aspect_ratings={
+                "grammar": "adequate",
+                "syntax": "adequate",
+                "word_order": "adequate",
+                "verb_forms": "adequate",
+                "agreement": "adequate",
+                "spelling": "adequate",
+                "punctuation": "adequate",
+                "capitalization": "adequate",
+                "comprehension": "adequate",
+            },
+        )
+
+    async def fake_improved(*args, **kwargs):
+        return ImprovedTextResult(improved_text="Verbessert")
+
+    monkeypatch.setattr(pipeline, "check_relevance", fake_relevance)
+    monkeypatch.setattr(pipeline, "check_key_points", flaky_key)
+    monkeypatch.setattr(pipeline, "check_communication", fake_comm)
+    monkeypatch.setattr(pipeline, "check_accuracy", fake_acc)
+    monkeypatch.setattr(pipeline, "generate_improved_text", fake_improved)
+
+    result = await pipeline.evaluate_writing(input_data=input_data, llm_client=object())
+    assert calls["key"] == 3
+    assert result.analysis_status == "success"
+    assert result.criterion_I.grade is not None
+    assert result.final_score is not None
+
+
+@pytest.mark.asyncio
+async def test_pipeline_failed_checker_marks_criterion_failed_not_d(
+    monkeypatch: pytest.MonkeyPatch, input_data: WritingEvaluationInput
+) -> None:
+    async def fake_relevance(*args, **kwargs):
+        return RelevanceCheckResult(
+            topic_mismatch=False,
+            situation_mismatch=False,
+            explanation="Ok",
+            positive_feedback=["Passt."],
+            improvement_feedback=["Kleiner Hinweis."],
+        )
+
+    async def failing_key(*args, **kwargs):
+        raise RuntimeError("key checker hard failure")
+
+    async def fake_comm(*args, **kwargs):
+        return CommunicationCheckResult(
+            email_structure_quality="good",
+            coherence_quality="good",
+            cohesion_quality="good",
+            register_quality="good",
+            vocabulary_level="B2",
+            sentence_variety_quality="good",
+            explanation="Ok",
+        )
+
+    async def fake_acc(*args, **kwargs):
+        return AccuracyCheckResult(
+            grammar_control="good",
+            systematic_errors=[],
+            spelling_quality="good",
+            punctuation_quality="good",
+            comprehension_affected=False,
+            explanation="Ok",
+            aspect_ratings={
+                "grammar": "adequate",
+                "syntax": "adequate",
+                "word_order": "adequate",
+                "verb_forms": "adequate",
+                "agreement": "adequate",
+                "spelling": "adequate",
+                "punctuation": "adequate",
+                "capitalization": "adequate",
+                "comprehension": "adequate",
+            },
+        )
+
+    async def fake_improved(*args, **kwargs):
+        return ImprovedTextResult(improved_text="Verbessert")
+
+    monkeypatch.setattr(pipeline, "check_relevance", fake_relevance)
+    monkeypatch.setattr(pipeline, "check_key_points", failing_key)
+    monkeypatch.setattr(pipeline, "check_communication", fake_comm)
+    monkeypatch.setattr(pipeline, "check_accuracy", fake_acc)
+    monkeypatch.setattr(pipeline, "generate_improved_text", fake_improved)
+
+    result = await pipeline.evaluate_writing(input_data=input_data, llm_client=object())
+    assert result.analysis_status == "partial"
+    assert result.criterion_I.analysis_status == "failed"
+    assert result.criterion_I.grade is None
+    assert result.criterion_I.points is None
+    assert result.final_score is None
+
+
+@pytest.mark.asyncio
+async def test_pipeline_relevance_failure_aborts_without_fake_success(
+    monkeypatch: pytest.MonkeyPatch, input_data: WritingEvaluationInput
+) -> None:
+    async def failing_relevance(*args, **kwargs):
+        raise RuntimeError("relevance hard failure")
+
+    monkeypatch.setattr(pipeline, "check_relevance", failing_relevance)
+
+    result = await pipeline.evaluate_writing(input_data=input_data, llm_client=object())
+    assert result.analysis_status == "failed"
+    assert result.final_score is None
+    assert result.criterion_I.analysis_status == "failed"
+    assert result.criterion_II.analysis_status == "failed"
+    assert result.criterion_III.analysis_status == "failed"

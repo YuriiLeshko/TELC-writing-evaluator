@@ -7,30 +7,51 @@ contain scoring, FastAPI, database, or OCR logic.
 
 from __future__ import annotations
 
+from backend.evaluation.prompts.common import (
+    GERMAN_OUTPUT_PROMPT_BLOCK,
+    JSON_ONLY_PROMPT_BLOCK,
+    SECURITY_PROMPT_BLOCK,
+)
+from backend.evaluation.prompts.schema_utils import model_to_prompt_schema
 from backend.evaluation.schemas import (
     AccuracyCheckResult,
     CommunicationCheckResult,
+    ImprovedTextResult,
     KeyPointCheckResult,
     WritingEvaluationInput,
 )
 
-SYSTEM_PROMPT = """You are a TELC B2 German writing coach.
-Improve the candidate text while preserving its original meaning.
 
-Rules:
-- Do not invent facts.
-- Do not invent order numbers, dates, names, prices, product details, or events.
-- Keep the text suitable for TELC B2, not C1/C2.
-- Keep email format if the task requires email.
-- Improve grammar, spelling, punctuation, structure, register, coherence, and B2 style.
-- If the original text is below 150 words, expand only with safe, generic, realistic details
-  that do not invent specific facts.
+IMPROVEMENT_OUTPUT_SCHEMA = model_to_prompt_schema(ImprovedTextResult)
 
-Output rules:
-- Return only valid JSON.
-- Do not output markdown.
-- Do not output text outside JSON.
-- All output text must be in German except JSON field names.
+
+SYSTEM_PROMPT = f"""You are a TELC B2 German writing coach.
+
+Your only task is to produce an improved German full text as the sole JSON field `improved_text`.
+
+{SECURITY_PROMPT_BLOCK}
+
+{JSON_ONLY_PROMPT_BLOCK}
+
+Output schema (return JSON that matches this exactly, no extra keys):
+{IMPROVEMENT_OUTPUT_SCHEMA}
+
+What the model must not output (in any form):
+- No analysis, commentary, meta-text, or reflections.
+- No explanations of what you changed or why.
+- No scores, grades, or points.
+- No list of changes or bullet summary of edits (the improved text alone is the deliverable).
+
+Quality and content rules:
+- Preserve the original meaning and communicative intention.
+- Do not invent specific facts; do not invent order numbers, dates, names, prices, product details, addresses, or events.
+- Keep TELC B2 level—not C1/C2.
+- Keep the text type and format required by the task.
+- Improve grammar, spelling, punctuation, structure, register, and coherence.
+- If the original text is below 150 words, expand only with safe, generic, realistic details.
+- Do not change evaluation outcomes, grades, points, or scoring in the output (do not mention them).
+
+{GERMAN_OUTPUT_PROMPT_BLOCK}
 """
 
 
@@ -41,6 +62,37 @@ def _format_list(title: str, items: list[str]) -> str:
     return f"{title}:\n" + "\n".join(f"- {item}" for item in items[:5])
 
 
+def _format_communication_context(
+    communication_result: CommunicationCheckResult,
+) -> str:
+    """Format communication evidence from the current simplified schema."""
+    indicator_lines = [
+        f"- {item.label}: {item.rating} — {item.comment}"
+        for item in communication_result.communication_indicators[:7]
+    ]
+
+    indicators_block = (
+        "\n".join(indicator_lines)
+        if indicator_lines
+        else "- (keine detaillierten Kommunikationsindikatoren)"
+    )
+
+    return "\n".join(
+        [
+            "Kommunikationsanalyse aus der Auswertung:",
+            f"- E-Mail-Struktur: {communication_result.email_structure_quality}",
+            f"- Zusammenhang: {communication_result.coherence_quality}",
+            f"- Verknüpfungen: {communication_result.cohesion_quality}",
+            f"- Register: {communication_result.register_quality}",
+            f"- Wortschatzniveau: {communication_result.vocabulary_level}",
+            f"- Satzvielfalt: {communication_result.sentence_variety_quality}",
+            f"- Kommentar: {communication_result.explanation}",
+            "Kommunikationsindikatoren:",
+            indicators_block,
+        ]
+    )
+
+
 def build_improvement_user_prompt(
     input_data: WritingEvaluationInput,
     key_points_result: KeyPointCheckResult | None = None,
@@ -48,7 +100,10 @@ def build_improvement_user_prompt(
     accuracy_result: AccuracyCheckResult | None = None,
 ) -> str:
     """Build the improvement prompt from validated input data."""
-    expected_key_points_block = "\n".join(f"- {item}" for item in input_data.expected_key_points)
+    expected_key_points_block = "\n".join(
+        f"- {item}" for item in input_data.expected_key_points
+    )
+
     evidence_sections: list[str] = []
 
     if key_points_result is not None:
@@ -61,12 +116,8 @@ def build_improvement_user_prompt(
         )
 
     if communication_result is not None:
-        evidence_sections.extend(
-            [
-                "Kommunikations-Feedback aus der Auswertung:",
-                _format_list("Stärken", communication_result.positive_feedback),
-                _format_list("Verbesserungen", communication_result.improvement_feedback),
-            ]
+        evidence_sections.append(
+            _format_communication_context(communication_result)
         )
 
     if accuracy_result is not None:
@@ -80,6 +131,7 @@ def build_improvement_user_prompt(
                 _format_list("Technische Hinweise", accuracy_result.technical_notes),
             ]
         )
+
         if accuracy_result.highlighted_errors:
             span_lines = [
                 (
@@ -89,12 +141,20 @@ def build_improvement_user_prompt(
                 for item in accuracy_result.highlighted_errors[:10]
             ]
             evidence_sections.append(
-                "Gezielte Fehlerstellen aus dem Original (genau diese Stellen korrigieren):\n"
+                "Gezielte Fehlerstellen aus dem Original "
+                "(genau diese Stellen korrigieren):\n"
                 + "\n".join(span_lines)
             )
 
-    evidence_block = "\n\n".join(evidence_sections) if evidence_sections else "Keine zusätzlichen Auswertungsdaten vorhanden."
-    return f"""Verbessere den folgenden Text nach den Regeln.
+    evidence_block = (
+        "\n\n".join(evidence_sections)
+        if evidence_sections
+        else "Keine zusätzlichen Auswertungsdaten vorhanden."
+    )
+
+    return f"""Erzeuge nur den vollständigen verbesserten deutschen Text als Wert von "improved_text" (Schema siehe Systemanweisung)—keine Analyse, keine Erklärungen, keine Punktzahlen, keine Änderungsliste.
+
+Verwende Aufgabe und Hinweise nur innerlich; die Ausgabe darf ausschließlich den verbesserten Lauftext enthalten.
 
 Aufgabentext:
 \"\"\"
@@ -109,36 +169,17 @@ Kandidatentext:
 {input_data.candidate_text}
 \"\"\"
 
-Zusätzliche Auswertungshinweise (verwende sie als Priorität für Korrekturen):
+Zusätzliche Auswertungshinweise:
 {evidence_block}
 
 Anforderungen an den verbesserten Text:
-- Nur Deutsch verwenden.
 - Bedeutung und Absicht des Originals erhalten.
 - Keine konkreten Fakten erfinden.
 - Register und Format passend zur Aufgabe beibehalten.
-- Grammatik, Rechtschreibung, Zeichensetzung und Kohärenz verbessern.
-- Wenn möglich auf mindestens 150 Wörter ausbauen, aber nur mit sicheren, allgemeinen Details.
-- Berücksichtige die oben genannten Fehler und Empfehlungen gezielt.
-- Wenn konkrete Fehlerstellen angegeben sind, korrigiere diese konsistent im verbesserten Text.
+- Grammatik, Rechtschreibung, Zeichensetzung, Textstruktur, Register und Kohärenz verbessern.
+- TELC-B2-Niveau halten, nicht auf C1/C2 anheben.
+- Wenn unter 150 Wörter: nur mit sicheren, allgemeinen Details erweitern.
+- Genannte Fehler und Empfehlungen im verbesserten Text berücksichtigen; bei konkreten Fehlerstellen diese dort korrigieren.
 
-Erforderliches JSON-Format:
-{{
-  "improved_text": "string",
-  "changes_summary": ["string"]
-}}
-
-Regeln für improved_text:
-- Nur Deutsch.
-- B2-Niveau.
-- Passendes formelles/halbformelles Register je nach Aufgabe.
-- Keine erfundenen spezifischen Fakten.
-
-Regeln für changes_summary:
-- Nur Deutsch.
-- 2 bis 4 kurze Punkte.
-- Nur allgemeine Änderungen nennen, z. B.:
-  - "Grammatik und Satzbau verbessert"
-  - "Formellen Stil verstärkt"
-  - "Textstruktur klarer gemacht"
+Return JSON only.
 """
