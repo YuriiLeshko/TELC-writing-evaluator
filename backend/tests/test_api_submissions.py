@@ -26,6 +26,8 @@ def _fake_result() -> WritingEvaluationResult:
             comment="I",
             scaled_points=9,
             max_scaled_points=15,
+            analysis_status="success",
+            analysis_error=None,
             task_achievement_summary=TaskAchievementSummary(
                 fulfilled_count=1,
                 partially_fulfilled_count=0,
@@ -70,6 +72,8 @@ def _fake_result() -> WritingEvaluationResult:
             comment="III",
             scaled_points=9,
             max_scaled_points=15,
+            analysis_status="success",
+            analysis_error=None,
             highlighted_errors=[
                 GrammarErrorSpan(
                     text="ein Kopfhörer",
@@ -83,6 +87,62 @@ def _fake_result() -> WritingEvaluationResult:
         improved_text=ImprovedTextResult(improved_text="Verbessert"),
         raw_score=9,
         final_score=27,
+        max_score=45,
+    )
+
+
+def _partial_communication_failed_result() -> WritingEvaluationResult:
+    comm_err = (
+        "Die Analyse der kommunikativen Gestaltung konnte technisch nicht durchgeführt werden. "
+        "Dieses Kriterium wurde nicht bewertet."
+    )
+    return WritingEvaluationResult(
+        topic_mismatch=False,
+        situation_mismatch=False,
+        criterion_I=CriterionScore(
+            grade="B",
+            points=3,
+            comment="I",
+            scaled_points=9,
+            max_scaled_points=15,
+            analysis_status="success",
+            analysis_error=None,
+            task_achievement_summary=TaskAchievementSummary(
+                fulfilled_count=1,
+                partially_fulfilled_count=0,
+                not_fulfilled_count=0,
+                own_idea_count=0,
+                overall_level="B2",
+                summary_comment="ok",
+            ),
+            key_point_details=[],
+        ),
+        criterion_II=CriterionScore(
+            grade=None,
+            points=None,
+            comment=comm_err,
+            scaled_points=None,
+            max_scaled_points=None,
+            analysis_status="failed",
+            analysis_error=comm_err,
+            communication_indicators=[],
+        ),
+        criterion_III=CriterionScore(
+            grade="B",
+            points=3,
+            comment="III",
+            scaled_points=9,
+            max_scaled_points=15,
+            analysis_status="success",
+            analysis_error=None,
+            highlighted_errors=[],
+        ),
+        word_count=WordCountCheck(value=160, minimum_required=150, meets_requirement=True),
+        improved_text=ImprovedTextResult(improved_text="Fallback"),
+        analysis_status="partial",
+        analysis_error=comm_err,
+        raw_score=None,
+        final_score=None,
         max_score=45,
     )
 
@@ -109,24 +169,26 @@ def test_evaluate_submission_success(test_client, seeded_users, seeded_tasks, db
     assert data["result"]["final_score"] == 27
     assert data["result"]["criterion_I"]["scaled_points"] == 9
     assert len(data["result"]["criterion_I"]["key_point_details"]) == 1
-    assert "grade" not in data["result"]["criterion_I"]
-    assert "points" not in data["result"]["criterion_I"]
+    assert data["result"]["criterion_I"]["grade"] == "B"
+    assert data["result"]["criterion_I"]["points"] == 3
+    assert data["result"]["criterion_I"]["analysis_status"] == "success"
     assert data["result"]["criterion_I"]["task_achievement_summary"]["fulfilled_count"] == 1
     assert data["result"]["criterion_I"]["key_point_details"][0]["number"] == 1
     assert data["result"]["criterion_I"]["key_point_details"][0]["type"] == "expected"
     assert data["result"]["criterion_II"]["scaled_points"] == 9
     assert data["result"]["criterion_II"]["analysis_status"] == "success"
     assert len(data["result"]["criterion_II"]["communication_indicators"]) == 1
-    assert "grade" not in data["result"]["criterion_II"]
-    assert "points" not in data["result"]["criterion_II"]
+    assert data["result"]["criterion_II"]["grade"] == "B"
+    assert data["result"]["criterion_II"]["points"] == 3
     detail = data["result"]["criterion_II"]["communication_indicators"][0]
     assert detail["aspect"] == "email_elements"
     assert detail["label"] == "E-Mail-Elemente"
     assert detail["rating"] == "good"
     assert data["result"]["criterion_III"]["scaled_points"] == 9
     assert data["result"]["criterion_III"]["aspect_ratings"] is None
-    assert "grade" not in data["result"]["criterion_III"]
-    assert "points" not in data["result"]["criterion_III"]
+    assert data["result"]["criterion_III"]["grade"] == "B"
+    assert data["result"]["criterion_III"]["points"] == 3
+    assert data["result"]["criterion_III"]["analysis_status"] == "success"
     assert data["result"]["criterion_III"]["highlighted_errors"][0]["error_type"] == "Kasusfehler"
     assert "aspect" not in data["result"]["criterion_III"]["highlighted_errors"][0]
 
@@ -149,16 +211,50 @@ def test_evaluate_submission_success(test_client, seeded_users, seeded_tasks, db
     assert submission.duration_seconds == session.duration_seconds
     assert submission.result_json["criterion_I"]["max_scaled_points"] == 15
     assert submission.result_json["criterion_I"]["task_achievement_summary"]["fulfilled_count"] == 1
-    assert "grade" not in submission.result_json["criterion_I"]
-    assert "points" not in submission.result_json["criterion_I"]
+    assert submission.result_json["criterion_I"]["grade"] == "B"
+    assert submission.result_json["criterion_I"]["points"] == 3
     assert submission.result_json["criterion_II"]["max_scaled_points"] == 15
     assert submission.result_json["criterion_II"]["communication_indicators"][0]["label"] == "E-Mail-Elemente"
-    assert "grade" not in submission.result_json["criterion_II"]
-    assert "points" not in submission.result_json["criterion_II"]
+    assert submission.result_json["criterion_II"]["grade"] == "B"
+    assert submission.result_json["criterion_II"]["points"] == 3
     assert submission.result_json["criterion_III"]["max_scaled_points"] == 15
-    assert "grade" not in submission.result_json["criterion_III"]
-    assert "points" not in submission.result_json["criterion_III"]
+    assert submission.result_json["criterion_III"]["grade"] == "B"
+    assert submission.result_json["criterion_III"]["points"] == 3
     assert "aspect" not in submission.result_json["criterion_III"]["highlighted_errors"][0]
+
+
+def test_evaluate_submission_partial_communication_failed(
+    test_client, seeded_users, seeded_tasks, db_session, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    async def fake_evaluate(*args, **kwargs):
+        return _partial_communication_failed_result()
+
+    monkeypatch.setattr("backend.routers.submissions.evaluate_writing", fake_evaluate)
+
+    session_id = test_client.post("/task-sessions/start").json()["session"]["id"]
+    resp = test_client.post(
+        "/submissions/evaluate",
+        json={
+            "task_session_id": session_id,
+            "selected_task_type": "info",
+            "candidate_text": "Antworttext",
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()["result"]
+    assert data["analysis_status"] == "partial"
+    assert data["analysis_error"]
+    assert data["final_score"] is None
+    assert data["raw_score"] is None
+    ii = data["criterion_II"]
+    assert ii["analysis_status"] == "failed"
+    assert ii["grade"] is None
+    assert ii["points"] is None
+    assert ii["analysis_error"]
+    submission = db_session.get(Submission, resp.json()["submission_id"])
+    assert submission is not None
+    assert submission.final_score is None
+    assert submission.raw_score is None
 
 
 def test_evaluate_submission_result_contract_e2e(
@@ -187,13 +283,19 @@ def test_evaluate_submission_result_contract_e2e(
     result = payload["result"]
 
     assert set(result["criterion_I"].keys()) == {
+        "grade",
+        "points",
         "scaled_points",
         "max_scaled_points",
         "comment",
+        "analysis_status",
+        "analysis_error",
         "task_achievement_summary",
         "key_point_details",
     }
     assert set(result["criterion_II"].keys()) == {
+        "grade",
+        "points",
         "scaled_points",
         "max_scaled_points",
         "comment",
@@ -202,9 +304,13 @@ def test_evaluate_submission_result_contract_e2e(
         "communication_indicators",
     }
     assert set(result["criterion_III"].keys()) == {
+        "grade",
+        "points",
         "scaled_points",
         "max_scaled_points",
         "comment",
+        "analysis_status",
+        "analysis_error",
         "aspect_ratings",
         "highlighted_errors",
     }

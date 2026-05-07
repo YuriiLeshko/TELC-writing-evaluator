@@ -56,33 +56,50 @@ def parse_key_points(value: Any) -> list[str]:
 
 
 def _sanitize_result_for_api(result_payload: dict[str, Any]) -> dict[str, Any]:
-    """Keep criteria response aligned with frontend-facing contract."""
+    """Shape evaluation JSON for API clients.
+
+    Strips redundant / internal-only shapes but keeps grades, scaled points,
+    analysis_status/analysis_error for partial or failed criteria (nullable).
+    Highlighted-error objects exclude legacy ``aspect``.
+    Top-level keys (topic_mismatch, overall analysis_status/error, scores, improved_text)
+    pass through unchanged from ``WritingEvaluationResult.model_dump``.
+    """
     sanitized = dict(result_payload)
     criterion_i = sanitized.get("criterion_I")
     if isinstance(criterion_i, dict):
         sanitized["criterion_I"] = {
+            "grade": criterion_i.get("grade"),
+            "points": criterion_i.get("points"),
             "scaled_points": criterion_i.get("scaled_points"),
             "max_scaled_points": criterion_i.get("max_scaled_points"),
             "comment": criterion_i.get("comment"),
+            "analysis_status": criterion_i.get("analysis_status"),
+            "analysis_error": criterion_i.get("analysis_error"),
             "task_achievement_summary": criterion_i.get("task_achievement_summary"),
             "key_point_details": criterion_i.get("key_point_details", []),
         }
     criterion_ii = sanitized.get("criterion_II")
     if isinstance(criterion_ii, dict):
         sanitized["criterion_II"] = {
+            "grade": criterion_ii.get("grade"),
+            "points": criterion_ii.get("points"),
             "scaled_points": criterion_ii.get("scaled_points"),
             "max_scaled_points": criterion_ii.get("max_scaled_points"),
             "comment": criterion_ii.get("comment"),
-            "analysis_status": criterion_ii.get("analysis_status", "success"),
+            "analysis_status": criterion_ii.get("analysis_status"),
             "analysis_error": criterion_ii.get("analysis_error"),
             "communication_indicators": criterion_ii.get("communication_indicators", []),
         }
     criterion_iii = sanitized.get("criterion_III")
     if isinstance(criterion_iii, dict):
         sanitized["criterion_III"] = {
+            "grade": criterion_iii.get("grade"),
+            "points": criterion_iii.get("points"),
             "scaled_points": criterion_iii.get("scaled_points"),
             "max_scaled_points": criterion_iii.get("max_scaled_points"),
             "comment": criterion_iii.get("comment"),
+            "analysis_status": criterion_iii.get("analysis_status"),
+            "analysis_error": criterion_iii.get("analysis_error"),
             "aspect_ratings": criterion_iii.get("aspect_ratings"),
             "highlighted_errors": [
                 {
