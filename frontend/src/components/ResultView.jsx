@@ -583,7 +583,7 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                 {r.final_score ?? "—"}/{r.max_score ?? "—"}
               </span>
             </button>
-            <InfoLink sectionId="scoring" title="Endnote und Punktesystem erklärt" />
+            <InfoLink sectionId="score-interpretation" title="Endnote und Gesamtpunkte erklärt" />
             </div>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
@@ -616,6 +616,9 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                   <span className={durationStatusClass}>
                     {durationMinutesLabel === "—" ? "—" : `${durationMinutesLabel} Min.`}
                   </span>
+                  <span className="result-inline-info">
+                    <InfoLink sectionId="result-overview" title="Zeit, Thema und Situation erklärt" />
+                  </span>
                 </p>
                 <p style={{ margin: "0.15rem 0", fontSize: "0.84rem" }}>
                   <strong>Thema passend:</strong>{" "}
@@ -625,6 +628,9 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                   <strong>Situation passend:</strong>{" "}
                   <span className={situationMismatch ? "status-bad" : "status-good"}>
                     {situationMismatch ? "Schlecht" : "Gut"}
+                  </span>
+                  <span className="result-inline-info">
+                    <InfoLink sectionId="result-overview" title="Thema und Situation passend erklärt" />
                   </span>
                 </p>
               </div>
@@ -657,11 +663,21 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                   </p>
                 ) : null}
                 <div className="result-rail-kp-summary">
-                  <p className="result-rail-kp-summary__line">
-                    <strong>Erfüllte Punkte:</strong> {keyPointSummary?.fulfilledCount ?? "—"}
+                  <p className="result-rail-kp-summary__line result-rail-kp-summary__line--with-info">
+                    <span>
+                      <strong>Erfüllte Punkte:</strong> {keyPointSummary?.fulfilledCount ?? "—"}
+                    </span>
+                    <InfoLink
+                      sectionId="task-achievement-fields"
+                      title="Leitpunkte, Erfüllung, Sprachniveau"
+                      ariaLabel="Leitpunkte und Kartenfelder im Ratgeber"
+                    />
                   </p>
-                  <p className="result-rail-kp-summary__line">
-                    <strong>Sprachniveau:</strong> {keyPointSummary?.overallLevel ?? "—"}
+                  <p className="result-rail-kp-summary__line result-rail-kp-summary__line--with-info">
+                    <span>
+                      <strong>Sprachniveau:</strong> {keyPointSummary?.overallLevel ?? "—"}
+                    </span>
+                    <InfoLink sectionId="task-achievement-fields" title="Sprachniveau und Leitpunkte" />
                   </p>
                 </div>
                 <p style={{ margin: "0.35rem 0 0", color: "var(--muted)", fontSize: "0.82rem", lineHeight: 1.35 }}>
@@ -715,8 +731,9 @@ export default function ResultView({ result, candidateText, selectedTask, submis
             </div>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
-                <p className="metric-card__help" style={{ margin: "0 0 0.35rem" }}>
-                  Struktur, Stil und Wortschatz
+                <p className="metric-card__help metric-card__help--with-info" style={{ margin: "0 0 0.35rem" }}>
+                  <span>Struktur, Stil und Wortschatz</span>
+                  <InfoLink sectionId="communication-fields" title="Kommunikative Felder und Skala" />
                 </p>
                 <p style={{ margin: "0.35rem 0 0", color: "var(--muted)", fontSize: "0.82rem", lineHeight: 1.35 }}>
                   {commentII || "Keine Details."}
@@ -765,8 +782,9 @@ export default function ResultView({ result, candidateText, selectedTask, submis
             </div>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
-                <p className="metric-card__help" style={{ margin: "0 0 0.35rem" }}>
-                  Grammatik, Satzbau und Rechtschreibung
+                <p className="metric-card__help metric-card__help--with-info" style={{ margin: "0 0 0.35rem" }}>
+                  <span>Grammatik, Satzbau und Rechtschreibung</span>
+                  <InfoLink sectionId="accuracy-fields" title="Formale Teilaspekte und Skala" />
                 </p>
                 <div className="result-rail-kp-summary">
                   {accuracyAnalysisStatus === "failed" ? (
@@ -808,7 +826,7 @@ export default function ResultView({ result, candidateText, selectedTask, submis
               <span className="result-rail-tile__title">Markierte Fehler</span>
               <span className="result-rail-tile__value">{errorCount}</span>
             </button>
-            <InfoLink sectionId="highlighted-errors" title="Markierte Fehler erklärt" />
+            <InfoLink sectionId="error-marking" title="Markierte Fehler erklärt" />
             </div>
             {railBodyVisible ? (
               <div className="result-rail-card__body">

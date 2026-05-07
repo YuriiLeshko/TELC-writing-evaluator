@@ -22,14 +22,14 @@ export default function ResultPage() {
         <h1 className="page-title">Ergebnis</h1>
         <div className="card">
           <p>
-            Kein Ergebnis ausgewählt. Bitte öffnen Sie ein Ergebnis aus dem Archiv oder starten Sie ein Training.
+            Kein Ergebnis ausgewählt. Bitte öffnen Sie ein Ergebnis aus dem Verlauf oder starten Sie eine Übung.
           </p>
           <div className="row" style={{ marginTop: "0.75rem", flexWrap: "wrap", gap: "0.5rem" }}>
             <Link to="/archive" className="btn btn--secondary link-btn">
-              Zum Archiv
+              Zum Verlauf
             </Link>
             <Link to="/training" className="btn btn--primary link-btn">
-              Zum Training
+              Zu den Übungen
             </Link>
           </div>
         </div>
