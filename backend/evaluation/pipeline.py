@@ -32,12 +32,15 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Awaitable, Callable
+from typing import TypeVar
 
 from backend.services.llm_client import LLMClient
 
 from backend.evaluation.schemas import (
     AccuracyCheckResult,
     CommunicationCheckResult,
+    CriterionScore,
     ImprovedTextResult,
     KeyPointCheckResult,
     RelevanceCheckResult,
@@ -52,11 +55,20 @@ from backend.evaluation.checks.communication import check_communication
 from backend.evaluation.checks.accuracy import check_accuracy
 from backend.evaluation.improvement import generate_improved_text
 
-from backend.evaluation.scoring import apply_word_count_override, calculate_final_score, make_score, score_all_criteria
+from backend.evaluation.scoring import (
+    apply_word_count_override,
+    calculate_final_score,
+    make_score,
+    score_criterion_i,
+    score_criterion_ii,
+    score_criterion_iii,
+)
 from backend.evaluation.result_builder import build_final_result
 
 MINIMUM_WORD_COUNT = 150
 logger = logging.getLogger(__name__)
+RETRY_ATTEMPTS = 3
+T = TypeVar("T")
 
 
 def count_words(text: str) -> int:
@@ -76,59 +88,34 @@ def _build_word_count_check(word_count: int) -> WordCountCheck:
     )
 
 
-def _fallback_relevance_result() -> RelevanceCheckResult:
-    """Return safe relevance fallback when LLM check fails."""
-    return RelevanceCheckResult(
-        topic_mismatch=False,
-        situation_mismatch=False,
-        explanation="Automatischer Fallback: Relevanz konnte wegen LLM-Ausfall nicht zuverlässig geprüft werden.",
-        positive_feedback=[],
-        improvement_feedback=[
-            "Bitte später erneut prüfen, da der Relevanz-Check technisch fehlgeschlagen ist."
-        ],
-    )
+async def _run_with_retries(
+    checker_name: str,
+    task_factory: Callable[[], Awaitable[T]],
+    attempts: int = RETRY_ATTEMPTS,
+) -> T:
+    last_exc: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            return await task_factory()
+        except Exception as exc:  # noqa: PERF203
+            last_exc = exc
+            logger.warning(
+                "%s attempt %s/%s failed: %s",
+                checker_name,
+                attempt,
+                attempts,
+                exc,
+            )
+    raise RuntimeError(f"{checker_name} failed after {attempts} attempts") from last_exc
 
 
-def _fallback_key_points_result() -> KeyPointCheckResult:
-    """Return safe key-point fallback when LLM check fails."""
-    return KeyPointCheckResult(
-        fulfilled_key_points=[],
-        own_ideas=[],
-        invalid_points=[],
-        explanation="Automatischer Fallback: Leitpunkt-Analyse war wegen LLM-Ausfall nicht verfügbar.",
-        positive_feedback=[],
-        improvement_feedback=[
-            "Bitte später erneut analysieren, um eine vollständige Leitpunkt-Bewertung zu erhalten."
-        ],
-    )
-
-
-def _fallback_accuracy_result() -> AccuracyCheckResult:
-    """Return safe formal-accuracy fallback when LLM check fails."""
-    return AccuracyCheckResult(
-        grammar_control="basic",
-        systematic_errors=[],
-        spelling_quality="poor",
-        punctuation_quality="poor",
-        comprehension_affected=True,
-        explanation="Automatischer Fallback: Sprachrichtigkeitsanalyse war wegen LLM-Ausfall nicht verfügbar.",
-        positive_feedback=[],
-        improvement_feedback=[
-            "Bitte später erneut prüfen, um belastbare Hinweise zu Grammatik und Orthografie zu erhalten."
-        ],
-        example_errors=[],
-        technical_notes=["Technischer Fallback ohne detaillierte Fehleranalyse."],
-        aspect_ratings={
-            "grammar": "problematic",
-            "syntax": "problematic",
-            "word_order": "problematic",
-            "verb_forms": "problematic",
-            "agreement": "problematic",
-            "spelling": "problematic",
-            "punctuation": "problematic",
-            "capitalization": "problematic",
-            "comprehension": "problematic",
-        },
+def _failed_criterion(message: str) -> CriterionScore:
+    return CriterionScore(
+        grade=None,
+        points=None,
+        comment=message,
+        analysis_status="failed",
+        analysis_error=message,
     )
 
 
@@ -143,10 +130,34 @@ async def evaluate_writing(
     word_count = count_words(input_data.candidate_text)
     word_count_check = _build_word_count_check(word_count)
     try:
-        relevance = await check_relevance(llm_client, input_data)
+        relevance = await _run_with_retries(
+            checker_name="relevance",
+            task_factory=lambda: check_relevance(llm_client, input_data),
+        )
     except Exception:
-        logger.exception("Relevance check failed, using fallback result.")
-        relevance = _fallback_relevance_result()
+        logger.exception("Relevance check failed after retries.")
+        fail_message = (
+            "Die Relevanzprüfung konnte technisch nicht durchgeführt werden. "
+            "Die Bewertung wurde abgebrochen."
+        )
+        failed = _failed_criterion(fail_message)
+        return build_final_result(
+            relevance=None,
+            key_points=None,
+            communication=None,
+            accuracy=None,
+            criterion_i=failed,
+            criterion_ii=failed.model_copy(deep=True),
+            criterion_iii=failed.model_copy(deep=True),
+            final_score=None,
+            word_count=word_count_check,
+            improved_text=ImprovedTextResult(
+                improved_text=input_data.candidate_text,
+                changes_summary=["Technischer Hinweis: Verbesserung konnte nicht erstellt werden."],
+            ),
+            overall_analysis_status="failed",
+            overall_analysis_error=fail_message,
+        )
 
     if relevance.topic_mismatch:
         criterion_i = make_score("D")
@@ -162,7 +173,12 @@ async def evaluate_writing(
             fulfilled_key_points=[],
             own_ideas=[],
             invalid_points=[],
-            explanation="Skipped due to topic mismatch.",
+            explanation="Analyse wurde wegen Themenverfehlung übersprungen.",
+            positive_feedback=[],
+            improvement_feedback=[
+                "Die Leitpunktanalyse wurde wegen Themenverfehlung nicht durchgeführt."
+            ],
+            key_point_details=[],
         )
         communication = CommunicationCheckResult(
             email_structure_quality="missing",
@@ -171,7 +187,8 @@ async def evaluate_writing(
             register_quality="weak",
             vocabulary_level="A2",
             sentence_variety_quality="weak",
-            explanation="Skipped due to topic mismatch.",
+            explanation="Analyse wurde wegen Themenverfehlung übersprungen.",
+            communication_indicators=[],
         )
         accuracy = AccuracyCheckResult(
             grammar_control="basic",
@@ -179,7 +196,13 @@ async def evaluate_writing(
             spelling_quality="poor",
             punctuation_quality="poor",
             comprehension_affected=True,
-            explanation="Skipped due to topic mismatch.",
+            explanation="Analyse wurde wegen Themenverfehlung übersprungen.",
+            positive_feedback=[],
+            improvement_feedback=[
+                "Die Sprachrichtigkeitsanalyse wurde wegen Themenverfehlung nicht durchgeführt."
+            ],
+            example_errors=[],
+            technical_notes=[],
             aspect_ratings={
                 "grammar": "problematic",
                 "syntax": "problematic",
@@ -191,23 +214,14 @@ async def evaluate_writing(
                 "capitalization": "problematic",
                 "comprehension": "problematic",
             },
+            highlighted_errors=[],
         )
-        try:
-            improved_text = await generate_improved_text(
-                llm_client=llm_client,
-                input_data=input_data,
-                key_points_result=key_points,
-                communication_result=communication,
-                accuracy_result=accuracy,
-            )
-        except Exception:
-            logger.exception("Improved text generation failed, using fallback improved text.")
-            improved_text = ImprovedTextResult(
-                improved_text=input_data.candidate_text,
-                changes_summary=[
-                    "Technischer Fallback: Verbesserte Version konnte wegen LLM-Ausfall nicht erstellt werden."
-                ],
-            )
+        improved_text = ImprovedTextResult(
+            improved_text=input_data.candidate_text,
+            changes_summary=[
+                "Keine verbesserte Version erstellt, da der Text das Thema verfehlt."
+            ],
+        )
 
         return build_final_result(
             relevance=relevance,
@@ -220,111 +234,102 @@ async def evaluate_writing(
             final_score=final_score,
             word_count=word_count_check,
             improved_text=improved_text,
+            overall_analysis_status="success",
+            overall_analysis_error=None,
         )
 
     checks = await asyncio.gather(
-        check_key_points(llm_client, input_data),
-        check_communication(llm_client, input_data),
-        check_accuracy(llm_client, input_data),
+        _run_with_retries("key_points", lambda: check_key_points(llm_client, input_data)),
+        # communication checker already has an internal 3-attempt repair loop.
+        # Keep a single outer attempt to avoid 3 x 3 duplicated retries.
+        _run_with_retries("communication", lambda: check_communication(llm_client, input_data), attempts=1),
+        _run_with_retries("accuracy", lambda: check_accuracy(llm_client, input_data)),
         return_exceptions=True,
     )
     key_points_result, communication_result, accuracy_result = checks
 
-    if isinstance(key_points_result, Exception):
-        logger.error(
-            "Key-points check failed, using fallback result.",
-            exc_info=(
-                type(key_points_result),
-                key_points_result,
-                key_points_result.__traceback__,
-            ),
-        )
-        key_points = _fallback_key_points_result()
-    else:
-        key_points = key_points_result
+    key_points = key_points_result if not isinstance(key_points_result, Exception) else None
+    communication = communication_result if not isinstance(communication_result, Exception) else None
+    accuracy = accuracy_result if not isinstance(accuracy_result, Exception) else None
 
-    communication_analysis_failed = False
-    communication_analysis_error = ""
-    if isinstance(communication_result, Exception):
-        logger.error(
-            "Communication check failed.",
-            exc_info=(
-                type(communication_result),
-                communication_result,
-                communication_result.__traceback__,
-            ),
-        )
-        communication_analysis_failed = True
-        communication_analysis_error = (
-            "Die kommunikative Gestaltung konnte technisch nicht zuverlässig analysiert werden."
-        )
-        communication = CommunicationCheckResult(
-            email_structure_quality="missing",
-            coherence_quality="missing",
-            cohesion_quality="missing",
-            register_quality="weak",
-            vocabulary_level="A2",
-            sentence_variety_quality="weak",
-            explanation=communication_analysis_error,
-            communication_indicators=[],
-        )
-    else:
-        communication = communication_result
+    key_failed_msg = "Die Leitpunktanalyse konnte technisch nicht durchgeführt werden. Dieses Kriterium wurde nicht bewertet."
+    comm_failed_msg = "Die Analyse der kommunikativen Gestaltung konnte technisch nicht durchgeführt werden. Dieses Kriterium wurde nicht bewertet."
+    acc_failed_msg = "Die Sprachrichtigkeitsanalyse konnte technisch nicht durchgeführt werden. Dieses Kriterium wurde nicht bewertet."
 
-    if isinstance(accuracy_result, Exception):
-        logger.error(
-            "Accuracy check failed, using fallback result.",
-            exc_info=(
-                type(accuracy_result),
-                accuracy_result,
-                accuracy_result.__traceback__,
-            ),
-        )
-        accuracy = _fallback_accuracy_result()
-    else:
-        accuracy = accuracy_result
+    criterion_i = (
+        score_criterion_i(relevance, key_points) if key_points is not None else _failed_criterion(key_failed_msg)
+    )
+    criterion_ii = (
+        score_criterion_ii(relevance, communication)
+        if communication is not None
+        else _failed_criterion(comm_failed_msg)
+    )
+    criterion_iii = (
+        score_criterion_iii(relevance, accuracy) if accuracy is not None else _failed_criterion(acc_failed_msg)
+    )
 
-    criterion_i, criterion_ii, criterion_iii, final_score = score_all_criteria(
-        relevance=relevance,
-        key_points=key_points,
-        communication=communication,
-        accuracy=accuracy,
-    )
-    criterion_i, criterion_ii, criterion_iii = apply_word_count_override(
-        word_count=word_count,
-        minimum_required=MINIMUM_WORD_COUNT,
-        criterion_i=criterion_i,
-        criterion_ii=criterion_ii,
-        criterion_iii=criterion_iii,
-    )
-    final_score = calculate_final_score(
-        criterion_i,
-        criterion_ii,
-        criterion_iii,
-    )
-    if communication_analysis_failed:
-        criterion_ii = make_score("D")
+    if (
+        criterion_i.analysis_status != "failed"
+        and criterion_ii.analysis_status != "failed"
+        and criterion_iii.analysis_status != "failed"
+    ):
+        criterion_i, criterion_ii, criterion_iii = apply_word_count_override(
+            word_count=word_count,
+            minimum_required=MINIMUM_WORD_COUNT,
+            criterion_i=criterion_i,
+            criterion_ii=criterion_ii,
+            criterion_iii=criterion_iii,
+        )
         final_score = calculate_final_score(
             criterion_i,
             criterion_ii,
             criterion_iii,
         )
-    try:
-        improved_text = await generate_improved_text(
-            llm_client=llm_client,
-            input_data=input_data,
-            key_points_result=key_points,
-            communication_result=communication,
-            accuracy_result=accuracy,
-        )
-    except Exception:
-        logger.exception("Improved text generation failed, using fallback improved text.")
+        overall_analysis_status = "success"
+        overall_analysis_error = None
+    else:
+        final_score = None
+        overall_analysis_status = "partial"
+        failed_messages = [
+            msg
+            for msg, criterion in (
+                (key_failed_msg, criterion_i),
+                (comm_failed_msg, criterion_ii),
+                (acc_failed_msg, criterion_iii),
+            )
+            if criterion.analysis_status == "failed"
+        ]
+        overall_analysis_error = " ".join(failed_messages)
+    if overall_analysis_status != "success":
         improved_text = ImprovedTextResult(
             improved_text=input_data.candidate_text,
             changes_summary=[
-                "Technischer Fallback: Verbesserte Version konnte wegen LLM-Ausfall nicht erstellt werden."
+                "Keine verbesserte Version erstellt, da die Bewertung nicht vollständig durchgeführt werden konnte."
             ],
         )
+    else:
+        assert key_points is not None
+        assert communication is not None
+        assert accuracy is not None
+        try:
+            improved_text = await _run_with_retries(
+                checker_name="improved_text",
+                task_factory=lambda: generate_improved_text(
+                    llm_client=llm_client,
+                    input_data=input_data,
+                    key_points_result=key_points,
+                    communication_result=communication,
+                    accuracy_result=accuracy,
+                ),
+            )
+        except Exception:
+            logger.exception("Improved text generation failed, using fallback improved text.")
+            improved_text = ImprovedTextResult(
+                improved_text=input_data.candidate_text,
+                changes_summary=[
+                    "Technischer Fallback: Verbesserte Version konnte wegen LLM-Ausfall nicht erstellt werden."
+                ],
+            )
 
     return build_final_result(
         relevance=relevance,
@@ -337,8 +342,8 @@ async def evaluate_writing(
         final_score=final_score,
         word_count=word_count_check,
         improved_text=improved_text,
-        communication_analysis_status="failed" if communication_analysis_failed else "success",
-        communication_analysis_error=communication_analysis_error if communication_analysis_failed else None,
+        overall_analysis_status=overall_analysis_status,
+        overall_analysis_error=overall_analysis_error,
     )
 
 

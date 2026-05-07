@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import pytest
+
 from backend.evaluation.schemas import (
     AccuracyCheckResult,
     CommunicationCheckResult,
+    CriterionScore,
     KeyPointCheckResult,
+    KeyPointDetail,
     RelevanceCheckResult,
 )
 from backend.evaluation.scoring import (
@@ -27,6 +31,8 @@ def make_relevance(
         topic_mismatch=topic_mismatch,
         situation_mismatch=situation_mismatch,
         explanation="test",
+        positive_feedback=["passt"],
+        improvement_feedback=["hinweis"],
     )
 
 
@@ -35,13 +41,36 @@ def make_key_points(
     fulfilled_key_points: list[str] | None = None,
     own_ideas: list[str] | None = None,
     invalid_points: list[str] | None = None,
+    key_point_details: list[KeyPointDetail] | None = None,
 ) -> KeyPointCheckResult:
-    """Create a key-point result for tests."""
+    """Create a key-point result for tests.
+
+    Unless ``key_point_details`` are provided explicitly, synthesize one valid
+    B2-fulfilled expected row per entry in ``fulfilled_key_points`` so Criterion I
+    scoring can count completions from ``key_point_details``.
+    """
+    fk = fulfilled_key_points or []
+    details = key_point_details
+    if details is None:
+        details = [
+            KeyPointDetail(
+                number=i + 1,
+                type="expected",
+                key_point=text,
+                status="fulfilled",
+                sentence_count=2,
+                situation_appropriate=True,
+                language_level="B2",
+                comment="ok",
+            )
+            for i, text in enumerate(fk)
+        ]
     return KeyPointCheckResult(
-        fulfilled_key_points=fulfilled_key_points or [],
+        fulfilled_key_points=fk,
         own_ideas=own_ideas or [],
         invalid_points=invalid_points or [],
         explanation="test",
+        key_point_details=details,
     )
 
 
@@ -73,8 +102,20 @@ def make_accuracy(
     spelling_quality: str = "good",
     punctuation_quality: str = "good",
     comprehension_affected: bool = False,
+    aspect_ratings: dict[str, str] | None = None,
 ) -> AccuracyCheckResult:
     """Create an accuracy result for tests."""
+    ar = aspect_ratings or {
+        "grammar": "adequate",
+        "syntax": "adequate",
+        "word_order": "adequate",
+        "verb_forms": "adequate",
+        "agreement": "adequate",
+        "spelling": "adequate",
+        "punctuation": "adequate",
+        "capitalization": "adequate",
+        "comprehension": "adequate",
+    }
     return AccuracyCheckResult(
         grammar_control=grammar_control,
         systematic_errors=systematic_errors or [],
@@ -82,17 +123,7 @@ def make_accuracy(
         punctuation_quality=punctuation_quality,
         comprehension_affected=comprehension_affected,
         explanation="test",
-        aspect_ratings={
-            "grammar": "adequate",
-            "syntax": "adequate",
-            "word_order": "adequate",
-            "verb_forms": "adequate",
-            "agreement": "adequate",
-            "spelling": "adequate",
-            "punctuation": "adequate",
-            "capitalization": "adequate",
-            "comprehension": "adequate",
-        },
+        aspect_ratings=ar,
     )
 
 
@@ -156,7 +187,7 @@ def test_situation_mismatch_forces_only_criterion_i_to_d() -> None:
 
     assert criterion_i.grade == "D"
     assert criterion_ii.grade == "A"
-    assert criterion_iii.grade == "A"
+    assert criterion_iii.grade == "B"
 
 
 def test_criterion_i_three_fulfilled_key_points_is_a() -> None:
@@ -223,9 +254,10 @@ def test_criterion_ii_acceptable_structure_can_still_be_b() -> None:
     score = score_criterion_ii(
         make_relevance(),
         make_communication(
-            email_structure_quality="acceptable",
+            email_structure_quality="good",
             register_quality="good",
             coherence_quality="good",
+            cohesion_quality="good",
             vocabulary_level="B2",
             sentence_variety_quality="good",
         ),
@@ -287,6 +319,17 @@ def test_criterion_ii_neutral_fallback_profile_is_c_not_d() -> None:
 
 
 def test_criterion_iii_strong_grammar_with_max_one_systematic_error_is_a() -> None:
+    strong = {
+        "grammar": "strong",
+        "syntax": "strong",
+        "word_order": "strong",
+        "verb_forms": "strong",
+        "agreement": "strong",
+        "spelling": "strong",
+        "punctuation": "strong",
+        "capitalization": "strong",
+        "comprehension": "strong",
+    }
     score = score_criterion_iii(
         make_relevance(),
         make_accuracy(
@@ -294,6 +337,7 @@ def test_criterion_iii_strong_grammar_with_max_one_systematic_error_is_a() -> No
             systematic_errors=["minor issue"],
             spelling_quality="good",
             punctuation_quality="good",
+            aspect_ratings=strong,
         ),
     )
     assert score.grade == "A"
@@ -315,7 +359,20 @@ def test_criterion_iii_good_grammar_with_max_three_systematic_errors_is_b() -> N
 def test_criterion_iii_unstable_grammar_is_c() -> None:
     score = score_criterion_iii(
         make_relevance(),
-        make_accuracy(grammar_control="unstable"),
+        make_accuracy(
+            grammar_control="unstable",
+            aspect_ratings={
+                "grammar": "weak",
+                "syntax": "adequate",
+                "word_order": "adequate",
+                "verb_forms": "adequate",
+                "agreement": "adequate",
+                "spelling": "adequate",
+                "punctuation": "adequate",
+                "capitalization": "adequate",
+                "comprehension": "adequate",
+            },
+        ),
     )
     assert score.grade == "C"
 
@@ -323,7 +380,20 @@ def test_criterion_iii_unstable_grammar_is_c() -> None:
 def test_criterion_iii_basic_grammar_is_c() -> None:
     score = score_criterion_iii(
         make_relevance(),
-        make_accuracy(grammar_control="basic"),
+        make_accuracy(
+            grammar_control="basic",
+            aspect_ratings={
+                "grammar": "weak",
+                "syntax": "weak",
+                "word_order": "adequate",
+                "verb_forms": "adequate",
+                "agreement": "adequate",
+                "spelling": "adequate",
+                "punctuation": "adequate",
+                "capitalization": "adequate",
+                "comprehension": "adequate",
+            },
+        ),
     )
     assert score.grade == "C"
 
@@ -334,6 +404,18 @@ def test_criterion_iii_comprehension_affected_is_d() -> None:
         make_accuracy(comprehension_affected=True),
     )
     assert score.grade == "D"
+
+
+def test_calculate_final_score_rejects_none_points() -> None:
+    failed = CriterionScore(
+        grade=None,
+        points=None,
+        analysis_status="failed",
+        analysis_error="Analysefehler.",
+    )
+    ok = make_score("B")
+    with pytest.raises(ValueError, match="points=None"):
+        calculate_final_score(criterion_i=failed, criterion_ii=ok, criterion_iii=ok)
 
 
 def test_calculate_final_score() -> None:
@@ -368,10 +450,10 @@ def test_score_all_criteria_returns_expected_tuple() -> None:
     criterion_i, criterion_ii, criterion_iii, final_score = result
 
     assert criterion_i.grade == "B"
-    assert criterion_ii.grade == "B"
+    assert criterion_ii.grade == "C"
     assert criterion_iii.grade == "B"
-    assert final_score.raw_score == 9
-    assert final_score.final_score == 27
+    assert final_score.raw_score == 7
+    assert final_score.final_score == 21
 
 
 def test_word_count_override_below_150_sets_all_d() -> None:

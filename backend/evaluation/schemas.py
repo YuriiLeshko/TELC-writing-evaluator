@@ -359,8 +359,8 @@ class CriterionScore(BaseModel):
         },
     )
 
-    grade: Literal["A", "B", "C", "D"] = Field(...)
-    points: int = Field(..., ge=0, le=5)
+    grade: Literal["A", "B", "C", "D"] | None = Field(default=None)
+    points: int | None = Field(default=None, ge=0, le=5)
     comment: str | None = Field(default=None)
     scaled_points: int | None = Field(default=None)
     max_scaled_points: int | None = Field(default=None)
@@ -373,7 +373,17 @@ class CriterionScore(BaseModel):
 
     @model_validator(mode="after")
     def validate_grade_points_mapping(self) -> CriterionScore:
-        """Ensure points exactly match the grade mapping."""
+        """Ensure either valid score mapping or valid failed-analysis shape."""
+        if self.analysis_status == "failed":
+            if self.grade is not None or self.points is not None:
+                raise ValueError("grade and points must be null when analysis_status is failed")
+            if self.analysis_error is None or not self.analysis_error.strip():
+                raise ValueError("analysis_error is required when analysis_status is failed")
+            return self
+
+        if self.grade is None or self.points is None:
+            raise ValueError("grade and points are required when analysis_status is not failed")
+
         expected_points = {"A": 5, "B": 3, "C": 1, "D": 0}[self.grade]
         if self.points != expected_points:
             raise ValueError(
@@ -474,6 +484,8 @@ class WritingEvaluationResult(BaseModel):
                         "Formellen Stil verstärkt",
                     ],
                 },
+                "analysis_status": "success",
+                "analysis_error": None,
                 "raw_score": 9,
                 "final_score": 27,
                 "max_score": 45,
@@ -488,6 +500,8 @@ class WritingEvaluationResult(BaseModel):
     criterion_III: CriterionScore = Field(...)
     word_count: WordCountCheck | None = Field(default=None)
     improved_text: ImprovedTextResult = Field(...)
-    raw_score: int = Field(..., ge=0)
-    final_score: int = Field(..., ge=0)
+    analysis_status: Literal["success", "partial", "failed"] = Field(default="success")
+    analysis_error: str | None = Field(default=None)
+    raw_score: int | None = Field(default=None, ge=0)
+    final_score: int | None = Field(default=None, ge=0)
     max_score: int = Field(..., ge=1)
