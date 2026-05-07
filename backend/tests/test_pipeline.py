@@ -77,16 +77,12 @@ async def test_pipeline_normal_flow(monkeypatch: pytest.MonkeyPatch, input_data:
     async def fake_comm(*args, **kwargs):
         calls.append("comm")
         return CommunicationCheckResult(
-            has_subject=True,
-            has_greeting=True,
-            has_introduction=True,
-            has_body_structure=True,
-            has_conclusion=True,
-            has_closing=True,
-            register_quality="appropriate",
+            email_structure_quality="good",
             coherence_quality="good",
+            cohesion_quality="acceptable",
+            register_quality="good",
             vocabulary_level="B2",
-            sentence_variety="some_variety",
+            sentence_variety_quality="acceptable",
             explanation="Ok",
             communication_indicators=[
                 CommunicationIndicator(
@@ -232,16 +228,12 @@ async def test_pipeline_low_word_count_override(monkeypatch: pytest.MonkeyPatch)
 
     async def fake_comm(*args, **kwargs):
         return CommunicationCheckResult(
-            has_subject=True,
-            has_greeting=True,
-            has_introduction=True,
-            has_body_structure=True,
-            has_conclusion=True,
-            has_closing=True,
-            register_quality="appropriate",
-            coherence_quality="strong",
+            email_structure_quality="excellent",
+            coherence_quality="excellent",
+            cohesion_quality="excellent",
+            register_quality="excellent",
             vocabulary_level="B2",
-            sentence_variety="varied",
+            sentence_variety_quality="excellent",
             explanation="Ok",
             communication_indicators=[
                 CommunicationIndicator(

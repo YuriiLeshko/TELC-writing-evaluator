@@ -70,27 +70,28 @@ def score_criterion_ii(
     if relevance.topic_mismatch:
         return make_score("D")
 
-    if communication.coherence_quality == "incoherent":
+    if communication.coherence_quality == "missing":
         return make_score("D")
 
-    if communication.register_quality == "inappropriate":
+    if communication.register_quality in {"weak", "missing"}:
         return make_score("D")
 
     is_a = (
-        communication.has_subject
-        and communication.has_greeting
-        and communication.has_closing
-        and communication.register_quality == "appropriate"
-        and communication.coherence_quality == "strong"
+        communication.email_structure_quality in {"excellent", "good"}
+        and communication.register_quality == "excellent"
+        and communication.coherence_quality == "excellent"
+        and communication.cohesion_quality in {"excellent", "good"}
         and communication.vocabulary_level == "B2"
-        and communication.sentence_variety == "varied"
+        and communication.sentence_variety_quality in {"excellent", "good"}
     )
     if is_a:
         return make_score("A")
 
     is_b = (
-        communication.register_quality in {"appropriate", "mostly_appropriate"}
+        communication.register_quality in {"good", "acceptable"}
         and communication.coherence_quality in {"good", "acceptable"}
+        and communication.cohesion_quality in {"good", "acceptable", "weak"}
+        and communication.email_structure_quality in {"excellent", "good", "acceptable"}
         and communication.vocabulary_level in {"B2", "B1+"}
         and communication.coherence_quality != "weak"
     )
@@ -100,7 +101,7 @@ def score_criterion_ii(
     is_c = (
         communication.coherence_quality == "weak"
         or communication.vocabulary_level == "B1"
-        or communication.sentence_variety == "simple"
+        or communication.sentence_variety_quality == "weak"
     )
     if is_c:
         return make_score("C")
@@ -213,16 +214,12 @@ if __name__ == "__main__":
     )
 
     communication = CommunicationCheckResult(
-        has_subject=True,
-        has_greeting=True,
-        has_introduction=True,
-        has_body_structure=True,
-        has_conclusion=True,
-        has_closing=True,
-        register_quality="appropriate",
+        email_structure_quality="good",
         coherence_quality="good",
+        cohesion_quality="good",
+        register_quality="good",
+        sentence_variety_quality="good",
         vocabulary_level="B2",
-        sentence_variety="varied",
         explanation="The email is well structured and appropriate in tone.",
     )
 

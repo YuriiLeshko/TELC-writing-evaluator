@@ -61,16 +61,12 @@ def _inputs() -> tuple[
         ],
     )
     communication = CommunicationCheckResult(
-        has_subject=True,
-        has_greeting=True,
-        has_introduction=True,
-        has_body_structure=True,
-        has_conclusion=True,
-        has_closing=True,
-        register_quality="appropriate",
+        email_structure_quality="good",
         coherence_quality="good",
+        cohesion_quality="acceptable",
+        register_quality="good",
         vocabulary_level="B2",
-        sentence_variety="some_variety",
+        sentence_variety_quality="acceptable",
         explanation="Strukturiert.",
         communication_indicators=[
             CommunicationIndicator(

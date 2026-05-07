@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 from backend.evaluation.checks.accuracy import check_accuracy
 from backend.evaluation.checks.communication import CommunicationAnalysisFailed, check_communication
+from backend.evaluation.checks.communication import _normalize_rating, _normalize_vocabulary_level
 from backend.evaluation.checks.key_points import check_key_points
 from backend.evaluation.checks.relevance import check_relevance
 from backend.evaluation.schemas import (
@@ -237,6 +238,11 @@ async def test_check_communication_with_fake_llm(input_data: WritingEvaluationIn
     )
     result = await check_communication(client, input_data)
     assert isinstance(result, CommunicationCheckResult)
+    assert result.email_structure_quality == "excellent"
+    assert result.coherence_quality == "good"
+    assert result.cohesion_quality == "missing"
+    assert result.register_quality == "good"
+    assert result.sentence_variety_quality == "acceptable"
     assert len(result.communication_indicators) == 7
     expected_aspects = {
         "email_elements",
@@ -382,6 +388,18 @@ async def test_check_communication_retries_then_succeeds(input_data: WritingEval
     result = await check_communication(client, input_data)
     assert len(client.calls) == 2
     assert len(result.communication_indicators) == 7
+
+
+def test_communication_normalizers_return_valid_schema_values() -> None:
+    assert _normalize_rating(None) == "missing"
+    assert _normalize_rating("strong") == "excellent"
+    assert _normalize_rating("ok") == "acceptable"
+    assert _normalize_rating("poor") == "weak"
+    assert _normalize_rating("unknown-value") == "weak"
+
+    assert _normalize_vocabulary_level(" b2 ") == "B2"
+    assert _normalize_vocabulary_level("b1+") == "B1+"
+    assert _normalize_vocabulary_level("invalid") == "B1"
 
 
 @pytest.mark.asyncio

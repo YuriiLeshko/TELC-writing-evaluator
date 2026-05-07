@@ -111,6 +111,33 @@ def test_communication_indicator_validation() -> None:
     assert detail.aspect == "register"
 
 
+def test_communication_check_result_uses_new_fields() -> None:
+    result = CommunicationCheckResult(
+        email_structure_quality="good",
+        coherence_quality="acceptable",
+        cohesion_quality="good",
+        register_quality="good",
+        vocabulary_level="B1+",
+        sentence_variety_quality="acceptable",
+        explanation="Die kommunikative Gestaltung ist insgesamt verständlich.",
+        communication_indicators=[],
+    )
+    assert result.email_structure_quality == "good"
+
+
+def test_communication_check_result_rejects_old_boolean_fields() -> None:
+    with pytest.raises(ValidationError):
+        CommunicationCheckResult(
+            has_subject=True,
+            coherence_quality="good",
+            cohesion_quality="good",
+            register_quality="good",
+            vocabulary_level="B2",
+            sentence_variety_quality="good",
+            explanation="Test",
+        )
+
+
 def test_accuracy_detail_validation() -> None:
     detail = AccuracyDetail(
         aspect="word_order",

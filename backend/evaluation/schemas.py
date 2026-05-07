@@ -156,6 +156,15 @@ class KeyPointCheckResult(BaseModel):
         return cleaned
 
 
+CommunicationRating = Literal[
+    "excellent",
+    "good",
+    "acceptable",
+    "weak",
+    "missing",
+]
+
+
 class CommunicationIndicator(BaseModel):
     """Simplified per-aspect communicative indicator for Criterion II."""
 
@@ -171,7 +180,7 @@ class CommunicationIndicator(BaseModel):
         "sentence_variety",
     ]
     label: str
-    rating: Literal["excellent", "good", "acceptable", "weak", "missing"]
+    rating: CommunicationRating
     comment: str
 
 
@@ -183,17 +192,13 @@ class CommunicationCheckResult(BaseModel):
         str_strip_whitespace=True,
         json_schema_extra={
             "example": {
-                "has_subject": True,
-                "has_greeting": True,
-                "has_introduction": True,
-                "has_body_structure": True,
-                "has_conclusion": True,
-                "has_closing": True,
-                "register_quality": "appropriate",
+                "email_structure_quality": "good",
                 "coherence_quality": "good",
+                "cohesion_quality": "acceptable",
+                "register_quality": "good",
                 "vocabulary_level": "B2",
-                "sentence_variety": "some_variety",
-                "explanation": "The email has the expected structure and appropriate register.",
+                "sentence_variety_quality": "acceptable",
+                "explanation": "Die E-Mail ist klar strukturiert und das Register passt weitgehend zur Aufgabe.",
                 "communication_indicators": [
                     {
                         "aspect": "email_elements",
@@ -206,16 +211,12 @@ class CommunicationCheckResult(BaseModel):
         },
     )
 
-    has_subject: bool = Field(...)
-    has_greeting: bool = Field(...)
-    has_introduction: bool = Field(...)
-    has_body_structure: bool = Field(...)
-    has_conclusion: bool = Field(...)
-    has_closing: bool = Field(...)
-    register_quality: Literal["appropriate", "mostly_appropriate", "inappropriate"] = Field(...)
-    coherence_quality: Literal["strong", "good", "acceptable", "weak", "incoherent"] = Field(...)
+    email_structure_quality: CommunicationRating = Field(...)
+    coherence_quality: CommunicationRating = Field(...)
+    cohesion_quality: CommunicationRating = Field(...)
+    register_quality: CommunicationRating = Field(...)
     vocabulary_level: Literal["B2", "B1+", "B1", "A2"] = Field(...)
-    sentence_variety: Literal["varied", "some_variety", "simple"] = Field(...)
+    sentence_variety_quality: CommunicationRating = Field(...)
     explanation: str = Field(..., min_length=1)
     communication_indicators: list[CommunicationIndicator] = Field(default_factory=list)
 

@@ -47,29 +47,21 @@ def make_key_points(
 
 def make_communication(
     *,
-    has_subject: bool = True,
-    has_greeting: bool = True,
-    has_introduction: bool = True,
-    has_body_structure: bool = True,
-    has_conclusion: bool = True,
-    has_closing: bool = True,
-    register_quality: str = "appropriate",
+    email_structure_quality: str = "good",
     coherence_quality: str = "good",
+    cohesion_quality: str = "good",
+    register_quality: str = "good",
     vocabulary_level: str = "B2",
-    sentence_variety: str = "varied",
+    sentence_variety_quality: str = "good",
 ) -> CommunicationCheckResult:
     """Create a communication result for tests."""
     return CommunicationCheckResult(
-        has_subject=has_subject,
-        has_greeting=has_greeting,
-        has_introduction=has_introduction,
-        has_body_structure=has_body_structure,
-        has_conclusion=has_conclusion,
-        has_closing=has_closing,
+        email_structure_quality=email_structure_quality,
+        cohesion_quality=cohesion_quality,
         register_quality=register_quality,
         coherence_quality=coherence_quality,
         vocabulary_level=vocabulary_level,
-        sentence_variety=sentence_variety,
+        sentence_variety_quality=sentence_variety_quality,
         explanation="test",
     )
 
@@ -107,9 +99,11 @@ def test_topic_mismatch_forces_all_criteria_to_d() -> None:
         own_ideas=["idea"],
     )
     communication = make_communication(
-        coherence_quality="strong",
+        coherence_quality="excellent",
+        register_quality="excellent",
+        cohesion_quality="excellent",
         vocabulary_level="B2",
-        sentence_variety="varied",
+        sentence_variety_quality="excellent",
     )
     accuracy = make_accuracy(grammar_control="strong")
 
@@ -134,9 +128,11 @@ def test_situation_mismatch_forces_only_criterion_i_to_d() -> None:
     relevance = make_relevance(situation_mismatch=True)
     key_points = make_key_points(fulfilled_key_points=["p1", "p2", "p3"])
     communication = make_communication(
-        coherence_quality="strong",
+        coherence_quality="excellent",
+        register_quality="excellent",
+        cohesion_quality="excellent",
         vocabulary_level="B2",
-        sentence_variety="varied",
+        sentence_variety_quality="excellent",
     )
     accuracy = make_accuracy(grammar_control="strong")
 
@@ -201,27 +197,26 @@ def test_criterion_ii_strong_communication_with_all_email_elements_is_a() -> Non
     score = score_criterion_ii(
         make_relevance(),
         make_communication(
-            has_subject=True,
-            has_greeting=True,
-            has_closing=True,
-            register_quality="appropriate",
-            coherence_quality="strong",
+            email_structure_quality="excellent",
+            register_quality="excellent",
+            coherence_quality="excellent",
+            cohesion_quality="excellent",
             vocabulary_level="B2",
-            sentence_variety="varied",
+            sentence_variety_quality="excellent",
         ),
     )
     assert score.grade == "A"
 
 
-def test_criterion_ii_missing_subject_prevents_a_but_can_still_be_b() -> None:
+def test_criterion_ii_acceptable_structure_can_still_be_b() -> None:
     score = score_criterion_ii(
         make_relevance(),
         make_communication(
-            has_subject=False,
-            register_quality="appropriate",
+            email_structure_quality="acceptable",
+            register_quality="good",
             coherence_quality="good",
             vocabulary_level="B2",
-            sentence_variety="varied",
+            sentence_variety_quality="good",
         ),
     )
     assert score.grade == "B"
@@ -230,7 +225,7 @@ def test_criterion_ii_missing_subject_prevents_a_but_can_still_be_b() -> None:
 def test_criterion_ii_inappropriate_register_is_d() -> None:
     score = score_criterion_ii(
         make_relevance(),
-        make_communication(register_quality="inappropriate"),
+        make_communication(register_quality="weak"),
     )
     assert score.grade == "D"
 
@@ -238,7 +233,7 @@ def test_criterion_ii_inappropriate_register_is_d() -> None:
 def test_criterion_ii_incoherent_text_is_d() -> None:
     score = score_criterion_ii(
         make_relevance(),
-        make_communication(coherence_quality="incoherent"),
+        make_communication(coherence_quality="missing"),
     )
     assert score.grade == "D"
 
@@ -262,19 +257,19 @@ def test_criterion_ii_b1_vocabulary_is_c() -> None:
 def test_criterion_ii_simple_sentence_variety_is_c() -> None:
     score = score_criterion_ii(
         make_relevance(),
-        make_communication(sentence_variety="simple"),
+        make_communication(sentence_variety_quality="weak"),
     )
-    assert score.grade == "B"
+    assert score.grade == "C"
 
 
 def test_criterion_ii_neutral_fallback_profile_is_c_not_d() -> None:
     score = score_criterion_ii(
         make_relevance(),
         make_communication(
-            register_quality="mostly_appropriate",
+            register_quality="acceptable",
             coherence_quality="acceptable",
             vocabulary_level="B1",
-            sentence_variety="simple",
+            sentence_variety_quality="weak",
         ),
     )
     assert score.grade == "C"
@@ -351,10 +346,10 @@ def test_score_all_criteria_returns_expected_tuple() -> None:
         relevance=make_relevance(),
         key_points=make_key_points(fulfilled_key_points=["p1", "p2"]),
         communication=make_communication(
-            has_subject=False,
+            email_structure_quality="acceptable",
             coherence_quality="good",
             vocabulary_level="B1+",
-            sentence_variety="varied",
+            sentence_variety_quality="good",
         ),
         accuracy=make_accuracy(grammar_control="good", systematic_errors=["e1"]),
     )

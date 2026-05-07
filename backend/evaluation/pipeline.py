@@ -154,16 +154,12 @@ async def evaluate_writing(
             explanation="Skipped due to topic mismatch.",
         )
         communication = CommunicationCheckResult(
-            has_subject=False,
-            has_greeting=False,
-            has_introduction=False,
-            has_body_structure=False,
-            has_conclusion=False,
-            has_closing=False,
-            register_quality="inappropriate",
-            coherence_quality="incoherent",
+            email_structure_quality="missing",
+            coherence_quality="missing",
+            cohesion_quality="missing",
+            register_quality="weak",
             vocabulary_level="A2",
-            sentence_variety="simple",
+            sentence_variety_quality="weak",
             explanation="Skipped due to topic mismatch.",
         )
         accuracy = AccuracyCheckResult(
@@ -241,16 +237,12 @@ async def evaluate_writing(
             "Die kommunikative Gestaltung konnte technisch nicht zuverlässig analysiert werden."
         )
         communication = CommunicationCheckResult(
-            has_subject=False,
-            has_greeting=False,
-            has_introduction=False,
-            has_body_structure=False,
-            has_conclusion=False,
-            has_closing=False,
-            register_quality="inappropriate",
-            coherence_quality="incoherent",
+            email_structure_quality="missing",
+            coherence_quality="missing",
+            cohesion_quality="missing",
+            register_quality="weak",
             vocabulary_level="A2",
-            sentence_variety="simple",
+            sentence_variety_quality="weak",
             explanation=communication_analysis_error,
             communication_indicators=[],
         )

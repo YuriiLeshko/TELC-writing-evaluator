@@ -9,6 +9,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from pydantic import ValidationError
+
 from backend.evaluation.prompts.communication import (
     REPAIR_INSTRUCTION,
     SYSTEM_PROMPT,
@@ -45,10 +47,18 @@ RATING_NORMALIZATION = {
     "strong": "excellent",
     "very_good": "excellent",
     "good": "good",
+    "appropriate": "good",
     "adequate": "acceptable",
     "acceptable": "acceptable",
+    "mostly_appropriate": "acceptable",
     "ok": "acceptable",
     "weak": "weak",
+    "poor": "weak",
+    "inappropriate": "weak",
+    "varied": "good",
+    "some_variety": "acceptable",
+    "simple": "weak",
+    "incoherent": "missing",
     "missing": "missing",
     "absent": "missing",
     "none": "missing",
@@ -61,7 +71,69 @@ class CommunicationAnalysisFailed(Exception):
 
 def _normalize_rating(value: Any) -> str:
     normalized = str(value or "").strip().lower()
-    return RATING_NORMALIZATION.get(normalized, normalized)
+    if not normalized:
+        return "missing"
+    return RATING_NORMALIZATION.get(normalized, "weak")
+
+
+def _normalize_vocabulary_level(value: Any) -> str:
+    normalized = str(value or "").strip().upper()
+    if normalized in {"B2", "B1+", "B1", "A2"}:
+        return normalized
+    return "B1"
+
+
+def _derive_email_structure_quality(raw_result: dict[str, Any]) -> Any:
+    if raw_result.get("email_structure_quality") not in (None, ""):
+        return raw_result.get("email_structure_quality")
+
+    boolean_keys = [
+        "has_subject",
+        "has_greeting",
+        "has_introduction",
+        "has_body_structure",
+        "has_conclusion",
+        "has_closing",
+    ]
+    bool_values = [raw_result.get(key) for key in boolean_keys if key in raw_result]
+    if not bool_values:
+        return None
+
+    true_count = sum(bool(value) for value in bool_values)
+    total_count = len(bool_values)
+    ratio = true_count / total_count if total_count else 0.0
+
+    if ratio >= 0.95:
+        return "excellent"
+    if ratio >= 0.7:
+        return "good"
+    if ratio >= 0.4:
+        return "acceptable"
+    if ratio > 0.0:
+        return "weak"
+    return "missing"
+
+
+def _normalize_communication_result_fields(raw_result: dict[str, Any]) -> None:
+    # Support both new schema fields and old prompt/checkpoint aliases.
+    raw_result["email_structure_quality"] = _normalize_rating(
+        _derive_email_structure_quality(raw_result)
+    )
+    raw_result["coherence_quality"] = _normalize_rating(
+        raw_result.get("coherence_quality")
+    )
+    raw_result["cohesion_quality"] = _normalize_rating(
+        raw_result.get("cohesion_quality")
+    )
+    raw_result["register_quality"] = _normalize_rating(
+        raw_result.get("register_quality")
+    )
+    raw_result["sentence_variety_quality"] = _normalize_rating(
+        raw_result.get("sentence_variety_quality", raw_result.get("sentence_variety"))
+    )
+    raw_result["vocabulary_level"] = _normalize_vocabulary_level(
+        raw_result.get("vocabulary_level")
+    )
 
 
 def _build_default_indicator(aspect: str) -> dict[str, Any]:
@@ -91,7 +163,7 @@ def _normalize_communication_indicators(value: Any) -> list[dict[str, Any]]:
 
         normalized = {
             "aspect": aspect,
-            "label": str(item.get("label") or ASPECT_LABELS[aspect]).strip() or ASPECT_LABELS[aspect],
+            "label": ASPECT_LABELS[aspect],
             "rating": _normalize_rating(item.get("rating")),
             "comment": str(item.get("comment") or "").strip() or "Keine Details verfügbar.",
         }
@@ -123,12 +195,16 @@ async def check_communication(
             if not isinstance(raw_result, dict):
                 raise ValueError("Communication checker must return a JSON object.")
 
+            _normalize_communication_result_fields(raw_result)
             raw_result["communication_indicators"] = _normalize_communication_indicators(
                 raw_result.get("communication_indicators")
             )
             return CommunicationCheckResult.model_validate(raw_result)
         except (LLMJSONParseError, ValueError) as exc:
             logger.warning("Communication check attempt %s failed: %s", attempt, exc)
+            errors.append(f"attempt {attempt}: {exc}")
+        except ValidationError as exc:
+            logger.warning("Communication check attempt %s validation failed: %s", attempt, exc)
             errors.append(f"attempt {attempt}: {exc}")
         except Exception as exc:
             logger.warning("Communication check attempt %s validation failed: %s", attempt, exc)
