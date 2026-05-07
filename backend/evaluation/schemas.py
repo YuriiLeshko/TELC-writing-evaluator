@@ -147,8 +147,8 @@ class KeyPointCheckResult(BaseModel):
         return cleaned
 
 
-class CommunicationDetail(BaseModel):
-    """Structured per-aspect communicative design analysis for Criterion II."""
+class CommunicationIndicator(BaseModel):
+    """Simplified per-aspect communicative indicator for Criterion II."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -162,11 +162,7 @@ class CommunicationDetail(BaseModel):
         "sentence_variety",
     ]
     label: str
-    status: Literal["strong", "adequate", "weak", "missing", "inappropriate"]
-    level: Literal["B2", "B1+", "B1", "A2"] | None = None
-    present_items: list[str] = Field(default_factory=list)
-    missing_items: list[str] = Field(default_factory=list)
-    evidence: list[str] = Field(default_factory=list)
+    rating: Literal["excellent", "good", "acceptable", "weak", "missing"]
     comment: str
 
 
@@ -189,11 +185,14 @@ class CommunicationCheckResult(BaseModel):
                 "vocabulary_level": "B2",
                 "sentence_variety": "some_variety",
                 "explanation": "The email has the expected structure and appropriate register.",
-                "positive_feedback": ["The structure is complete and easy to follow."],
-                "improvement_feedback": ["Use more complex connectors to improve textual flow."],
-                "linking_devices": ["leider", "deshalb"],
-                "complex_connectors": ["dass", "entweder ... oder"],
-                "language_level_comment": "Lexis is mostly precise and functionally close to B2.",
+                "communication_indicators": [
+                    {
+                        "aspect": "email_elements",
+                        "label": "E-Mail-Elemente",
+                        "rating": "good",
+                        "comment": "Die wichtigsten E-Mail-Bausteine sind vorhanden.",
+                    }
+                ],
             }
         },
     )
@@ -209,26 +208,7 @@ class CommunicationCheckResult(BaseModel):
     vocabulary_level: Literal["B2", "B1+", "B1", "A2"] = Field(...)
     sentence_variety: Literal["varied", "some_variety", "simple"] = Field(...)
     explanation: str = Field(..., min_length=1)
-    positive_feedback: list[str] = Field(default_factory=list)
-    improvement_feedback: list[str] = Field(default_factory=list)
-    linking_devices: list[str] = Field(default_factory=list)
-    complex_connectors: list[str] = Field(default_factory=list)
-    language_level_comment: str = Field(default="")
-    communication_details: list[CommunicationDetail] = Field(default_factory=list)
-
-    @field_validator(
-        "positive_feedback",
-        "improvement_feedback",
-        "linking_devices",
-        "complex_connectors",
-    )
-    @classmethod
-    def validate_communication_lists(cls, value: list[str]) -> list[str]:
-        """Ensure communication feedback and connector lists are clean strings."""
-        cleaned = [item.strip() for item in value]
-        if any(not item for item in cleaned):
-            raise ValueError("communication list fields must not contain empty strings")
-        return cleaned
+    communication_indicators: list[CommunicationIndicator] = Field(default_factory=list)
 
 
 class GrammarErrorSpan(BaseModel):
@@ -349,7 +329,9 @@ class CriterionScore(BaseModel):
     max_scaled_points: int | None = Field(default=None)
     task_achievement_summary: TaskAchievementSummary | None = Field(default=None)
     key_point_details: list[KeyPointDetail] | None = Field(default=None)
-    communication_details: list[CommunicationDetail] | None = Field(default=None)
+    analysis_status: Literal["success", "failed"] | None = Field(default=None)
+    analysis_error: str | None = Field(default=None)
+    communication_indicators: list[CommunicationIndicator] | None = Field(default=None)
     accuracy_details: list[AccuracyDetail] | None = Field(default=None)
     highlighted_errors: list[GrammarErrorSpan] | None = Field(default=None)
 

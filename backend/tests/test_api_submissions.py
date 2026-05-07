@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from backend.evaluation.schemas import (
     AccuracyDetail,
-    CommunicationDetail,
+    CommunicationIndicator,
     CriterionScore,
     GrammarErrorSpan,
     ImprovedTextResult,
@@ -54,15 +54,13 @@ def _fake_result() -> WritingEvaluationResult:
             comment="II",
             scaled_points=9,
             max_scaled_points=15,
-            communication_details=[
-                CommunicationDetail(
+            analysis_status="success",
+            analysis_error=None,
+            communication_indicators=[
+                CommunicationIndicator(
                     aspect="email_elements",
                     label="E-Mail-Elemente",
-                    status="strong",
-                    level=None,
-                    present_items=["Betreff", "Anrede", "Hauptteil", "Grußformel"],
-                    missing_items=["Schluss"],
-                    evidence=["Betreff: Beschädigte Lieferung"],
+                    rating="good",
                     comment="Die meisten E-Mail-Elemente sind vorhanden.",
                 )
             ],
@@ -129,16 +127,14 @@ def test_evaluate_submission_success(test_client, seeded_users, seeded_tasks, db
     assert data["result"]["criterion_I"]["key_point_details"][0]["number"] == 1
     assert data["result"]["criterion_I"]["key_point_details"][0]["type"] == "expected"
     assert data["result"]["criterion_II"]["scaled_points"] == 9
-    assert len(data["result"]["criterion_II"]["communication_details"]) == 1
+    assert data["result"]["criterion_II"]["analysis_status"] == "success"
+    assert len(data["result"]["criterion_II"]["communication_indicators"]) == 1
     assert "grade" not in data["result"]["criterion_II"]
     assert "points" not in data["result"]["criterion_II"]
-    detail = data["result"]["criterion_II"]["communication_details"][0]
+    detail = data["result"]["criterion_II"]["communication_indicators"][0]
     assert detail["aspect"] == "email_elements"
     assert detail["label"] == "E-Mail-Elemente"
-    assert detail["status"] == "strong"
-    assert isinstance(detail["present_items"], list)
-    assert isinstance(detail["missing_items"], list)
-    assert isinstance(detail["evidence"], list)
+    assert detail["rating"] == "good"
     assert data["result"]["criterion_III"]["scaled_points"] == 9
     assert len(data["result"]["criterion_III"]["accuracy_details"]) == 1
     acc_detail = data["result"]["criterion_III"]["accuracy_details"][0]
@@ -172,7 +168,7 @@ def test_evaluate_submission_success(test_client, seeded_users, seeded_tasks, db
     assert "grade" not in submission.result_json["criterion_I"]
     assert "points" not in submission.result_json["criterion_I"]
     assert submission.result_json["criterion_II"]["max_scaled_points"] == 15
-    assert submission.result_json["criterion_II"]["communication_details"][0]["label"] == "E-Mail-Elemente"
+    assert submission.result_json["criterion_II"]["communication_indicators"][0]["label"] == "E-Mail-Elemente"
     assert "grade" not in submission.result_json["criterion_II"]
     assert "points" not in submission.result_json["criterion_II"]
     assert submission.result_json["criterion_III"]["max_scaled_points"] == 15
@@ -217,7 +213,9 @@ def test_evaluate_submission_result_contract_e2e(
         "scaled_points",
         "max_scaled_points",
         "comment",
-        "communication_details",
+        "analysis_status",
+        "analysis_error",
+        "communication_indicators",
     }
     assert set(result["criterion_III"].keys()) == {
         "scaled_points",

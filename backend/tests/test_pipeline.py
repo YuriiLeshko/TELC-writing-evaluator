@@ -6,7 +6,7 @@ from backend.evaluation import pipeline
 from backend.evaluation.schemas import (
     AccuracyCheckResult,
     AccuracyDetail,
-    CommunicationDetail,
+    CommunicationIndicator,
     CommunicationCheckResult,
     ImprovedTextResult,
     KeyPointCheckResult,
@@ -88,15 +88,11 @@ async def test_pipeline_normal_flow(monkeypatch: pytest.MonkeyPatch, input_data:
             vocabulary_level="B2",
             sentence_variety="some_variety",
             explanation="Ok",
-            communication_details=[
-                CommunicationDetail(
+            communication_indicators=[
+                CommunicationIndicator(
                     aspect="coherence",
                     label="Zusammenhang",
-                    status="adequate",
-                    level=None,
-                    present_items=["logische Reihenfolge"],
-                    missing_items=["klarere Übergänge"],
-                    evidence=["Deshalb bin ich mit der Lieferung nicht zufrieden."],
+                    rating="acceptable",
                     comment="Der Zusammenhang ist erkennbar, aber ausbaufähig.",
                 )
             ],
@@ -143,8 +139,9 @@ async def test_pipeline_normal_flow(monkeypatch: pytest.MonkeyPatch, input_data:
     assert len(result.criterion_I.key_point_details) == 3
     assert result.criterion_II.scaled_points == result.criterion_II.points * 3
     assert result.criterion_II.max_scaled_points == 15
-    assert result.criterion_II.communication_details is not None
-    assert len(result.criterion_II.communication_details) == 1
+    assert result.criterion_II.analysis_status == "success"
+    assert result.criterion_II.communication_indicators is not None
+    assert len(result.criterion_II.communication_indicators) == 1
     assert result.criterion_III.scaled_points == result.criterion_III.points * 3
     assert result.criterion_III.max_scaled_points == 15
     assert result.criterion_III.accuracy_details is not None
@@ -246,15 +243,11 @@ async def test_pipeline_low_word_count_override(monkeypatch: pytest.MonkeyPatch)
             vocabulary_level="B2",
             sentence_variety="varied",
             explanation="Ok",
-            communication_details=[
-                CommunicationDetail(
+            communication_indicators=[
+                CommunicationIndicator(
                     aspect="register",
                     label="Register und Stil",
-                    status="strong",
-                    level=None,
-                    present_items=["formelle Anrede"],
-                    missing_items=[],
-                    evidence=["Sehr geehrte Damen und Herren"],
+                    rating="excellent",
                     comment="Das Register ist situativ passend.",
                 )
             ],
@@ -341,5 +334,8 @@ async def test_pipeline_communication_fallback_not_forced_to_d(
     monkeypatch.setattr(pipeline, "generate_improved_text", fake_improved)
 
     result = await pipeline.evaluate_writing(input_data=long_input_data, llm_client=object())
-    assert result.criterion_II.grade == "C"
-    assert result.criterion_II.points == 1
+    assert result.criterion_II.grade == "D"
+    assert result.criterion_II.points == 0
+    assert result.criterion_II.analysis_status == "failed"
+    assert result.criterion_II.analysis_error is not None
+    assert result.criterion_II.communication_indicators == []

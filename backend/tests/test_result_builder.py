@@ -4,7 +4,7 @@ from backend.evaluation.result_builder import build_final_result
 from backend.evaluation.schemas import (
     AccuracyCheckResult,
     AccuracyDetail,
-    CommunicationDetail,
+    CommunicationIndicator,
     CommunicationCheckResult,
     CriterionScore,
     FinalScore,
@@ -72,27 +72,17 @@ def _inputs() -> tuple[
         vocabulary_level="B2",
         sentence_variety="some_variety",
         explanation="Strukturiert.",
-        positive_feedback=["Gute Struktur."],
-        improvement_feedback=["Mehr Konnektoren verwenden."],
-        communication_details=[
-            CommunicationDetail(
+        communication_indicators=[
+            CommunicationIndicator(
                 aspect="structure",
                 label="Struktur",
-                status="strong",
-                level=None,
-                present_items=["Einleitung", "Hauptteil", "Schluss"],
-                missing_items=[],
-                evidence=["Bitte informieren Sie mich, wie wir dieses Problem lösen können."],
+                rating="excellent",
                 comment="Die Struktur ist klar und logisch aufgebaut.",
             ),
-            CommunicationDetail(
+            CommunicationIndicator(
                 aspect="sentence_variety",
                 label="Satzvielfalt",
-                status="adequate",
-                level="B1+",
-                present_items=["Nebensatz mit dass"],
-                missing_items=["mehr Variation bei Satzanfängen"],
-                evidence=["Ich erwarte, dass Sie mir ..."],
+                rating="acceptable",
                 comment="Es gibt etwas Variation, aber noch Wiederholungen.",
             ),
         ],
@@ -160,7 +150,9 @@ def test_build_final_result_normal_case() -> None:
     assert dumped["criterion_I"]["task_achievement_summary"]["own_idea_count"] == 1
     assert dumped["criterion_II"]["scaled_points"] == 9
     assert dumped["criterion_II"]["max_scaled_points"] == 15
-    assert len(dumped["criterion_II"]["communication_details"]) == 2
+    assert dumped["criterion_II"]["analysis_status"] == "success"
+    assert dumped["criterion_II"]["analysis_error"] is None
+    assert len(dumped["criterion_II"]["communication_indicators"]) == 2
     assert dumped["criterion_III"]["scaled_points"] == 9
     assert dumped["criterion_III"]["max_scaled_points"] == 15
     assert len(dumped["criterion_III"]["accuracy_details"]) == 2

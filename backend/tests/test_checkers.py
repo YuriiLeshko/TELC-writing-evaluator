@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from backend.evaluation.checks.accuracy import check_accuracy
-from backend.evaluation.checks.communication import check_communication
+from backend.evaluation.checks.communication import CommunicationAnalysisFailed, check_communication
 from backend.evaluation.checks.key_points import check_key_points
 from backend.evaluation.checks.relevance import check_relevance
 from backend.evaluation.schemas import (
@@ -137,30 +137,17 @@ async def test_check_communication_with_fake_llm(input_data: WritingEvaluationIn
                 "vocabulary_level": "B2",
                 "sentence_variety": "some_variety",
                 "explanation": "Gut.",
-                "positive_feedback": ["Struktur gut."],
-                "improvement_feedback": ["Mehr Konnektoren."],
-                "linking_devices": ["deshalb"],
-                "complex_connectors": ["obwohl"],
-                "language_level_comment": "Nahe B2.",
-                "communication_details": [
+                "communication_indicators": [
                     {
                         "aspect": "email_elements",
                         "label": "E-Mail-Elemente",
-                        "status": "strong",
-                        "level": None,
-                        "present_items": ["Betreff", "Anrede", "Hauptteil", "Grußformel"],
-                        "missing_items": ["Schluss"],
-                        "evidence": ["Betreff: Beschädigte Lieferung", "Sehr geehrte Damen und Herren"],
+                        "rating": "good",
                         "comment": "Die zentralen E-Mail-Bausteine sind weitgehend vorhanden.",
                     },
                     {
                         "aspect": "vocabulary",
                         "label": "Wortschatz",
-                        "status": "adequate",
-                        "level": "B1+",
-                        "present_items": ["aufgabenbezogene Lexik"],
-                        "missing_items": ["präzisere Nuancen"],
-                        "evidence": ["beschädigt", "zurückerstatten"],
+                        "rating": "acceptable",
                         "comment": "Der Wortschatz passt, bleibt aber teils allgemein.",
                     },
                 ],
@@ -169,7 +156,7 @@ async def test_check_communication_with_fake_llm(input_data: WritingEvaluationIn
     )
     result = await check_communication(client, input_data)
     assert isinstance(result, CommunicationCheckResult)
-    assert len(result.communication_details) == 7
+    assert len(result.communication_indicators) == 7
     expected_aspects = {
         "email_elements",
         "structure",
@@ -179,13 +166,13 @@ async def test_check_communication_with_fake_llm(input_data: WritingEvaluationIn
         "vocabulary",
         "sentence_variety",
     }
-    assert {item.aspect for item in result.communication_details} == expected_aspects
+    assert {item.aspect for item in result.communication_indicators} == expected_aspects
     assert len(client.calls) == 1
     assert client.calls[0]["temperature"] == 0.0
 
 
 @pytest.mark.asyncio
-async def test_check_communication_normalizes_missing_label_and_arrays(input_data: WritingEvaluationInput) -> None:
+async def test_check_communication_normalizes_missing_label_and_rating(input_data: WritingEvaluationInput) -> None:
     client = FakeLLMClient(
         [
             {
@@ -200,15 +187,10 @@ async def test_check_communication_normalizes_missing_label_and_arrays(input_dat
                 "vocabulary_level": "B2",
                 "sentence_variety": "some_variety",
                 "explanation": "Gut.",
-                "positive_feedback": [],
-                "improvement_feedback": [],
-                "linking_devices": [],
-                "complex_connectors": [],
-                "language_level_comment": "Nahe B2.",
-                "communication_details": [
+                "communication_indicators": [
                     {
                         "aspect": "coherence",
-                        "status": "acceptable",
+                        "rating": "good",
                         "comment": "Teilweise klar verbunden.",
                     }
                 ],
@@ -216,18 +198,14 @@ async def test_check_communication_normalizes_missing_label_and_arrays(input_dat
         ]
     )
     result = await check_communication(client, input_data)
-    assert len(result.communication_details) == 7
-    coherence = [item for item in result.communication_details if item.aspect == "coherence"][0]
+    assert len(result.communication_indicators) == 7
+    coherence = [item for item in result.communication_indicators if item.aspect == "coherence"][0]
     assert coherence.label == "Zusammenhang"
-    assert coherence.status == "adequate"
-    assert coherence.present_items == []
-    assert coherence.missing_items == []
-    assert coherence.evidence == []
-    assert coherence.level is None
+    assert coherence.rating == "good"
 
 
 @pytest.mark.asyncio
-async def test_check_communication_rejects_non_array_details(input_data: WritingEvaluationInput) -> None:
+async def test_check_communication_retries_and_then_raises(input_data: WritingEvaluationInput) -> None:
     client = FakeLLMClient(
         [
             {
@@ -242,17 +220,87 @@ async def test_check_communication_rejects_non_array_details(input_data: Writing
                 "vocabulary_level": "B2",
                 "sentence_variety": "some_variety",
                 "explanation": "Gut.",
-                "positive_feedback": [],
-                "improvement_feedback": [],
-                "linking_devices": [],
-                "complex_connectors": [],
-                "language_level_comment": "Nahe B2.",
-                "communication_details": "invalid",
-            }
+                "communication_indicators": "invalid",
+            },
+            {
+                "has_subject": True,
+                "has_greeting": True,
+                "has_introduction": True,
+                "has_body_structure": True,
+                "has_conclusion": True,
+                "has_closing": True,
+                "register_quality": "appropriate",
+                "coherence_quality": "good",
+                "vocabulary_level": "B2",
+                "sentence_variety": "some_variety",
+                "explanation": "Gut.",
+                "communication_indicators": "still-invalid",
+            },
+            {
+                "has_subject": True,
+                "has_greeting": True,
+                "has_introduction": True,
+                "has_body_structure": True,
+                "has_conclusion": True,
+                "has_closing": True,
+                "register_quality": "appropriate",
+                "coherence_quality": "good",
+                "vocabulary_level": "B2",
+                "sentence_variety": "some_variety",
+                "explanation": "Gut.",
+                "communication_indicators": "nope",
+            },
         ]
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(CommunicationAnalysisFailed):
         await check_communication(client, input_data)
+    assert len(client.calls) == 3
+
+
+@pytest.mark.asyncio
+async def test_check_communication_retries_then_succeeds(input_data: WritingEvaluationInput) -> None:
+    client = FakeLLMClient(
+        [
+            {
+                "has_subject": True,
+                "has_greeting": True,
+                "has_introduction": True,
+                "has_body_structure": True,
+                "has_conclusion": True,
+                "has_closing": True,
+                "register_quality": "appropriate",
+                "coherence_quality": "good",
+                "vocabulary_level": "B2",
+                "sentence_variety": "some_variety",
+                "explanation": "Gut.",
+                "communication_indicators": "invalid",
+            },
+            {
+                "has_subject": True,
+                "has_greeting": True,
+                "has_introduction": True,
+                "has_body_structure": True,
+                "has_conclusion": True,
+                "has_closing": True,
+                "register_quality": "appropriate",
+                "coherence_quality": "good",
+                "vocabulary_level": "B2",
+                "sentence_variety": "some_variety",
+                "explanation": "Gut.",
+                "communication_indicators": [
+                    {
+                        "aspect": "email_elements",
+                        "label": "E-Mail-Elemente",
+                        "rating": "good",
+                        "comment": "Die Grundelemente sind vorhanden.",
+                    }
+                ],
+            },
+        ]
+    )
+    result = await check_communication(client, input_data)
+    assert len(client.calls) == 2
+    assert len(result.communication_indicators) == 7
 
 
 @pytest.mark.asyncio

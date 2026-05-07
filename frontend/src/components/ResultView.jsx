@@ -123,135 +123,25 @@ export default function ResultView({ result, candidateText, selectedTask, submis
       : criterionIIScaledPoints >= 6
         ? "status-warning"
         : "status-bad";
-  const communicationDetails = safeGet(r, "criterion_II.communication_details");
-  const communicationSummary = safeGet(r, "criterion_II.task_achievement_summary");
-  const normalizeCommValue = (value) => String(value ?? "").trim().toLowerCase();
-  const normalizeLevel = (value) => {
-    const normalized = String(value ?? "").trim().toUpperCase();
-    return normalized || null;
-  };
-  const levelPriority = { A1: 1, A2: 2, B1: 3, "B1+": 4, B2: 5, "B2+": 6, C1: 7, "C1+": 8, C2: 9 };
-  const extractAspectDetail = (aspectKey) => {
-    if (!communicationDetails || typeof communicationDetails !== "object") return null;
-    const direct = communicationDetails?.[aspectKey];
-    if (direct && typeof direct === "object" && !Array.isArray(direct)) return direct;
-    const nested = communicationDetails?.aspects?.[aspectKey];
-    if (nested && typeof nested === "object" && !Array.isArray(nested)) return nested;
-    if (Array.isArray(communicationDetails)) {
-      return communicationDetails.find((entry) => {
-        const key = normalizeCommValue(entry?.aspect ?? entry?.name ?? entry?.type ?? entry?.key);
-        return key === normalizeCommValue(aspectKey);
-      });
-    }
-    if (Array.isArray(communicationDetails?.aspects)) {
-      return communicationDetails.aspects.find((entry) => {
-        const key = normalizeCommValue(entry?.aspect ?? entry?.name ?? entry?.type ?? entry?.key);
-        return key === normalizeCommValue(aspectKey);
-      });
-    }
-    return null;
-  };
-  const mapRegisterLabel = (value) => {
-    const normalized = normalizeCommValue(value);
-    if (!normalized) return "—";
-    if (["appropriate", "passend", "good", "strong"].includes(normalized)) return "passend";
-    if (["mostly_appropriate", "mostly passend", "mostly", "adequate"].includes(normalized)) return "meist passend";
-    if (["inappropriate", "unpassend", "weak", "missing"].includes(normalized)) return "unpassend";
-    return "—";
-  };
-  const mapStructureLabel = (value) => {
-    const normalized = normalizeCommValue(value);
-    if (!normalized) return "—";
-    if (["strong", "stark", "very_good", "excellent"].includes(normalized)) return "stark";
-    if (["good", "adequate", "gut"].includes(normalized)) return "gut";
-    if (["simple", "einfach"].includes(normalized)) return "einfach";
-    if (["weak", "schwach", "missing"].includes(normalized)) return "schwach";
-    return "—";
-  };
-  const mapLinkingLabel = (value) => {
-    const normalized = normalizeCommValue(value);
-    if (!normalized) return "—";
-    if (["varied", "vielfaeltig", "vielfältig", "strong"].includes(normalized)) return "vielfältig";
-    if (["adequate", "ausreichend", "good"].includes(normalized)) return "ausreichend";
-    if (["simple", "einfach"].includes(normalized)) return "einfach";
-    if (["few", "kaum", "kaum_vorhanden", "weak", "missing"].includes(normalized)) return "kaum vorhanden";
-    return "—";
-  };
-  const summaryLabelClass = (value) => {
-    const normalized = normalizeCommValue(value);
-    if (["passend", "stark", "gut", "vielfältig"].includes(normalized)) return "status-good";
-    if (["meist passend", "ausreichend", "einfach"].includes(normalized)) return "status-warning";
-    if (["unpassend", "schwach", "kaum vorhanden"].includes(normalized)) return "status-bad";
-    return "";
-  };
-  const overallCommLevel = (() => {
-    const summaryLevel = normalizeLevel(safeGet(r, "criterion_II.task_achievement_summary.overall_level"));
-    if (summaryLevel) return summaryLevel;
-    const fallbackFields = [
-      normalizeLevel(safeGet(r, "criterion_II.vocabulary_level")),
-      normalizeLevel(safeGet(r, "criterion_II.language_level")),
-      normalizeLevel(safeGet(r, "criterion_II.level")),
-    ].filter(Boolean);
-    let bestLevel = fallbackFields[0] ?? null;
-    const aspectLevels = ["email_elements", "structure", "coherence", "cohesion", "register", "vocabulary", "sentence_variety"]
-      .map((key) => normalizeLevel(extractAspectDetail(key)?.level ?? extractAspectDetail(key)?.language_level))
-      .filter(Boolean);
-    [...fallbackFields, ...aspectLevels].forEach((level) => {
-      if (!bestLevel || (levelPriority[level] ?? 0) > (levelPriority[bestLevel] ?? 0)) bestLevel = level;
-    });
-    return bestLevel || "—";
-  })();
-  const registerSummary = mapRegisterLabel(
-    safeGet(r, "criterion_II.communication_details.register_quality") ??
-      safeGet(r, "criterion_II.register_quality") ??
-      extractAspectDetail("register")?.status,
-  );
-  const structureSummary = mapStructureLabel(
-    safeGet(r, "criterion_II.communication_details.coherence_quality") ??
-      safeGet(r, "criterion_II.coherence_quality") ??
-      extractAspectDetail("structure")?.status,
-  );
-  const linkingSummary = mapLinkingLabel(
-    safeGet(r, "criterion_II.communication_details.linking_devices") ??
-      safeGet(r, "criterion_II.linking_devices") ??
-      extractAspectDetail("cohesion")?.status,
-  );
-  const commAspectSections = [
-    { key: "email_elements", title: "E-Mail-Elemente" },
-    { key: "structure", title: "Struktur" },
-    { key: "coherence", title: "Zusammenhang" },
-    { key: "cohesion", title: "Verknüpfungen" },
-    { key: "register", title: "Register und Stil" },
-    { key: "vocabulary", title: "Wortschatz" },
-    { key: "sentence_variety", title: "Satzvielfalt" },
-  ].map((section) => ({ ...section, detail: extractAspectDetail(section.key) }));
-  const mapAspectStatus = (status) => {
-    const normalized = normalizeCommValue(status);
-    if (!normalized) return "—";
-    if (normalized === "strong") return "gut";
-    if (normalized === "adequate") return "ausreichend";
+  const communicationAnalysisStatus = String(safeGet(r, "criterion_II.analysis_status") || "success");
+  const communicationAnalysisError = safeGet(r, "criterion_II.analysis_error");
+  const communicationIndicatorsRaw = safeGet(r, "criterion_II.communication_indicators");
+  const communicationIndicators = Array.isArray(communicationIndicatorsRaw) ? communicationIndicatorsRaw : [];
+  const mapCommunicationRating = (rating) => {
+    const normalized = String(rating ?? "").trim().toLowerCase();
+    if (normalized === "excellent") return "sehr gut";
+    if (normalized === "good") return "gut";
+    if (normalized === "acceptable") return "akzeptabel";
     if (normalized === "weak") return "schwach";
     if (normalized === "missing") return "fehlt";
-    if (normalized === "inappropriate") return "unpassend";
     return "—";
   };
-  const statusClassByAspectStatus = (status) => {
-    const normalized = normalizeCommValue(status);
-    if (normalized === "strong") return "status-good";
-    if (normalized === "adequate") return "status-warning";
-    if (["weak", "missing", "inappropriate"].includes(normalized)) return "status-bad";
+  const communicationRatingClass = (rating) => {
+    const normalized = String(rating ?? "").trim().toLowerCase();
+    if (normalized === "excellent" || normalized === "good") return "status-good";
+    if (normalized === "acceptable") return "status-warning";
+    if (normalized === "weak" || normalized === "missing") return "status-bad";
     return "";
-  };
-  const formatAspectItems = (value) => {
-    if (Array.isArray(value)) {
-      const entries = value.map((item) => String(item ?? "").trim()).filter(Boolean);
-      return entries.length ? entries.join(", ") : null;
-    }
-    if (typeof value === "string") {
-      const cleaned = value.trim();
-      return cleaned || null;
-    }
-    return null;
   };
   const criterionIIIRawPoints = Number(ptsIII);
   const criterionIIIScaledPointsRaw = Number(safeGet(r, "criterion_III.scaled_points"));
@@ -751,80 +641,26 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                 <p className="metric-card__help" style={{ margin: "0 0 0.35rem" }}>
                   Struktur, Stil und Wortschatz
                 </p>
-                <div className="result-rail-kp-summary">
-                  <p className="result-rail-kp-summary__line">
-                    <strong>Sprachniveau:</strong> {overallCommLevel}
-                  </p>
-                  <p className="result-rail-kp-summary__line">
-                    <strong>Register:</strong> <span className={summaryLabelClass(registerSummary)}>{registerSummary}</span>
-                  </p>
-                  <p className="result-rail-kp-summary__line">
-                    <strong>Struktur:</strong> <span className={summaryLabelClass(structureSummary)}>{structureSummary}</span>
-                  </p>
-                  <p className="result-rail-kp-summary__line">
-                    <strong>Verknüpfungen:</strong> <span className={summaryLabelClass(linkingSummary)}>{linkingSummary}</span>
-                  </p>
-                </div>
                 <p style={{ margin: "0.35rem 0 0", color: "var(--muted)", fontSize: "0.82rem", lineHeight: 1.35 }}>
                   {commentII || "Keine Details."}
                 </p>
-                <div className="result-rail-kp-details">
-                  {commAspectSections.map((section) => {
-                    const detail = section.detail;
-                    const statusLabel = mapAspectStatus(detail?.status);
-                    const statusClass = statusClassByAspectStatus(detail?.status);
-                    const level = normalizeLevel(detail?.level ?? detail?.language_level);
-                    const presentItems = formatAspectItems(detail?.present_items);
-                    const missingItems = formatAspectItems(detail?.missing_items);
-                    const evidence = formatAspectItems(detail?.evidence);
-                    const comment = formatAspectItems(detail?.comment);
-                    const hasData = statusLabel !== "—" || level || presentItems || missingItems || evidence || comment;
-
-                    return (
-                      <details key={section.key} className="result-rail-kp-item">
-                        <summary className="result-rail-kp-item__summary">{section.title}</summary>
-                        <div className="result-rail-kp-item__body">
-                          {hasData ? (
-                            <>
-                              {statusLabel !== "—" ? (
-                                <p className="result-rail-kp-item__line">
-                                  <strong>Status:</strong> <span className={statusClass}>{statusLabel}</span>
-                                </p>
-                              ) : null}
-                              {level ? (
-                                <p className="result-rail-kp-item__line">
-                                  <strong>Niveau:</strong> {level}
-                                </p>
-                              ) : null}
-                              {presentItems ? (
-                                <p className="result-rail-kp-item__line">
-                                  <strong>Vorhanden:</strong> {presentItems}
-                                </p>
-                              ) : null}
-                              {missingItems ? (
-                                <p className="result-rail-kp-item__line">
-                                  <strong>Fehlt:</strong> {missingItems}
-                                </p>
-                              ) : null}
-                              {evidence ? (
-                                <p className="result-rail-kp-item__line">
-                                  <strong>Beispiele:</strong> {evidence}
-                                </p>
-                              ) : null}
-                              {comment ? (
-                                <p className="result-rail-kp-item__line">
-                                  <strong>Kommentar:</strong> {comment}
-                                </p>
-                              ) : null}
-                            </>
-                          ) : (
-                            <p className="result-rail-kp-item__line">Keine Details.</p>
-                          )}
-                        </div>
-                      </details>
-                    );
-                  })}
-                </div>
+                {communicationAnalysisStatus === "failed" ? (
+                  <p className="alert alert--warn" style={{ marginTop: "0.4rem" }}>
+                    Die Analyse dieses Kriteriums ist fehlgeschlagen. Deshalb wurde hier die niedrigste Bewertung vergeben.
+                    {communicationAnalysisError ? ` ${communicationAnalysisError}` : ""}
+                  </p>
+                ) : (
+                  <div className="result-rail-kp-details">
+                    {communicationIndicators.map((item, idx) => (
+                      <div key={`${item?.aspect || "aspect"}-${idx}`} className="result-rail-kp-detail">
+                        <p className="result-rail-kp-detail__line">
+                          <strong>{item?.label || "Aspekt"}:</strong>{" "}
+                          <span className={communicationRatingClass(item?.rating)}>{mapCommunicationRating(item?.rating)}</span>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : null}
           </div>

@@ -103,31 +103,6 @@ def _fallback_key_points_result() -> KeyPointCheckResult:
     )
 
 
-def _fallback_communication_result() -> CommunicationCheckResult:
-    """Return safe communication fallback when LLM check fails."""
-    return CommunicationCheckResult(
-        has_subject=False,
-        has_greeting=False,
-        has_introduction=False,
-        has_body_structure=False,
-        has_conclusion=False,
-        has_closing=False,
-        register_quality="mostly_appropriate",
-        coherence_quality="acceptable",
-        vocabulary_level="B1",
-        sentence_variety="simple",
-        explanation="Automatischer Fallback: Kommunikationsanalyse wurde mit neutralen Standardwerten durchgeführt.",
-        positive_feedback=[],
-        improvement_feedback=[
-            "Bitte später erneut prüfen, damit Struktur und Register korrekt bewertet werden können."
-        ],
-        linking_devices=[],
-        complex_connectors=[],
-        language_level_comment="Technischer Fallback ohne belastbare Sprachstandsanalyse.",
-        communication_details=[],
-    )
-
-
 def _fallback_accuracy_result() -> AccuracyCheckResult:
     """Return safe formal-accuracy fallback when LLM check fails."""
     return AccuracyCheckResult(
@@ -250,16 +225,35 @@ async def evaluate_writing(
     else:
         key_points = key_points_result
 
+    communication_analysis_failed = False
+    communication_analysis_error = ""
     if isinstance(communication_result, Exception):
         logger.error(
-            "Communication check failed, using fallback result.",
+            "Communication check failed.",
             exc_info=(
                 type(communication_result),
                 communication_result,
                 communication_result.__traceback__,
             ),
         )
-        communication = _fallback_communication_result()
+        communication_analysis_failed = True
+        communication_analysis_error = (
+            "Die kommunikative Gestaltung konnte technisch nicht zuverlässig analysiert werden."
+        )
+        communication = CommunicationCheckResult(
+            has_subject=False,
+            has_greeting=False,
+            has_introduction=False,
+            has_body_structure=False,
+            has_conclusion=False,
+            has_closing=False,
+            register_quality="inappropriate",
+            coherence_quality="incoherent",
+            vocabulary_level="A2",
+            sentence_variety="simple",
+            explanation=communication_analysis_error,
+            communication_indicators=[],
+        )
     else:
         communication = communication_result
 
@@ -294,6 +288,13 @@ async def evaluate_writing(
         criterion_ii,
         criterion_iii,
     )
+    if communication_analysis_failed:
+        criterion_ii = make_score("D")
+        final_score = calculate_final_score(
+            criterion_i,
+            criterion_ii,
+            criterion_iii,
+        )
     try:
         improved_text = await generate_improved_text(
             llm_client=llm_client,
@@ -322,6 +323,8 @@ async def evaluate_writing(
         final_score=final_score,
         word_count=word_count_check,
         improved_text=improved_text,
+        communication_analysis_status="failed" if communication_analysis_failed else "success",
+        communication_analysis_error=communication_analysis_error if communication_analysis_failed else None,
     )
 
 

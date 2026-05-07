@@ -6,13 +6,16 @@ It does not assign grades or points and does not perform any scoring.
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from backend.evaluation.prompts.communication import (
+    REPAIR_INSTRUCTION,
     SYSTEM_PROMPT,
     build_communication_user_prompt,
 )
 from backend.evaluation.schemas import CommunicationCheckResult, WritingEvaluationInput
+from backend.services.llm_client import LLMJSONParseError
 from backend.services.llm_client import LLMClient
 
 ASPECTS_IN_ORDER = [
@@ -25,6 +28,8 @@ ASPECTS_IN_ORDER = [
     "sentence_variety",
 ]
 
+logger = logging.getLogger(__name__)
+
 ASPECT_LABELS = {
     "email_elements": "E-Mail-Elemente",
     "structure": "Struktur",
@@ -35,69 +40,51 @@ ASPECT_LABELS = {
     "sentence_variety": "Satzvielfalt",
 }
 
-STATUS_NORMALIZATION = {
-    "strong": "strong",
-    "good": "strong",
-    "adequate": "adequate",
-    "acceptable": "adequate",
-    "ok": "adequate",
+RATING_NORMALIZATION = {
+    "excellent": "excellent",
+    "strong": "excellent",
+    "very_good": "excellent",
+    "good": "good",
+    "adequate": "acceptable",
+    "acceptable": "acceptable",
+    "ok": "acceptable",
     "weak": "weak",
     "missing": "missing",
     "absent": "missing",
     "none": "missing",
-    "inappropriate": "inappropriate",
-    "not_appropriate": "inappropriate",
-    "unsuitable": "inappropriate",
 }
 
 
-def _normalize_status(value: Any) -> str:
+class CommunicationAnalysisFailed(Exception):
+    """Raised when Criterion II analysis fails across all retry attempts."""
+
+
+def _normalize_rating(value: Any) -> str:
     normalized = str(value or "").strip().lower()
-    return STATUS_NORMALIZATION.get(normalized, normalized)
+    return RATING_NORMALIZATION.get(normalized, normalized)
 
 
-def _normalize_string_list(value: Any) -> list[str]:
-    if value is None:
-        return []
-    if not isinstance(value, list):
-        raise ValueError("communication_details list fields must be arrays when provided")
-    return [str(item).strip() for item in value if str(item).strip()]
-
-
-def _normalize_level(value: Any) -> str | None:
-    if value in (None, ""):
-        return None
-    normalized = str(value).strip().upper()
-    if normalized in {"B2", "B1+", "B1", "A2"}:
-        return normalized
-    return None
-
-
-def _build_default_detail(aspect: str) -> dict[str, Any]:
+def _build_default_indicator(aspect: str) -> dict[str, Any]:
     return {
         "aspect": aspect,
         "label": ASPECT_LABELS[aspect],
-        "status": "missing",
-        "level": None,
-        "present_items": [],
-        "missing_items": [],
-        "evidence": [],
+        "rating": "missing",
         "comment": "Keine ausreichenden Hinweise im Text erkannt.",
     }
 
 
-def _normalize_communication_details(value: Any) -> list[dict[str, Any]]:
+def _normalize_communication_indicators(value: Any) -> list[dict[str, Any]]:
     if value is None:
-        details_in: list[dict[str, Any]] = []
+        indicators_in: list[dict[str, Any]] = []
     elif not isinstance(value, list):
-        raise ValueError("communication_details must be a JSON array")
+        raise ValueError("communication_indicators must be a JSON array")
     else:
-        details_in = [item for item in value if isinstance(item, dict)]
-        if value and not details_in:
-            raise ValueError("communication_details must contain JSON objects")
+        indicators_in = [item for item in value if isinstance(item, dict)]
+        if value and not indicators_in:
+            raise ValueError("communication_indicators must contain JSON objects")
 
-    details_by_aspect: dict[str, dict[str, Any]] = {}
-    for item in details_in:
+    indicators_by_aspect: dict[str, dict[str, Any]] = {}
+    for item in indicators_in:
         aspect = str(item.get("aspect", "")).strip().lower()
         if aspect not in ASPECT_LABELS:
             continue
@@ -105,16 +92,12 @@ def _normalize_communication_details(value: Any) -> list[dict[str, Any]]:
         normalized = {
             "aspect": aspect,
             "label": str(item.get("label") or ASPECT_LABELS[aspect]).strip() or ASPECT_LABELS[aspect],
-            "status": _normalize_status(item.get("status")),
-            "level": _normalize_level(item.get("level")),
-            "present_items": _normalize_string_list(item.get("present_items")),
-            "missing_items": _normalize_string_list(item.get("missing_items")),
-            "evidence": _normalize_string_list(item.get("evidence")),
+            "rating": _normalize_rating(item.get("rating")),
             "comment": str(item.get("comment") or "").strip() or "Keine Details verfügbar.",
         }
-        details_by_aspect[aspect] = normalized
+        indicators_by_aspect[aspect] = normalized
 
-    return [details_by_aspect.get(aspect, _build_default_detail(aspect)) for aspect in ASPECTS_IN_ORDER]
+    return [indicators_by_aspect.get(aspect, _build_default_indicator(aspect)) for aspect in ASPECTS_IN_ORDER]
 
 
 async def check_communication(
@@ -122,23 +105,36 @@ async def check_communication(
     input_data: WritingEvaluationInput,
 ) -> CommunicationCheckResult:
     """Check communicative design features for Criterion II."""
-    user_prompt = build_communication_user_prompt(
+    base_user_prompt = build_communication_user_prompt(
         task_text=input_data.task_text,
         candidate_text=input_data.candidate_text,
     )
+    errors: list[str] = []
 
-    raw_result = await llm_client.call_llm_json(
-        system_prompt=SYSTEM_PROMPT,
-        user_prompt=user_prompt,
-        temperature=0.0,
-        max_tokens=900,
-    )
-    if not isinstance(raw_result, dict):
-        raise ValueError("Communication checker must return a JSON object.")
+    for attempt in range(1, 4):
+        user_prompt = base_user_prompt if attempt == 1 else f"{base_user_prompt}\n\n{REPAIR_INSTRUCTION}"
+        try:
+            raw_result = await llm_client.call_llm_json(
+                system_prompt=SYSTEM_PROMPT,
+                user_prompt=user_prompt,
+                temperature=0.0,
+                max_tokens=2200,
+            )
+            if not isinstance(raw_result, dict):
+                raise ValueError("Communication checker must return a JSON object.")
 
-    raw_result["communication_details"] = _normalize_communication_details(raw_result.get("communication_details"))
+            raw_result["communication_indicators"] = _normalize_communication_indicators(
+                raw_result.get("communication_indicators")
+            )
+            return CommunicationCheckResult.model_validate(raw_result)
+        except (LLMJSONParseError, ValueError) as exc:
+            logger.warning("Communication check attempt %s failed: %s", attempt, exc)
+            errors.append(f"attempt {attempt}: {exc}")
+        except Exception as exc:
+            logger.warning("Communication check attempt %s validation failed: %s", attempt, exc)
+            errors.append(f"attempt {attempt}: {exc}")
 
-    return CommunicationCheckResult.model_validate(raw_result)
+    raise CommunicationAnalysisFailed("; ".join(errors))
 
 
 if __name__ == "__main__":
@@ -172,6 +168,6 @@ if __name__ == "__main__":
 
         result = await check_communication(llm_client=llm_client, input_data=input_data)
         print(result.model_dump_json(indent=2))
-        print("communication_details:", result.communication_details)
+        print("communication_indicators:", result.communication_indicators)
 
     asyncio.run(_smoke_test())

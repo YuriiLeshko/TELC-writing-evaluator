@@ -329,19 +329,16 @@ Response `200` (frontend-facing contract):
       "scaled_points": 9,
       "max_scaled_points": 15,
       "comment": "Kommunikation ist insgesamt gut nachvollziehbar.",
-      "communication_details": [
+      "analysis_status": "success",
+      "analysis_error": null,
+      "communication_indicators": [
         {
           "aspect": "coherence",
           "label": "Zusammenhang",
-          "status": "adequate",
-          "level": "B1+",
-          "present_items": ["logische Reihenfolge"],
-          "missing_items": ["explizite Übergänge"],
-          "evidence": ["deshalb", "außerdem"],
+          "rating": "acceptable",
           "comment": "Teilweise klare Verknüpfung der Aussagen."
         }
-      ],
-      "task_achievement_summary": { "overall_level": "B1+" }
+      ]
     },
     "criterion_III": {
       "scaled_points": 6,
@@ -435,19 +432,14 @@ Required:
 - `scaled_points`
 - `max_scaled_points`
 - `comment`
-- `communication_details`
+- `analysis_status` (`success` | `failed`)
+- `analysis_error` (`string | null`)
+- `communication_indicators`
 
-Optional:
-- `task_achievement_summary.overall_level` (frontend uses this if present)
-
-`communication_details[]` fields:
+`communication_indicators[]` fields:
 - `aspect` (`email_elements`, `structure`, `coherence`, `cohesion`, `register`, `vocabulary`, `sentence_variety`)
 - `label`
-- `status`
-- `level`
-- `present_items`
-- `missing_items`
-- `evidence`
+- `rating` (`excellent`, `good`, `acceptable`, `weak`, `missing`)
 - `comment`
 
 #### `result.criterion_III` (Formale Korrektheit)

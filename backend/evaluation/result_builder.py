@@ -80,22 +80,7 @@ def _build_task_achievement_summary(key_points: KeyPointCheckResult) -> TaskAchi
 
 def _build_criterion_ii_comment(communication: CommunicationCheckResult) -> str:
     """Create concise Criterion II comment from communication evidence."""
-    positive = _first_or_default(
-        communication.positive_feedback,
-        "Der Text hat eine klare E-Mail-Struktur und ein überwiegend passendes Register.",
-    )
-    if communication.sentence_variety == "simple":
-        improvement = "Zur Verbesserung sollten abwechslungsreichere Satzstrukturen verwendet werden."
-    elif communication.vocabulary_level in {"B1", "A2"}:
-        improvement = "Zur Verbesserung sollte ein breiterer und präziserer Wortschatz auf B2-Niveau genutzt werden."
-    elif not communication.complex_connectors:
-        improvement = "Zur Verbesserung sollten mehr komplexe Konnektoren zur Stärkung der Kohärenz verwendet werden."
-    else:
-        improvement = _first_or_default(
-            communication.improvement_feedback,
-            "Zur Verbesserung sollten Übergänge zwischen den Gedanken expliziter formuliert werden.",
-        )
-    return f"{positive} {improvement}"
+    return communication.explanation.strip() or "Die kommunikative Gestaltung wurde ausgewertet."
 
 
 def _build_criterion_iii_comment(accuracy: AccuracyCheckResult) -> str:
@@ -138,6 +123,8 @@ def build_final_result(
     final_score: FinalScore,
     word_count: WordCountCheck | None = None,
     improved_text: ImprovedTextResult,
+    communication_analysis_status: str = "success",
+    communication_analysis_error: str | None = None,
 ) -> WritingEvaluationResult:
     """Build final result with concise criterion-level comments."""
     criterion_i.comment = _build_criterion_i_comment(key_points)
@@ -148,7 +135,11 @@ def build_final_result(
     criterion_ii.comment = _build_criterion_ii_comment(communication)
     criterion_ii.scaled_points = criterion_ii.points * 3
     criterion_ii.max_scaled_points = 15
-    criterion_ii.communication_details = communication.communication_details
+    criterion_ii.analysis_status = "failed" if communication_analysis_status == "failed" else "success"
+    criterion_ii.analysis_error = communication_analysis_error
+    criterion_ii.communication_indicators = (
+        communication.communication_indicators if criterion_ii.analysis_status == "success" else []
+    )
     criterion_iii.comment = _build_criterion_iii_comment(accuracy)
     criterion_iii.scaled_points = criterion_iii.points * 3
     criterion_iii.max_scaled_points = 15

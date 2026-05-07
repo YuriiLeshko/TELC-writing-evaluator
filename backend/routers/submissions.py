@@ -73,7 +73,9 @@ def _sanitize_result_for_api(result_payload: dict[str, Any]) -> dict[str, Any]:
             "scaled_points": criterion_ii.get("scaled_points"),
             "max_scaled_points": criterion_ii.get("max_scaled_points"),
             "comment": criterion_ii.get("comment"),
-            "communication_details": criterion_ii.get("communication_details", []),
+            "analysis_status": criterion_ii.get("analysis_status", "success"),
+            "analysis_error": criterion_ii.get("analysis_error"),
+            "communication_indicators": criterion_ii.get("communication_indicators", []),
         }
     criterion_iii = sanitized.get("criterion_III")
     if isinstance(criterion_iii, dict):

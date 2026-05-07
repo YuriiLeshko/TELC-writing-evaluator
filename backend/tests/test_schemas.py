@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from backend.evaluation.schemas import (
     AccuracyCheckResult,
     AccuracyDetail,
-    CommunicationDetail,
+    CommunicationIndicator,
     CriterionScore,
     GrammarErrorSpan,
     ImprovedTextResult,
@@ -101,15 +101,11 @@ def test_key_point_check_result_accepts_key_point_details() -> None:
     assert len(result.key_point_details) == 1
 
 
-def test_communication_detail_validation() -> None:
-    detail = CommunicationDetail(
+def test_communication_indicator_validation() -> None:
+    detail = CommunicationIndicator(
         aspect="register",
         label="Register und Stil",
-        status="adequate",
-        level=None,
-        present_items=["Höfliche Anrede"],
-        missing_items=[],
-        evidence=["Sehr geehrte Damen und Herren"],
+        rating="acceptable",
         comment="Das Register ist überwiegend passend, aber nicht durchgehend stabil.",
     )
     assert detail.aspect == "register"
@@ -209,15 +205,13 @@ def test_writing_evaluation_result_serialization() -> None:
             comment="Solide",
             scaled_points=9,
             max_scaled_points=15,
-            communication_details=[
-                CommunicationDetail(
+            analysis_status="success",
+            analysis_error=None,
+            communication_indicators=[
+                CommunicationIndicator(
                     aspect="structure",
                     label="Struktur",
-                    status="strong",
-                    level=None,
-                    present_items=["Einleitung", "Hauptteil", "Schluss"],
-                    missing_items=[],
-                    evidence=["Bitte informieren Sie mich, wie wir dieses Problem lösen können."],
+                    rating="excellent",
                     comment="Die Makrostruktur ist klar und nachvollziehbar.",
                 )
             ],
@@ -254,7 +248,8 @@ def test_writing_evaluation_result_serialization() -> None:
     assert dumped["criterion_I"]["key_point_details"][0]["status"] == "fulfilled"
     assert dumped["criterion_II"]["scaled_points"] == 9
     assert dumped["criterion_II"]["max_scaled_points"] == 15
-    assert dumped["criterion_II"]["communication_details"][0]["aspect"] == "structure"
+    assert dumped["criterion_II"]["analysis_status"] == "success"
+    assert dumped["criterion_II"]["communication_indicators"][0]["aspect"] == "structure"
     assert dumped["criterion_III"]["scaled_points"] == 3
     assert dumped["criterion_III"]["max_scaled_points"] == 15
     assert dumped["criterion_III"]["accuracy_details"][0]["aspect"] == "grammar"

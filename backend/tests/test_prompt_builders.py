@@ -32,7 +32,7 @@ def test_communication_prompt_contains_required_parts() -> None:
     assert "TASK" in prompt
     assert "CANDIDATE" in prompt
     assert "register_quality" in prompt
-    assert "communication_details" in prompt
+    assert "communication_indicators" in prompt
     assert "do not assign grades" in prompt.lower()
     assert "German" in prompt
 
