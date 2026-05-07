@@ -7,53 +7,39 @@ an LLM and does not contain scoring, FastAPI, database, or OCR logic.
 
 from __future__ import annotations
 
-SYSTEM_PROMPT = """You are a strict TELC B2 writing evaluator.
-Your only task is to check task achievement through key points.
+from backend.evaluation.prompts.common import (
+    GERMAN_OUTPUT_PROMPT_BLOCK,
+    JSON_ONLY_PROMPT_BLOCK,
+    SECURITY_PROMPT_BLOCK,
+)
+from backend.evaluation.prompts.schema_utils import model_to_prompt_schema
+from backend.evaluation.schemas import KeyPointCheckResult
 
-Output requirements:
-- Return only valid JSON.
-- Do not use markdown.
-- Do not output any text outside JSON.
-- Use exactly this schema:
-{
-  "fulfilled_key_points": ["string"],
-  "own_ideas": ["string"],
-  "invalid_points": ["string"],
-  "explanation": "string",
-  "positive_feedback": ["string"],
-  "improvement_feedback": ["string"],
-  "key_point_details": [
-    {
-      "number": 1,
-      "type": "expected | own_idea",
-      "key_point": "string",
-      "status": "fulfilled | partially_fulfilled | not_fulfilled",
-      "sentence_count": 0,
-      "situation_appropriate": "true | false | null",
-      "language_level": "B2 | B1+ | B1 | A2 | null",
-      "comment": "Kurzer Kommentar auf Deutsch"
-    }
-  ]
-}
 
-Scope restrictions:
-- Do NOT evaluate grammar.
-- Do NOT evaluate spelling or punctuation.
-- Do NOT evaluate communicative design.
-- Do NOT assign criterion grades or points.
-- Do NOT calculate final score.
-- Feedback must be balanced and evidence-based:
-  - always include positive_feedback and improvement_feedback
-  - if weaknesses are limited, still provide one realistic improvement suggestion
-  - do not invent missing points or errors
-  - return at most 2 items in positive_feedback
-  - return at most 2 items in improvement_feedback
-  - each feedback item must be <= 120 characters
-You must write all explanations, feedback, and comments strictly in German (Deutsch).
-Do not use English words or sentences.
-Do not mix German and English.
-Your output must be entirely in German except for JSON field names.
-If any part of the explanation is in English, the response is invalid.
+KEY_POINTS_OUTPUT_SCHEMA = model_to_prompt_schema(KeyPointCheckResult)
+
+
+SYSTEM_PROMPT = f"""You are a strict TELC B2 writing evaluator.
+
+Your only task is to check Criterion I task achievement through expected key points and relevant own ideas.
+
+{SECURITY_PROMPT_BLOCK}
+
+{JSON_ONLY_PROMPT_BLOCK}
+
+Return JSON using exactly this schema:
+{KEY_POINTS_OUTPUT_SCHEMA}
+
+Scope:
+- Evaluate only task achievement, content relevance, situation appropriateness, and key-point development.
+- Do not evaluate grammar, spelling, punctuation, communicative design, grades, points, or final score.
+- Ignore grammar mistakes unless they make the content impossible to understand.
+- Feedback must be evidence-based and limited to task achievement.
+- positive_feedback: max 2 items, each <= 120 characters.
+- improvement_feedback: max 2 items, each <= 120 characters.
+- If weaknesses are limited, still include one realistic improvement suggestion.
+
+{GERMAN_OUTPUT_PROMPT_BLOCK}
 """
 
 
@@ -63,9 +49,11 @@ def build_key_points_user_prompt(
     candidate_text: str,
 ) -> str:
     """Build deterministic user prompt for key-point achievement extraction."""
-    expected_key_points_block = "\n".join(f"- {item}" for item in expected_key_points)
+    expected_key_points_block = "\n".join(
+        f"{index}. {item}" for index, item in enumerate(expected_key_points, start=1)
+    )
 
-    return f"""Evaluate TELC B2 task achievement using ONLY the rules below.
+    return f"""Evaluate TELC B2 Criterion I task achievement using only the rules below.
 
 Task text:
 \"\"\"
@@ -80,108 +68,99 @@ Candidate text:
 {candidate_text}
 \"\"\"
 
+Your task:
+- Analyze whether each expected key point is addressed in the candidate text.
+- Estimate how many candidate sentences actually develop each expected key point.
+- Identify relevant additional own ideas.
+- Identify missing, unclear, underdeveloped, irrelevant, or inappropriate content points.
+- Do not assign grades or points.
+
 Decision rules:
 
-fulfilled_key_points:
-Include an expected key point only if it is:
-- directly relevant to the task
-- appropriate to the communicative situation
-- developed beyond one sentence
-- sufficiently detailed
-- at B2 content level
+1) Expected key point status
 
-Do NOT count a key point as fulfilled if it is:
-- only mentioned briefly
-- only implied
-- too general
-- unclear
-- irrelevant
-- inappropriate to the situation
-- not developed enough
+For each expected key point, choose exactly one status:
 
-own_ideas:
-Include only relevant additional ideas that are:
-- not part of expected_key_points
-- appropriate to the task
-- clearly developed
-- useful for the communicative goal
-- at B2 content level
+- fulfilled:
+  The key point is clearly addressed, relevant, situation-appropriate, and sufficiently developed in content.
 
-Do NOT count as own idea:
-- repetition of expected key points
-- generic filler
-- greeting or closing
-- emotional reaction without development
-- irrelevant information
+- partially_fulfilled:
+  The key point is relevant but too short, vague, incomplete, weakly developed, only partly relevant, or not detailed enough.
 
-invalid_points:
-Include:
-- expected key points that were missing
-- expected key points that were mentioned but not adequately developed
-- candidate ideas that were irrelevant, unclear, too general, or inappropriate
+- not_fulfilled:
+  The key point is missing, irrelevant, unclear, impossible to understand, or inappropriate to the communicative situation.
 
-key_point_details:
-- Return exactly one object per expected key point.
-- Use original expected key point wording exactly or very close.
+Important:
+- You must estimate sentence_count carefully.
+- sentence_count means: the number of candidate sentences that actually develop this specific key point.
+- Count only sentences that add meaningful content to the key point.
+- Do not count greetings, closings, generic filler, repeated phrases, or unrelated sentences.
+- If one sentence covers several key points, count it only where it meaningfully develops the point.
+- The final deterministic sentence-count rule is applied after your output by the checker.
+
+2) fulfilled_key_points
+
+Include expected key points that are clearly fulfilled by content.
+Use the original expected key point wording.
+
+3) own_ideas
+
+Include only additional candidate ideas that are:
+- not repetitions of expected key points;
+- relevant to the task;
+- appropriate to the communicative situation;
+- useful for the communicative goal;
+- clearly developed.
+
+Do not include:
+- greetings or closings;
+- generic filler;
+- undeveloped emotional reactions;
+- repetitions of expected key points;
+- irrelevant information.
+
+4) invalid_points
+
+Include content points that are:
+- missing;
+- underdeveloped;
+- unclear;
+- too general;
+- irrelevant;
+- inappropriate to the communicative situation.
+
+5) key_point_details
+
+Return exactly one key_point_details object for each expected key point.
+Do not include own ideas in key_point_details.
+Use the expected key point order and numbering.
+
+For every expected key point:
+- number: use 1..N according to the expected key point list.
+- type: always "expected".
+- key_point: use the original expected key point wording.
+- status: "fulfilled", "partially_fulfilled", or "not_fulfilled".
+- sentence_count: estimate how many candidate sentences actually develop this key point.
+- situation_appropriate: true, false, or null.
+- language_level: "B2", "B1+", "B1", "A2", or null.
+- comment: short, evidence-based German comment.
+
+Consistency rules:
+- fulfilled_key_points should match key_point_details where status is "fulfilled".
 - Do not invent expected key points.
-- number:
-  - for expected points: use 1..N by expected key point order
-  - for own ideas: use null
-- type:
-  - expected key points: "expected"
-  - own ideas: "own_idea"
-- sentence_count = estimated number of candidate sentences that address this key point.
-- status:
-  - fulfilled: clearly developed, relevant, situation-appropriate, beyond one sentence, sufficiently detailed, B2/B1+ acceptable content
-  - partially_fulfilled: mentioned but too short, vague, weakly developed, or only partly relevant
-  - not_fulfilled: missing, irrelevant, unclear, or inappropriate
-- situation_appropriate=false if content does not fit the communicative situation.
-- language_level must estimate the language used for that point.
-- comment must be concise German and evidence-based.
-
-Important constraints:
-- Use the same or very close wording from expected_key_points when listing fulfilled_key_points.
-- Do not invent expected key points.
+- Do not include own ideas in key_point_details.
 - Do not assign grades.
 - Do not calculate points.
-- Ignore grammar mistakes unless they make content impossible to understand.
+- Ignore grammar mistakes unless they make the content impossible to understand.
 - Be strict but fair.
 
-Required output JSON structure:
-{{
-  "fulfilled_key_points": ["string"],
-  "own_ideas": ["string"],
-  "invalid_points": ["string"],
-  "explanation": "Kurze Erklärung auf Deutsch (1–2 Sätze)",
-  "positive_feedback": ["string"],
-  "improvement_feedback": ["string"],
-  "key_point_details": [
-    {{
-      "number": 1,
-      "type": "expected | own_idea",
-      "key_point": "string",
-      "status": "fulfilled | partially_fulfilled | not_fulfilled",
-      "sentence_count": 0,
-      "situation_appropriate": "true | false | null",
-      "language_level": "B2 | B1+ | B1 | A2 | null",
-      "comment": "Kurzer Kommentar auf Deutsch"
-    }}
-  ]
-}}
+Explanation:
+- Mention only task achievement and key-point fulfillment.
+- Keep it short.
 
-The explanation must be short and mention only task achievement / key-point fulfillment.
 Feedback focus:
-- positive_feedback: clearly fulfilled and developed task points
-- improvement_feedback: missing, underdeveloped, unclear, or overly general points
-Feedback limits:
-- positive_feedback: max 2 items, each <= 120 chars
-- improvement_feedback: max 2 items, each <= 120 chars
-Language requirements:
-- All explanations must be written in German.
-- Use clear and simple German sentences suitable for B2 learners.
-- Maximum 1–2 sentences per explanation.
-- Do not include English words.
-- Each feedback item must be in German.
-- Maximum 1 sentence per feedback item.
+- positive_feedback: clearly addressed and developed task points.
+- improvement_feedback: missing, underdeveloped, unclear, or overly general points.
+
 Return JSON only.
 """

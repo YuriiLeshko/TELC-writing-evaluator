@@ -3,6 +3,7 @@ from __future__ import annotations
 from backend.evaluation.prompts.accuracy import build_accuracy_user_prompt
 from backend.evaluation.prompts.communication import build_communication_user_prompt
 from backend.evaluation.prompts.improvement import build_improvement_user_prompt
+from backend.evaluation.prompts.key_points import SYSTEM_PROMPT as KEY_POINTS_SYSTEM_PROMPT
 from backend.evaluation.prompts.key_points import build_key_points_user_prompt
 from backend.evaluation.prompts.relevance import build_relevance_user_prompt
 from backend.evaluation.schemas import WritingEvaluationInput
@@ -29,6 +30,14 @@ def test_key_points_prompt_contains_required_parts() -> None:
     assert "key_point_details" in prompt
     assert "do not assign grades" in prompt.lower()
     assert "German" in prompt
+
+
+def test_key_points_system_prompt_uses_common_blocks() -> None:
+    assert "Security rules:" in KEY_POINTS_SYSTEM_PROMPT
+    assert "Output rules:" in KEY_POINTS_SYSTEM_PROMPT
+    assert "Language rules:" in KEY_POINTS_SYSTEM_PROMPT
+    assert "Return only valid JSON." in KEY_POINTS_SYSTEM_PROMPT
+    assert "Write all explanations, feedback, and comments only in German." in KEY_POINTS_SYSTEM_PROMPT
 
 
 def test_communication_prompt_contains_required_parts() -> None:

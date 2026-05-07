@@ -59,6 +59,48 @@ def _normalize_sentence_count(value: Any) -> int:
         return 0
 
 
+def _normalize_bool_or_none(value: Any) -> bool | None:
+    """Normalize possible LLM boolean-like outputs to bool | None."""
+    if isinstance(value, bool):
+        return value
+
+    if value in (None, ""):
+        return None
+
+    normalized = str(value).strip().lower()
+
+    if normalized in {"true", "yes", "ja", "1"}:
+        return True
+
+    if normalized in {"false", "no", "nein", "0"}:
+        return False
+
+    return None
+
+
+def _apply_key_point_status_rules(
+    status: str,
+    sentence_count: int,
+    situation_appropriate: bool | None,
+) -> str:
+    """Apply deterministic Criterion I consistency rules.
+
+    Official rule:
+    A key point can be considered fulfilled only if it is developed in at least
+    two candidate sentences.
+    """
+    if sentence_count <= 0:
+        return "not_fulfilled"
+
+    if situation_appropriate is False:
+        return "not_fulfilled"
+
+    if status == "fulfilled" and sentence_count < 2:
+        return "partially_fulfilled"
+
+    return status
+
+
 def _normalize_expected_key_point_details(
     expected_key_points: list[str],
     raw_details: list[dict],
@@ -67,13 +109,15 @@ def _normalize_expected_key_point_details(
     normalized_by_number: dict[int, dict[str, Any]] = {}
 
     expected_norm_to_index = {
-        str(point).strip().lower(): idx + 1 for idx, point in enumerate(expected_key_points)
+        str(point).strip().lower(): idx + 1
+        for idx, point in enumerate(expected_key_points)
     }
 
     for item in raw_details:
         raw_type = str(item.get("type", "")).strip().lower()
         if raw_type == "own_idea":
             continue
+
         key_point = str(item.get("key_point", "")).strip()
         if not key_point:
             continue
@@ -83,27 +127,43 @@ def _normalize_expected_key_point_details(
             number_int = int(number) if number is not None else None
         except (TypeError, ValueError):
             number_int = None
+
         if number_int is None:
             number_int = expected_norm_to_index.get(key_point.lower())
+
+        sentence_count = _normalize_sentence_count(item.get("sentence_count"))
+        situation_appropriate = _normalize_bool_or_none(
+            item.get("situation_appropriate")
+        )
+        status = _normalize_status(item.get("status"))
 
         normalized = {
             "number": number_int,
             "type": "expected",
             "key_point": key_point,
-            "status": _normalize_status(item.get("status")),
-            "sentence_count": _normalize_sentence_count(item.get("sentence_count")),
-            "situation_appropriate": item.get("situation_appropriate"),
+            "status": _apply_key_point_status_rules(
+                status=status,
+                sentence_count=sentence_count,
+                situation_appropriate=situation_appropriate,
+            ),
+            "sentence_count": sentence_count,
+            "situation_appropriate": situation_appropriate,
             "language_level": _normalize_level(item.get("language_level")),
-            "comment": str(item.get("comment") or "").strip() or "Keine Details verfügbar.",
+            "comment": str(item.get("comment") or "").strip()
+            or "Keine Details verfügbar.",
         }
+
         normalized_by_text[key_point.lower()] = normalized
+
         if number_int is not None:
             normalized_by_number[number_int] = normalized
 
     result: list[dict[str, Any]] = []
+
     for idx, expected_point in enumerate(expected_key_points, start=1):
         expected_key = str(expected_point).strip().lower()
         detail = normalized_by_number.get(idx) or normalized_by_text.get(expected_key)
+
         if detail is None:
             detail = {
                 "number": idx,
@@ -119,7 +179,15 @@ def _normalize_expected_key_point_details(
             detail["number"] = idx
             detail["type"] = "expected"
             detail["key_point"] = expected_point
+
+            detail["status"] = _apply_key_point_status_rules(
+                status=str(detail["status"]),
+                sentence_count=int(detail["sentence_count"]),
+                situation_appropriate=detail["situation_appropriate"],
+            )
+
         result.append(detail)
+
     return result
 
 
@@ -156,6 +224,7 @@ async def check_key_points(
         temperature=0.0,
         max_tokens=900,
     )
+
     if not isinstance(raw_result, dict):
         raise ValueError("Key-points checker must return a JSON object.")
 
@@ -170,13 +239,23 @@ async def check_key_points(
     raw_result["improvement_feedback"] = _ensure_string_list(
         raw_result.get("improvement_feedback")
     )
+
     raw_details = _ensure_dict_list(raw_result.get("key_point_details"))
+
     normalized_expected_details = _normalize_expected_key_point_details(
         expected_key_points=input_data.expected_key_points,
         raw_details=raw_details,
     )
+
     own_idea_details = _build_own_idea_details(raw_result["own_ideas"])
+
     raw_result["key_point_details"] = normalized_expected_details + own_idea_details
+
+    raw_result["fulfilled_key_points"] = [
+        detail["key_point"]
+        for detail in normalized_expected_details
+        if detail["status"] == "fulfilled"
+    ]
 
     return KeyPointCheckResult.model_validate(raw_result)
 

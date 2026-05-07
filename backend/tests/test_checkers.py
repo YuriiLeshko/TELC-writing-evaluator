@@ -122,6 +122,87 @@ async def test_check_key_points_derives_missing_number(input_data: WritingEvalua
 
 
 @pytest.mark.asyncio
+async def test_check_key_points_applies_deterministic_status_rules(
+    input_data: WritingEvaluationInput,
+) -> None:
+    client = FakeLLMClient(
+        [
+            {
+                # Intentionally contradictory LLM output; checker must normalize deterministically.
+                "fulfilled_key_points": ["P1", "P2"],
+                "own_ideas": ["Eigene Idee"],
+                "invalid_points": [],
+                "explanation": "Teilweise.",
+                "positive_feedback": ["Punkte erkannt."],
+                "improvement_feedback": ["Mehr ausführen."],
+                "key_point_details": [
+                    {
+                        "number": 1,
+                        "type": "expected",
+                        "key_point": "P1",
+                        "status": "fulfilled",
+                        "sentence_count": 1,
+                        "situation_appropriate": "ja",
+                        "language_level": "B2",
+                        "comment": "Nur kurz erwähnt.",
+                    },
+                    {
+                        "number": 2,
+                        "type": "expected",
+                        "key_point": "P2",
+                        "status": "fulfilled",
+                        "sentence_count": 0,
+                        "situation_appropriate": "true",
+                        "language_level": "B1+",
+                        "comment": "Nicht ausgebaut.",
+                    },
+                    {
+                        "number": 99,
+                        "type": "expected",
+                        "key_point": "P2",
+                        "status": "fulfilled",
+                        "sentence_count": 3,
+                        "situation_appropriate": "nein",
+                        "language_level": "B1+",
+                        "comment": "Situativ unpassend.",
+                    },
+                    {
+                        "number": None,
+                        "type": "own_idea",
+                        "key_point": "Soll ignoriert werden",
+                        "status": "fulfilled",
+                        "sentence_count": 5,
+                        "situation_appropriate": True,
+                        "language_level": "B2",
+                        "comment": "LLM should not return own ideas in expected details.",
+                    },
+                ],
+            }
+        ]
+    )
+    result = await check_key_points(client, input_data)
+
+    expected_details = [d for d in result.key_point_details if d.type == "expected"]
+    own_idea_details = [d for d in result.key_point_details if d.type == "own_idea"]
+
+    # fulfilled + sentence_count=1 -> partially_fulfilled
+    assert expected_details[0].key_point == "P1"
+    assert expected_details[0].status == "partially_fulfilled"
+
+    # sentence_count=0 -> not_fulfilled
+    assert expected_details[1].key_point == "P2"
+    assert expected_details[1].status == "not_fulfilled"
+
+    # fulfilled_key_points rebuilt from normalized expected details
+    assert result.fulfilled_key_points == []
+
+    # own ideas are appended as own_idea details exactly once
+    assert len(own_idea_details) == 1
+    assert own_idea_details[0].key_point == "Eigene Idee"
+    assert own_idea_details[0].type == "own_idea"
+
+
+@pytest.mark.asyncio
 async def test_check_communication_with_fake_llm(input_data: WritingEvaluationInput) -> None:
     client = FakeLLMClient(
         [
