@@ -6,6 +6,12 @@ This module converts structured evaluation outputs into TELC B2 writing scores
 using fully deterministic Python rules. It is responsible only for score
 assignment and score aggregation.
 
+Normative intent is aligned with ``task_examples&criteria/criteria.md`` (bands
+for criteria I–III and Final Score = (I + II + III) × 3). Checker outputs feed
+deterministic thresholds; nuanced rubric wording may not map 1:1 to every edge
+case—in particular criterion III distinguishes A/B/C only within the hardened
+gates below unless extended later.
+
 """
 
 from __future__ import annotations
@@ -21,8 +27,6 @@ from backend.evaluation.schemas import (
     KeyPointDetail,
     RelevanceCheckResult,
 )
-
-MINIMUM_WORD_COUNT = 150
 
 GRADE_POINTS = {
     "A": 5,
@@ -209,10 +213,7 @@ def score_criterion_iii(
     ):
         return make_score("B")
 
-    if problematic_count <= 1:
-        return make_score("C")
-
-    return make_score("D")
+    return make_score("C")
 
 
 def calculate_final_score(

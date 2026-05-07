@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Literal
+
 from backend.evaluation.schemas import (
     AccuracyCheckResult,
     CommunicationCheckResult,
@@ -122,7 +124,7 @@ def build_final_result(
     final_score: FinalScore | None,
     word_count: WordCountCheck | None = None,
     improved_text: ImprovedTextResult,
-    overall_analysis_status: str = "success",
+    overall_analysis_status: Literal["success", "partial", "failed"] = "success",
     overall_analysis_error: str | None = None,
 ) -> WritingEvaluationResult:
     """Build final result with concise criterion-level comments."""

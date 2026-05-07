@@ -6,10 +6,7 @@ It does not assign grades or points and does not perform any scoring.
 
 from __future__ import annotations
 
-import logging
 from typing import Any
-
-from pydantic import ValidationError
 
 from backend.evaluation.prompts.communication import (
     REPAIR_INSTRUCTION,
@@ -17,7 +14,6 @@ from backend.evaluation.prompts.communication import (
     build_communication_user_prompt,
 )
 from backend.evaluation.schemas import CommunicationCheckResult, WritingEvaluationInput
-from backend.services.llm_client import LLMJSONParseError
 from backend.services.llm_client import LLMClient
 
 ASPECTS_IN_ORDER = [
@@ -29,8 +25,6 @@ ASPECTS_IN_ORDER = [
     "vocabulary",
     "sentence_variety",
 ]
-
-logger = logging.getLogger(__name__)
 
 ASPECT_LABELS = {
     "email_elements": "E-Mail-Elemente",
@@ -63,10 +57,6 @@ RATING_NORMALIZATION = {
     "absent": "missing",
     "none": "missing",
 }
-
-
-class CommunicationAnalysisFailed(Exception):
-    """Raised when Criterion II analysis fails across all retry attempts."""
 
 
 def _normalize_rating(value: Any) -> str:
@@ -175,42 +165,38 @@ def _normalize_communication_indicators(value: Any) -> list[dict[str, Any]]:
 async def check_communication(
     llm_client: LLMClient,
     input_data: WritingEvaluationInput,
+    *,
+    append_schema_repair_hint: bool = False,
 ) -> CommunicationCheckResult:
-    """Check communicative design features for Criterion II."""
+    """Check communicative design features for Criterion II.
+
+    Performs a single LLM call. Retry policy lives in ``pipeline.evaluate_writing``;
+    pass ``append_schema_repair_hint=True`` on subsequent pipeline attempts to append
+    a short schema discipline reminder to the user prompt (see ``REPAIR_INSTRUCTION``).
+    """
     base_user_prompt = build_communication_user_prompt(
         task_text=input_data.task_text,
         candidate_text=input_data.candidate_text,
     )
-    errors: list[str] = []
+    user_prompt = (
+        base_user_prompt
+        if not append_schema_repair_hint
+        else f"{base_user_prompt}\n\n{REPAIR_INSTRUCTION}"
+    )
+    raw_result = await llm_client.call_llm_json(
+        system_prompt=SYSTEM_PROMPT,
+        user_prompt=user_prompt,
+        temperature=0.0,
+        max_tokens=2200,
+    )
+    if not isinstance(raw_result, dict):
+        raise ValueError("Communication checker must return a JSON object.")
 
-    for attempt in range(1, 4):
-        user_prompt = base_user_prompt if attempt == 1 else f"{base_user_prompt}\n\n{REPAIR_INSTRUCTION}"
-        try:
-            raw_result = await llm_client.call_llm_json(
-                system_prompt=SYSTEM_PROMPT,
-                user_prompt=user_prompt,
-                temperature=0.0,
-                max_tokens=2200,
-            )
-            if not isinstance(raw_result, dict):
-                raise ValueError("Communication checker must return a JSON object.")
-
-            _normalize_communication_result_fields(raw_result)
-            raw_result["communication_indicators"] = _normalize_communication_indicators(
-                raw_result.get("communication_indicators")
-            )
-            return CommunicationCheckResult.model_validate(raw_result)
-        except (LLMJSONParseError, ValueError) as exc:
-            logger.warning("Communication check attempt %s failed: %s", attempt, exc)
-            errors.append(f"attempt {attempt}: {exc}")
-        except ValidationError as exc:
-            logger.warning("Communication check attempt %s validation failed: %s", attempt, exc)
-            errors.append(f"attempt {attempt}: {exc}")
-        except Exception as exc:
-            logger.warning("Communication check attempt %s validation failed: %s", attempt, exc)
-            errors.append(f"attempt {attempt}: {exc}")
-
-    raise CommunicationAnalysisFailed("; ".join(errors))
+    _normalize_communication_result_fields(raw_result)
+    raw_result["communication_indicators"] = _normalize_communication_indicators(
+        raw_result.get("communication_indicators")
+    )
+    return CommunicationCheckResult.model_validate(raw_result)
 
 
 if __name__ == "__main__":

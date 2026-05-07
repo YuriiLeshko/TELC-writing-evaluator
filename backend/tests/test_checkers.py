@@ -5,7 +5,7 @@ from pydantic import ValidationError
 
 from backend.evaluation.checks.accuracy import check_accuracy
 from backend.evaluation.checks.accuracy import _normalize_aspect_ratings, _normalize_highlighted_errors
-from backend.evaluation.checks.communication import CommunicationAnalysisFailed, check_communication
+from backend.evaluation.checks.communication import check_communication
 from backend.evaluation.checks.communication import _normalize_rating, _normalize_vocabulary_level
 from backend.evaluation.checks.key_points import check_key_points
 from backend.evaluation.checks.relevance import check_relevance
@@ -16,7 +16,19 @@ from backend.evaluation.schemas import (
     RelevanceCheckResult,
     WritingEvaluationInput,
 )
+from backend.evaluation.prompts.communication import REPAIR_INSTRUCTION
 from backend.tests.conftest import FakeLLMClient
+
+
+_COMM_VALID_PAYLOAD = {
+    "email_structure_quality": "excellent",
+    "coherence_quality": "good",
+    "cohesion_quality": "missing",
+    "register_quality": "good",
+    "vocabulary_level": "B2",
+    "sentence_variety_quality": "acceptable",
+    "explanation": "Gut.",
+}
 
 
 @pytest.fixture
@@ -209,17 +221,7 @@ async def test_check_communication_with_fake_llm(input_data: WritingEvaluationIn
     client = FakeLLMClient(
         [
             {
-                "has_subject": True,
-                "has_greeting": True,
-                "has_introduction": True,
-                "has_body_structure": True,
-                "has_conclusion": True,
-                "has_closing": True,
-                "register_quality": "appropriate",
-                "coherence_quality": "good",
-                "vocabulary_level": "B2",
-                "sentence_variety": "some_variety",
-                "explanation": "Gut.",
+                **_COMM_VALID_PAYLOAD,
                 "communication_indicators": [
                     {
                         "aspect": "email_elements",
@@ -264,17 +266,7 @@ async def test_check_communication_normalizes_missing_label_and_rating(input_dat
     client = FakeLLMClient(
         [
             {
-                "has_subject": True,
-                "has_greeting": True,
-                "has_introduction": True,
-                "has_body_structure": True,
-                "has_conclusion": True,
-                "has_closing": True,
-                "register_quality": "appropriate",
-                "coherence_quality": "good",
-                "vocabulary_level": "B2",
-                "sentence_variety": "some_variety",
-                "explanation": "Gut.",
+                **_COMM_VALID_PAYLOAD,
                 "communication_indicators": [
                     {
                         "aspect": "coherence",
@@ -293,102 +285,35 @@ async def test_check_communication_normalizes_missing_label_and_rating(input_dat
 
 
 @pytest.mark.asyncio
-async def test_check_communication_retries_and_then_raises(input_data: WritingEvaluationInput) -> None:
+async def test_check_communication_invalid_indicators_raises(input_data: WritingEvaluationInput) -> None:
     client = FakeLLMClient(
         [
             {
-                "has_subject": True,
-                "has_greeting": True,
-                "has_introduction": True,
-                "has_body_structure": True,
-                "has_conclusion": True,
-                "has_closing": True,
-                "register_quality": "appropriate",
-                "coherence_quality": "good",
-                "vocabulary_level": "B2",
-                "sentence_variety": "some_variety",
-                "explanation": "Gut.",
+                **_COMM_VALID_PAYLOAD,
                 "communication_indicators": "invalid",
-            },
-            {
-                "has_subject": True,
-                "has_greeting": True,
-                "has_introduction": True,
-                "has_body_structure": True,
-                "has_conclusion": True,
-                "has_closing": True,
-                "register_quality": "appropriate",
-                "coherence_quality": "good",
-                "vocabulary_level": "B2",
-                "sentence_variety": "some_variety",
-                "explanation": "Gut.",
-                "communication_indicators": "still-invalid",
-            },
-            {
-                "has_subject": True,
-                "has_greeting": True,
-                "has_introduction": True,
-                "has_body_structure": True,
-                "has_conclusion": True,
-                "has_closing": True,
-                "register_quality": "appropriate",
-                "coherence_quality": "good",
-                "vocabulary_level": "B2",
-                "sentence_variety": "some_variety",
-                "explanation": "Gut.",
-                "communication_indicators": "nope",
             },
         ]
     )
-    with pytest.raises(CommunicationAnalysisFailed):
+    with pytest.raises(ValueError, match="communication_indicators"):
         await check_communication(client, input_data)
-    assert len(client.calls) == 3
+    assert len(client.calls) == 1
 
 
 @pytest.mark.asyncio
-async def test_check_communication_retries_then_succeeds(input_data: WritingEvaluationInput) -> None:
+async def test_check_communication_appends_repair_instruction_when_requested(
+    input_data: WritingEvaluationInput,
+) -> None:
     client = FakeLLMClient(
         [
             {
-                "has_subject": True,
-                "has_greeting": True,
-                "has_introduction": True,
-                "has_body_structure": True,
-                "has_conclusion": True,
-                "has_closing": True,
-                "register_quality": "appropriate",
-                "coherence_quality": "good",
-                "vocabulary_level": "B2",
-                "sentence_variety": "some_variety",
-                "explanation": "Gut.",
-                "communication_indicators": "invalid",
-            },
-            {
-                "has_subject": True,
-                "has_greeting": True,
-                "has_introduction": True,
-                "has_body_structure": True,
-                "has_conclusion": True,
-                "has_closing": True,
-                "register_quality": "appropriate",
-                "coherence_quality": "good",
-                "vocabulary_level": "B2",
-                "sentence_variety": "some_variety",
-                "explanation": "Gut.",
-                "communication_indicators": [
-                    {
-                        "aspect": "email_elements",
-                        "label": "E-Mail-Elemente",
-                        "rating": "good",
-                        "comment": "Die Grundelemente sind vorhanden.",
-                    }
-                ],
+                **_COMM_VALID_PAYLOAD,
+                "communication_indicators": [],
             },
         ]
     )
-    result = await check_communication(client, input_data)
-    assert len(client.calls) == 2
-    assert len(result.communication_indicators) == 7
+    await check_communication(client, input_data, append_schema_repair_hint=True)
+    prompt = client.calls[0]["user_prompt"]
+    assert REPAIR_INSTRUCTION.split("\n", 1)[0] in prompt
 
 
 def test_communication_normalizers_return_valid_schema_values() -> None:

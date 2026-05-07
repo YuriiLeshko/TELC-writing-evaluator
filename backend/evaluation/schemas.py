@@ -256,26 +256,6 @@ class AccuracyAspectRatings(BaseModel):
     comprehension: AccuracyStatus
 
 
-class AccuracyDetail(BaseModel):
-    """Structured grouped formal-accuracy analysis for Criterion III."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    aspect: Literal[
-        "grammar",
-        "syntax",
-        "word_order",
-        "spelling",
-        "punctuation",
-        "comprehension",
-    ]
-    label: str
-    status: Literal["strong", "adequate", "weak", "problematic"]
-    error_count: int = 0
-    evidence: list[str] = Field(default_factory=list)
-    comment: str
-
-
 class AccuracyCheckResult(BaseModel):
     """Structured LLM output for language accuracy and error impact."""
 

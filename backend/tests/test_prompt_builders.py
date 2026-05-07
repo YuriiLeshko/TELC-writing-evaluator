@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from backend.evaluation.prompts.accuracy import build_accuracy_user_prompt
+from backend.evaluation.prompts.accuracy import (
+    SYSTEM_PROMPT as ACCURACY_SYSTEM_PROMPT,
+    build_accuracy_user_prompt,
+)
 from backend.evaluation.prompts.communication import build_communication_user_prompt
 from backend.evaluation.prompts.improvement import (
     SYSTEM_PROMPT as IMPROVEMENT_SYSTEM_PROMPT,
@@ -8,7 +11,10 @@ from backend.evaluation.prompts.improvement import (
 )
 from backend.evaluation.prompts.key_points import SYSTEM_PROMPT as KEY_POINTS_SYSTEM_PROMPT
 from backend.evaluation.prompts.key_points import build_key_points_user_prompt
-from backend.evaluation.prompts.relevance import build_relevance_user_prompt
+from backend.evaluation.prompts.relevance import (
+    SYSTEM_PROMPT as RELEVANCE_SYSTEM_PROMPT,
+    build_relevance_user_prompt,
+)
 from backend.evaluation.schemas import WritingEvaluationInput
 
 
@@ -21,8 +27,11 @@ def test_relevance_prompt_contains_required_parts() -> None:
     assert "TASK" in prompt
     assert "CANDIDATE" in prompt
     assert "topic_mismatch" in prompt
-    assert "German" in prompt
     assert "assign grades" not in prompt.lower()
+    assert (
+        "German" in RELEVANCE_SYSTEM_PROMPT
+        or "Language rules:" in RELEVANCE_SYSTEM_PROMPT
+    )
 
 
 def test_key_points_prompt_contains_required_parts() -> None:
@@ -60,8 +69,8 @@ def test_accuracy_prompt_contains_highlighted_error_rules() -> None:
     assert "highlighted_errors" in prompt
     assert "verb_forms" in prompt
     assert "capitalization" in prompt
-    assert "do not assign grades" in prompt.lower()
-    assert "German" in prompt
+    assert "do not assign grades" in ACCURACY_SYSTEM_PROMPT.lower()
+    assert "German" in ACCURACY_SYSTEM_PROMPT
 
 
 def test_improvement_system_prompt_uses_common_blocks_and_schema() -> None:

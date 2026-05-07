@@ -15,17 +15,26 @@ Evaluation order
 5) Formal accuracy check (Criterion III evidence)
 6) Deterministic scoring and final result build
 
+Performance note:
+After relevance passes without topic mismatch, the key-points, communication, and
+accuracy extractors run concurrently via ``asyncio.gather``. This does not change
+the logical evaluation order described in ``task_examples&criteria/criteria.md``
+§5 (content → communication → grammar); scoring functions still apply criteria
+in that dependency order using the aggregated checker results.
+
 Dependencies
 ------------
 - LLM extraction checks from `backend.evaluation.checks.*`
 - Deterministic scoring from `backend.evaluation.scoring`
-- Result assembly via `backend.evaluation.result_builder` (with safe fallback)
+- Result assembly via `backend.evaluation.result_builder`.
 
 Notes
 -----
 - LLM checks in this pipeline extract structured data only.
 - Score and final-score calculations are deterministic.
-- This module does not contain prompt text or scoring rules.
+- Transient HTTP failures may be retried inside ``LLMClient`` (per-request); checker
+  functions each perform one model round-trip apart from those transport retries.
+
 """
 
 from __future__ import annotations
@@ -43,7 +52,6 @@ from backend.evaluation.schemas import (
     CriterionScore,
     ImprovedTextResult,
     KeyPointCheckResult,
-    RelevanceCheckResult,
     WordCountCheck,
     WritingEvaluationInput,
     WritingEvaluationResult,
@@ -232,11 +240,19 @@ async def evaluate_writing(
             overall_analysis_error=None,
         )
 
+    comm_attempt = {"n": 0}
+
+    async def communication_task() -> CommunicationCheckResult:
+        comm_attempt["n"] += 1
+        return await check_communication(
+            llm_client,
+            input_data,
+            append_schema_repair_hint=(comm_attempt["n"] >= 2),
+        )
+
     checks = await asyncio.gather(
         _run_with_retries("key_points", lambda: check_key_points(llm_client, input_data)),
-        # communication checker already has an internal 3-attempt repair loop.
-        # Keep a single outer attempt to avoid 3 x 3 duplicated retries.
-        _run_with_retries("communication", lambda: check_communication(llm_client, input_data), attempts=1),
+        _run_with_retries("communication", communication_task),
         _run_with_retries("accuracy", lambda: check_accuracy(llm_client, input_data)),
         return_exceptions=True,
     )

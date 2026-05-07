@@ -368,7 +368,7 @@ async def test_pipeline_communication_fallback_not_forced_to_d(
     assert result.criterion_II.points is None
     assert result.criterion_II.analysis_status == "failed"
     assert result.criterion_II.analysis_error is not None
-    assert result.criterion_II.communication_indicators == []
+    assert result.criterion_II.communication_indicators is None
 
 
 @pytest.mark.asyncio
