@@ -26,37 +26,19 @@ function useScrollToHash() {
 /** Inhaltsverzeichnis: Reihenfolge = Leselogik */
 const toc = [
   ["overview", "Überblick"],
-  ["result-overview", "Thema, Situation, Zeit"],
-  ["score-interpretation", "Endnote & Kartenfarben"],
-  ["scoring", "Noten A–D & Formel"],
-  ["word-count", "Wortzahl"],
-  ["partial-failed-results", "Teilweise / fehlgeschlagen"],
-  ["criterion-i", "Kriterium I (Überblick)"],
-  ["task-achievement-fields", "Leitpunkte & Karten"],
-  ["criterion-ii", "Kriterium II (Überblick)"],
-  ["communication-fields", "E-Mail & Gestaltung"],
-  ["criterion-iii", "Kriterium III (Überblick)"],
-  ["accuracy-fields", "Sprachliche Teilaspekte"],
+  ["result-overview", "Thema, Situation und Zeit"],
+  ["score-interpretation", "Punkte, Endnote und Wortzahl"],
+  ["partial-failed-results", "Teilweise oder fehlgeschlagene Auswertung"],
+  ["criterion-i", "Kriterium I: Aufgabenerfüllung"],
+  ["criterion-ii", "Kriterium II: Kommunikative Gestaltung"],
+  ["criterion-iii", "Kriterium III: Formale Korrektheit"],
   ["error-marking", "Markierte Fehler"],
   ["improved-text", "Verbesserte Version"],
-  ["good-letter", "Gute E-Mail & Muster"],
+  ["good-letter", "Gute TELC-B2-E-Mail"],
 ];
 
-function FieldBlock({ title, meaning, conclusion, improve }) {
-  return (
-    <div className="assessment-guide__field">
-      <h4 className="assessment-guide__field-title">{title}</h4>
-      <p className="assessment-guide__field-line">
-        <strong>Was das ist:</strong> <span className="assessment-guide__field-body">{meaning}</span>
-      </p>
-      <p className="assessment-guide__field-line">
-        <strong>Was Sie daraus schließen:</strong> <span className="assessment-guide__field-body">{conclusion}</span>
-      </p>
-      <p className="assessment-guide__field-line">
-        <strong>Beim nächsten Text:</strong> <span className="assessment-guide__field-body">{improve}</span>
-      </p>
-    </div>
-  );
+function Subheading({ children }) {
+  return <h4 className="assessment-guide__subsection-title">{children}</h4>;
 }
 
 export default function AssessmentGuide() {
@@ -69,11 +51,16 @@ export default function AssessmentGuide() {
           ← Zur Startseite
         </Link>
         <h1 className="page-title assessment-guide__page-title">Ratgeber: Ihr Ergebnis verstehen</h1>
-        <p className="page-subtitle assessment-guide__lead">
-          Diese Seite erklärt <strong>jedes Feld</strong>, das Sie in der Ergebnisansicht (rechte Leiste und
-          „Verbesserte Version“) sehen — in einfachem Deutsch für Lernende auf B1/B2-Niveau. Die App orientiert sich am
-          üblichen TELC-B2-Schreibformat; es ist ein Trainingstool, keine offizielle Prüfungsnote.
-        </p>
+        <div className="page-subtitle assessment-guide__lead stack stack--sm">
+          <p style={{ margin: 0 }}>
+            Diese Seite erklärt, wie die Bewertung in dieser App funktioniert und wie Sie aus dem Ergebnis konkrete
+            Verbesserungen ableiten können.
+          </p>
+          <p style={{ margin: 0 }}>
+            Die App orientiert sich an TELC-B2-Schreibkriterien. Sie ist ein Trainingstool und ersetzt keine offizielle
+            TELC-Bewertung.
+          </p>
+        </div>
       </header>
 
       <Card title="Inhaltsverzeichnis" className="assessment-guide__toc-card">
@@ -91,108 +78,93 @@ export default function AssessmentGuide() {
       <section id="overview" className="assessment-guide__anchor assessment-guide-section" tabIndex={-1}>
         <Card title="Überblick">
           <div className="stack stack--sm guide-prose">
-            <p style={{ margin: 0 }}>
-              Ihr Text wird in <strong>drei Kriterien</strong> betrachtet, die in der App klar getrennt angezeigt werden:
-            </p>
+            <p style={{ margin: 0 }}>Ihr Text wird in drei Bereichen bewertet:</p>
             <ul className="assessment-guide__list">
               <li>
-                <strong>I — Aufgabenerfüllung:</strong> Haben Sie die Leitpunkte und die eigene Idee sinnvoll bearbeitet?
+                <strong>Kriterium I — Aufgabenerfüllung</strong>
+                <br />
+                Hier geht es um den Inhalt: Haben Sie die Aufgabe verstanden, die Leitpunkte bearbeitet und eine sinnvolle
+                eigene Idee ergänzt?
               </li>
               <li>
-                <strong>II — Kommunikative Gestaltung:</strong> Passt der Text als formelle E-Mail? Struktur, Ton,
-                Verknüpfungen, Wortschatz, Satzvielfalt.
+                <strong>Kriterium II — Kommunikative Gestaltung</strong>
+                <br />
+                Hier geht es darum, ob Ihr Text als E-Mail gut funktioniert: Aufbau, roter Faden, Verknüpfungen, Register,
+                Wortschatz und Satzvielfalt.
               </li>
               <li>
-                <strong>III — Formale Korrektheit / Sprachrichtigkeit:</strong> Grammatik, Rechtschreibung usw. — und ob
-                Fehler das Verständnis stören.
+                <strong>Kriterium III — Formale Korrektheit</strong>
+                <br />
+                Hier geht es um sprachliche Genauigkeit: Grammatik, Satzbau, Wortstellung, Verbformen, Rechtschreibung,
+                Zeichensetzung und Verständlichkeit.
               </li>
             </ul>
             <p style={{ margin: 0 }}>
-              Rechts sehen Sie pro Kriterium eine <strong>Zahl „X / 15“</strong> (skalierte Teilpunkte) und darunter
-              Kommentare, Listen oder Ampelfarben. Unten im Hauptteil stehen Ihr Originaltext (mit Markierungen), die
-              Aufgabe und ggf. eine <strong>verbesserte Fassung</strong> nur zum Üben.
+              <strong>Wichtig:</strong> Die Kriterien werden getrennt betrachtet. Ein Text kann inhaltlich gut sein, aber
+              sprachlich schwach. Oder er kann sprachlich relativ korrekt sein, aber die Aufgabe nicht vollständig erfüllen.
             </p>
           </div>
         </Card>
       </section>
 
       <section id="result-overview" className="assessment-guide__anchor assessment-guide-section" tabIndex={-1}>
-        <Card title="Thema passend, Situation passend, Zeit">
+        <Card title="Thema, Situation und Zeit">
           <div className="stack stack--sm guide-prose">
-            <FieldBlock
-              title="„Thema passend“ (Gut / Schlecht)"
-              meaning='Die App prüft, ob Ihr Text zur gestellten Aufgabe und zum erwarteten Thema passt („topic_mismatch“ im Hintergrund). „Schlecht“ bedeutet: Der Inhalt verfehlt das Thema klar — das ist eine echte inhaltliche Bewertung, kein technischer Fehler.'
-              conclusion="Bei „Schlecht“ ist oft mit sehr niedrigen Teilnoten zu rechnen; die Endnote kann trotzdem aus den Regeln der App berechnet werden (Themenverfehlung). Bei „Gut“ ist das Thema grundsätzlich getroffen — die Feinbewertung folgt in Kriterium I–III."
-              improve="Lesen Sie die Aufgabe und die Situation zweimal. Schreiben Sie nur zu diesem Fall; wechseln Sie nicht zu einem anderen Produkt, Ort oder Problem."
-            />
-            <FieldBlock
-              title="„Situation passend“ (Gut / Schlecht)"
-              meaning="Hier geht es darum, ob Ihr Schreiben zur beschriebenen Situation passt (z. B. Reklamation vs. Information). „Schlecht“ kann bedeuten, dass der Text zur Situation nicht passt oder das Szenario ignoriert."
-              conclusion="Wenn beides „Gut“ ist, können Sie sich auf Leitpunkte und Sprache konzentrieren. Wenn eines „Schlecht“ ist, lohnt sich ein inhaltlicher Neustart: Weniger generelle Floskeln, mehr Bezug zur Aufgabenstellung."
-              improve="Nennen Sie konkret, wer Sie sind, was passiert ist und was Sie von der Gegenstelle erwarten — immer passend zur Aufgabenfigur (Kunde, Mieter, Leser …)."
-            />
-            <FieldBlock
-              title="„Zeit“ (Minuten)"
-              meaning={
-                <>
-                  Das ist die <strong>Schreibzeit in dieser App</strong>: vom Start der Aufgabe bis zur Einreichung
-                  (Session). Sie dient Ihrer Selbstkontrolle beim Training, nicht einer offiziellen Prüfungszeit. Ab etwa 30
-                  Minuten kann die Anzeige warnend wirken — das ist ein Hinweis, lange Pausen oder sehr langsames Arbeiten
-                  zu überdenken.
-                </>
-              }
-              conclusion="Kurze Zeit heißt nicht automatisch schlechte Note; lange Zeit heißt nicht automatisch gute Note. Es ist nur Kontext für Ihr Training."
-              improve="Üben Sie einmal mit Timer: zuerst Plan (2–3 Min.), dann Schreiben, zuletzt Korrekturlesen — so wird die Zeit realistischer."
-            />
+            <Subheading>Thema passend</Subheading>
+            <p style={{ margin: 0 }}>Dieses Feld zeigt, ob Ihr Text grundsätzlich zur Aufgabe passt.</p>
+            <p style={{ margin: 0 }}>
+              Wenn das Thema verfehlt wurde, bedeutet das: Der Text behandelt nicht die geforderte Aufgabe oder nur sehr
+              entfernt. In diesem Fall werden alle drei Kriterien mit D bewertet.
+            </p>
+            <p style={{ margin: 0 }}>Das ist kein technischer Fehler, sondern eine inhaltliche Bewertung.</p>
+            <p style={{ margin: 0 }}>
+              <strong>Was Sie daraus lernen können:</strong> Lesen Sie die Aufgabe vor dem Schreiben genau. Markieren Sie,
+              worum es wirklich geht: Beschwerde, Bitte, Anfrage, Entschuldigung, Meinung oder Reaktion auf eine konkrete
+              Situation.
+            </p>
+
+            <Subheading>Situation passend</Subheading>
+            <p style={{ margin: 0 }}>Dieses Feld zeigt, ob die kommunikative Situation stimmt.</p>
+            <p style={{ margin: 0 }}>
+              <strong>Beispiel:</strong> Die Aufgabe verlangt eine formelle Beschwerde an einen Kundenservice. Wenn der Text
+              stattdessen wie eine private Nachricht an einen Freund klingt, kann die Situation verfehlt sein.
+            </p>
+            <p style={{ margin: 0 }}>Wenn die Situation verfehlt wurde, gilt in dieser App:</p>
+            <ul className="assessment-guide__list">
+              <li>Kriterium I wird mit D bewertet.</li>
+              <li>Kriterium II und III werden trotzdem normal bewertet.</li>
+            </ul>
+            <p style={{ margin: 0 }}>
+              <strong>Was Sie daraus lernen können:</strong> Achten Sie auf drei Fragen: Wer schreibt? An wen wird
+              geschrieben? Was soll mit dem Text erreicht werden?
+            </p>
+
+            <Subheading>Zeit</Subheading>
+            <p style={{ margin: 0 }}>Die Zeit ist kein TELC-Bewertungskriterium. Sie beeinflusst die Punkte nicht direkt.</p>
+            <p style={{ margin: 0 }}>Sie zeigt nur, wie lange Sie im Training ungefähr gebraucht haben.</p>
+            <p style={{ margin: 0 }}>
+              Eine sehr kurze Zeit kann bedeuten, dass der Text zu knapp, nicht kontrolliert oder nicht vollständig entwickelt
+              ist. Eine lange Zeit garantiert aber keine bessere Bewertung.
+            </p>
+            <p style={{ margin: 0 }}>
+              Für realistisches Training können Sie sich an einem vollständigen Schreibfenster von etwa 30–45 Minuten
+              orientieren.
+            </p>
           </div>
         </Card>
       </section>
 
       <section id="score-interpretation" className="assessment-guide__anchor assessment-guide-section" tabIndex={-1}>
-        <Card title="Endnote (Zahl rechts oben)">
+        <Card title="Punkte, Endnote und Wortzahl">
           <div className="stack stack--sm guide-prose">
-            <FieldBlock
-              title="„Endnote“ als „X / 45“ oder Striche"
-              meaning={
-                <>
-                  Die <strong>Endnote</strong> ist die skalierte Gesamtpunktzahl: Summe der drei Rohpunkte (je 0–5) × 3,
-                  maximal 45. Steht dort „—“, wurde keine volle Zahl berechnet — z. B. bei technischer Teilauswertung.
-                </>
-              }
-              conclusion="Hohe Werte (z. B. über 36) deuten auf insgesamt solide bis starke Leistung; niedrige Werte zeigen klare Lücken in Inhalt, Gestaltung oder Sprache — je nach Kriterienkarten."
-              improve="Vergleichen Sie die drei Karten I/II/III: Wo ist die kleinste Zahl? Dort zuerst trainieren, statt nur an der Endnote zu „drehen“."
-            />
-            <FieldBlock
-              title="Farben neben der Endnote (Ampel)"
-              meaning={
-                <>
-                  Grün / Gelb / Rot fasst nur das <strong>Verhältnis Endnote zu 45</strong> grob zusammen (ca. ≥80 % grün,
-                  ≥60 % gelb, sonst rot). Es ersetzt keine offizielle TELC-Skala.
-                </>
-              }
-              conclusion="Gelb bedeutet nicht „durchgefallen“, sondern: Es gibt noch Luft nach oben. Rot heißt: gezielt üben."
-              improve="Setzen Sie sich konkrete Teilziele (z. B. erst 150 Wörter stabil, dann Leitpunkte vertiefen)."
-            />
-            <FieldBlock
-              title="„X / 15“ auf den Karten I, II, III"
-              meaning={
-                <>
-                  Pro Kriterium werden bis zu 5 Rohpunkte vergeben; in der Anzeige stehen oft{" "}
-                  <strong>skalierte Punkte</strong> (×3), also maximal 15. Entspricht der Note: A=15, B=9, C=3, D=0 in
-                  dieser Skala.
-                </>
-              }
-              conclusion="Wenn dort „— / —“ steht, wurde dieses Kriterium nicht numerisch bewertet (z. B. technischer Fehler)."
-              improve="Arbeiten Sie Kriterium für Kriterium: Inhalt zuerst stimmig, dann Höflichkeit und Struktur, zuletzt Feinschliff bei Grammatik und Zeichensetzung."
-            />
-          </div>
-        </Card>
-      </section>
-
-      <section id="scoring" className="assessment-guide__anchor assessment-guide-section" tabIndex={-1}>
-        <Card title="Notenstufen A–D und Formel (Hintergrund)">
-          <div className="stack stack--sm guide-prose">
-            <p style={{ margin: 0 }}>Pro Kriterium gilt in der App eine Stufe mit Rohpunkten:</p>
+            <Subheading>Endnote</Subheading>
+            <p style={{ margin: 0 }}>Die Endnote wird so berechnet:</p>
+            <p style={{ margin: 0 }}>
+              <strong>
+                Endnote = (Kriterium I + Kriterium II + Kriterium III) × 3
+              </strong>
+            </p>
+            <p style={{ margin: 0 }}>Jedes Kriterium bekommt zuerst Rohpunkte:</p>
             <ul className="assessment-guide__list">
               <li>
                 <strong>A</strong> = 5 Punkte
@@ -207,503 +179,543 @@ export default function AssessmentGuide() {
                 <strong>D</strong> = 0 Punkte
               </li>
             </ul>
+            <p style={{ margin: 0 }}>Maximal sind 45 Punkte möglich.</p>
             <p style={{ margin: 0 }}>
-              <strong>Endnote</strong> = (Punkte<sub>I</sub> + Punkte<sub>II</sub> + Punkte<sub>III</sub>) × 3,{" "}
-              <strong>Maximum</strong> 45.
+              Steht in der App „—“ oder fehlt die Endnote, wurde keine vollständige Gesamtnote berechnet — zum Beispiel bei
+              einer teilweise oder technisch fehlgeschlagenen Auswertung.
             </p>
             <p style={{ margin: 0 }}>
-              <strong>Wichtig:</strong> Eine echte Note D kommt aus der Bewertungslogik (Inhalt/Sprache). Ein{" "}
-              <strong>technischer Ausfall</strong> einer Teilprüfung ist <em>keine</em> automatische D-Note — siehe Abschnitt
-              „Teilweise / fehlgeschlagen“.
+              Neben der Zahl zeigt die App oft eine Ampelfarbe (grob nach Anteil an 45). Das ersetzt keine offizielle
+              TELC-Skala.
             </p>
-            <p style={{ margin: 0 }}>
-              <strong>Themenverfehlung:</strong> Wenn das Thema klar nicht zur Aufgabe passt, kann das System inhaltlich mit
-              D-Stufen arbeiten — das ist eine inhaltliche Entscheidung, keine Störung der Technik.
-            </p>
-          </div>
-        </Card>
-      </section>
 
-      <section id="word-count" className="assessment-guide__anchor assessment-guide-section" tabIndex={-1}>
-        <Card title="Wortzahl (150)">
-          <div className="stack stack--sm guide-prose">
-            <FieldBlock
-              title="„Wortzahl: … / 150“"
-              meaning={
-                <>
-                  Die App zählt Wörter im eingereichten Text und vergleicht mit der{" "}
-                  <strong>Mindestgrenze 150</strong>. Die Farbe zeigt, ob die Grenze erreicht ist.
-                </>
-              }
-              conclusion="Unter 150 Wörtern kann die Bewertung in dieser App die Endnote besonders behandeln oder auf 0 setzen (Projektregel zur Mindestlänge). Das ist eine Trainingsregel, damit Sie realistische Prüfungslängen üben."
-              improve="Schreiben Sie zuerst den Hauptteil, zählen Sie, ergänzen Sie begründende Sätze (nicht nur Füllwörter), und prüfen Sie die Grenze vor dem Absenden."
-            />
+            <span id="word-count" className="assessment-guide__sr-anchor" aria-hidden="true" />
+            <Subheading>Punkte pro Kriterium</Subheading>
+            <p style={{ margin: 0 }}>In der Ergebnisansicht sehen Sie pro Kriterium oft Werte wie:</p>
+            <ul className="assessment-guide__list">
+              <li>9 / 15</li>
+              <li>3 / 15</li>
+              <li>15 / 15</li>
+            </ul>
+            <p style={{ margin: 0 }}>
+              Das sind skalierte Punkte. Ein Kriterium hat maximal 5 Rohpunkte. In der Anzeige werden sie mit 3 multipliziert.
+            </p>
+            <p style={{ margin: 0 }}>Also:</p>
+            <ul className="assessment-guide__list">
+              <li>A = 15 / 15</li>
+              <li>B = 9 / 15</li>
+              <li>C = 3 / 15</li>
+              <li>D = 0 / 15</li>
+            </ul>
+            <p style={{ margin: 0 }}>
+              Wenn dort „— / —“ steht, wurde dieses Kriterium nicht numerisch bewertet (z. B. technischer Fehler bei der
+              Auswertung — nicht dasselbe wie Note D).
+            </p>
+
+            <Subheading>Wortzahl</Subheading>
+            <p style={{ margin: 0 }}>Die App prüft, ob Ihr Text mindestens 150 Wörter hat.</p>
+            <p style={{ margin: 0 }}>
+              <strong>Wichtig:</strong> Mehr Wörter bedeuten nicht automatisch eine bessere Bewertung. Entscheidend ist, ob die
+              Wörter sinnvoll sind.
+            </p>
+            <p style={{ margin: 0 }}>Ein guter Text braucht:</p>
+            <ul className="assessment-guide__list">
+              <li>entwickelte Leitpunkte;</li>
+              <li>klare Beispiele oder Begründungen;</li>
+              <li>passende Verknüpfungen;</li>
+              <li>eine klare Bitte oder Erwartung;</li>
+              <li>eine vollständige E-Mail-Struktur.</li>
+            </ul>
+            <p style={{ margin: 0 }}>
+              Füllsätze helfen nicht. Wenn der Text unter 150 Wörtern bleibt, kann die Bewertung in dieser App stark
+              eingeschränkt oder auf 0 gesetzt werden.
+            </p>
           </div>
         </Card>
       </section>
 
       <section id="partial-failed-results" className="assessment-guide__anchor assessment-guide-section" tabIndex={-1}>
-        <Card title="Warnhinweise: Teilbewertung, analysis_status, analysis_error">
+        <Card title="Teilweise oder fehlgeschlagene Auswertung">
           <div className="stack stack--sm guide-prose">
-            <FieldBlock
-              title="Gelber Kasten mit längerem Text"
-              meaning={
-                <>
-                  Wenn die Auswertung <strong>teilweise</strong> oder <strong>technisch fehlgeschlagen</strong> ist, zeigt die
-                  App eine Meldung. Im Hintergrund stehen Felder wie <code className="assessment-guide__code">analysis_status</code>{" "}
-                  (z. B. „partial“ oder „failed“) und{" "}
-                  <code className="assessment-guide__code">analysis_error</code> (kurze technische oder zusammengefasste
-                  Erklärung).
-                </>
-              }
-              conclusion={
-                <>
-                  Das bedeutet: Mindestens ein Teil der KI-Auswertung konnte nicht zuverlässig fertiggestellt werden. Ihre
-                  Note ist dann <strong>keine vollständige Prüfungsnote</strong>; die Endnote kann fehlen.
-                </>
-              }
-              improve="Text erneut einreichen oder später versuchen. Wenn es oft passiert, Verbindung oder Dienst prüfen — die Bewertungsregeln selbst haben Sie damit nicht „verschlechtert“."
-            />
-            <FieldBlock
-              title="Einzelkriterium „technisch fehlgeschlagen“"
-              meaning={
-                <>
-                  Steht bei einem Kriterium keine Punktzahl und eine Fehlermeldung, wurde{" "}
-                  <strong>nur dieses Kriterium</strong> nicht ausgewertet — nicht dasselbe wie Note D.
-                </>
-              }
-              conclusion="Sie sehen ehrlich: „Hier fehlen Daten.“ Das ist transparenter, als eine erfundene Note einzusetzen."
-              improve="Kriterien mit gültiger Bewertung trotzdem lesen und daraus lernen; fehlendes Kriterium später erneut versuchen."
-            />
+            <p style={{ margin: 0 }}>
+              Manchmal kann ein Teil der automatischen Analyse technisch nicht abgeschlossen werden. Das ist nicht dasselbe
+              wie eine schlechte Note.
+            </p>
+            <p style={{ margin: 0 }}>Wenn ein Kriterium technisch fehlgeschlagen ist:</p>
+            <ul className="assessment-guide__list">
+              <li>wird dieses Kriterium nicht bewertet;</li>
+              <li>es bekommt keine künstliche D-Note;</li>
+              <li>die Endnote kann fehlen;</li>
+              <li>Sie sehen eine Fehlermeldung.</li>
+            </ul>
+            <p style={{ margin: 0 }}>
+              <strong>Was Sie tun können:</strong> Reichen Sie den Text später erneut ein. Die gültigen Teile der Auswertung
+              können Sie trotzdem zum Lernen verwenden.
+            </p>
           </div>
         </Card>
       </section>
 
       <section id="criterion-i" className="assessment-guide__anchor assessment-guide-section" tabIndex={-1}>
-        <Card title="Kriterium I — Aufgabenerfüllung (Karte & Kommentar)">
+        <Card title="Kriterium I: Aufgabenerfüllung">
           <div className="stack stack--sm guide-prose">
-            <FieldBlock
-              title="Überschrift „Aufgabenerfüllung“ und „X / 15“"
-              meaning={
-                <>
-                  Das ist Ihre Bewertung für <strong>Inhalt und Leitpunkte</strong>. Die Zahl ist wie oben beschrieben
-                  skaliert (max. 15).
-                </>
-              }
-              conclusion="Niedrige Werte zeigen: Leitpunkte fehlen, sind zu oberflächlich oder passen nicht zur Aufgabe."
-              improve="Planen Sie vor dem Schreiben: ein Absatz oder Abschnitt pro Leitpunkt plus eine eigene sinnvolle Idee."
-            />
-            <FieldBlock
-              title="Fließtext-Kommentar unter der Überschrift"
-              meaning="Kurze Zusammenfassung der KI: Was ist gut gelaufen, wo fehlt Tiefe oder Bezug?"
-              conclusion="Lesen Sie den Kommentar als Checkliste, nicht als persönliche Kritik."
-              improve="Übernehmen Sie 1–2 konkrete Verbesserungsideen direkt in eine zweite Version Ihres Textes."
-            />
-          </div>
-        </Card>
-      </section>
+            <p style={{ margin: 0 }}>
+              Kriterium I bewertet, ob Sie die Aufgabe inhaltlich erfüllt haben. Dabei geht es nicht nur darum, ob ein
+              Leitpunkt irgendwo erwähnt wurde. Ein Leitpunkt zählt erst dann als erfüllt, wenn er wirklich ausgearbeitet ist.
+            </p>
 
-      <section id="task-achievement-fields" className="assessment-guide__anchor assessment-guide-section" tabIndex={-1}>
-        <Card title="Erfüllte Punkte, Sprachniveau, Punkt 1–4, Eigener Aspekt">
-          <div className="stack stack--sm guide-prose">
-            <FieldBlock
-              title="„Erfüllte Punkte“"
-              meaning={
-                <>
-                  Zählt, wie viele <strong>vorgegebene Leitpunkte</strong> den Status „erfüllt“ haben (nicht die eigene Idee).
-                </>
-              }
-              conclusion="Eine kleine Zahl heißt: Mehrere geforderte Inhaltspunkte sind noch nicht ausreichend ausgearbeitet."
-              improve={
-                <>
-                  Jeden Leitpunkt mit mindestens <strong>2–3 vollständigen Sätzen</strong> belegen — Einleitung, Beispiel,
-                  Folge oder Bitte im Kontext.
-                </>
-              }
-            />
-            <FieldBlock
-              title="„Sprachniveau“ (z. B. B2, B1+ …)"
-              meaning={
-                <>
-                  Einschätzung, auf welchem Niveau die <strong>inhaltlichen Leitpunkt-Texte</strong> wirken (Wortschatz und
-                  Satzbau in den relevanten Stellen), orientiert an B2.
-                </>
-              }
-              conclusion="B1 oder A2 bei Inhalten bedeutet: zu einfach oder zu unsicher für eine starke B2-Aufgabenlösung — unabhängig von Grammatik in Kriterium III."
-              improve="Verwenden Sie präzisere Verben und Nomen (z. B. statt „Problem“: „Lieferverzug“, „beschädigte Ware“), verknüpfen Sie Sätze mit weil, damit, obwohl."
-            />
-            <FieldBlock
-              title="„Mehr als ein Satz“ pro Leitpunkt"
-              meaning={
-                <>
-                  Ein einziger kurzer Satz reicht selten, um einen Leitpunkt als inhaltlich „erfüllt“ zu zeigen. Die
-                  Prüfungslogik erwartet <strong>Ausarbeitung</strong>.
-                </>
-              }
-              conclusion="Wenn die App „teilweise erfüllt“ oder „nicht erfüllt“ meldet, liegt es oft an zu wenig Text pro Punkt."
-              improve="Muster: (1) Sachverhalt nennen, (2) näher erklären oder begründen, (3) Folge oder Bitte formulieren."
-            />
-            <FieldBlock
-              title="„B2-Niveau“ beim Inhalt"
-              meaning="Gemeint ist: Sinnvoller Wortschatz und Satzbau, mit dem man in einem realen B2-Alltag oder in einer Prüfung dieselbe Aufgabe bewältigen könnte — nicht perfekte Fehlerfreiheit, aber tragfähige Sprache."
-              conclusion="Zu einfache Ketten („Ich bin traurig. Ich schreibe Brief. Ich will Hilfe.“) reichen selten für „erfüllt“."
-              improve="Nebensätze üben, feste Wendungen nutzen (ich möchte darauf hinweisen, ich wäre Ihnen dankbar, ich erwarte)."
-            />
-            <FieldBlock
-              title="„Punkt 1“, „Punkt 2“, … (aufklappbare Karten)"
-              meaning={
-                <>
-                  Jeder Eintrag gehört zu einem <strong>geforderten Leitpunkt</strong> aus der Aufgabe. Dort sehen Sie
-                  Kurzkommentar, Status, Satzzahl, Niveau, ob es zur Situation passt.
-                </>
-              }
-              conclusion="„Erfüllt“ = der Punkt ist inhaltlich und sprachlich tragfähig bearbeitet. „Teilweise erfüllt“ = angefangen, aber zu dünn oder unscharf. „Nicht erfüllt“ = fehlt oder verfehlt die Aufgabe."
-              improve="Arbeiten Sie genau die roten/schwachen Felder zuerst: mehr Beispiele, Zahlen, Daten, klare Erwartung."
-            />
-            <FieldBlock
-              title="„Eigener Aspekt“"
-              meaning={
-                <>
-                  Eine <strong>eigene, sinnvolle Idee</strong> zur Situation (nicht nur Abschrift der Aufgabe). Sie zeigt,
-                  dass Sie selbst denken.
-                </>
-              }
-              conclusion="Fehlt sie oft, sinkt Kriterium I — auch wenn die drei Pflichtpunkte halb okay sind."
-              improve="Formulieren Sie eine konkrete, höfliche Forderung oder Alternative (z. B. Ersatzlieferung, Termin, Kulanz), die zur Rolle passt."
-            />
+            <Subheading>Was ist ein Leitpunkt?</Subheading>
+            <p style={{ margin: 0 }}>Ein Leitpunkt ist ein inhaltlicher Punkt, den die Aufgabe von Ihnen erwartet.</p>
+            <p style={{ margin: 0 }}>
+              <strong>Beispiel bei einer Beschwerde:</strong>
+            </p>
+            <ul className="assessment-guide__list">
+              <li>Problem beschreiben</li>
+              <li>Folgen erklären</li>
+              <li>Lösung verlangen</li>
+            </ul>
+
+            <Subheading>Wann zählt ein Leitpunkt als erfüllt?</Subheading>
+            <p style={{ margin: 0 }}>Ein Leitpunkt zählt nur dann als erfüllt, wenn er:</p>
+            <ul className="assessment-guide__list">
+              <li>direkt zur Aufgabe passt;</li>
+              <li>zur Situation passt;</li>
+              <li>mehr als nur kurz erwähnt wird;</li>
+              <li>ausreichend konkret ist;</li>
+              <li>sprachlich ungefähr auf B2-Niveau formuliert ist.</li>
+            </ul>
+            <p style={{ margin: 0 }}>Ein einzelner Satz reicht oft nicht.</p>
+            <p style={{ margin: 0 }}>
+              <strong>Schwach:</strong> Das Paket war kaputt.
+            </p>
+            <p style={{ margin: 0 }}>
+              <strong>Besser:</strong> Das Paket kam beschädigt an. Beim Öffnen habe ich gesehen, dass auch das Gerät
+              beschädigt war und nicht richtig funktioniert. Deshalb konnte ich es nicht wie geplant benutzen.
+            </p>
+            <p style={{ margin: 0 }}>
+              Der zweite Text erklärt nicht nur das Problem, sondern entwickelt den Leitpunkt.
+            </p>
+
+            <Subheading>Unterschied zwischen „erfüllt“, „teilweise erfüllt“ und „nicht erfüllt“</Subheading>
+            <ul className="assessment-guide__list">
+              <li>
+                <strong>Erfüllt</strong> bedeutet: Der Punkt ist klar, relevant, ausreichend entwickelt und passt zur
+                Situation.
+              </li>
+              <li>
+                <strong>Teilweise erfüllt</strong> bedeutet: Der Punkt ist erkennbar, aber zu kurz, zu allgemein oder nicht
+                klar genug.
+              </li>
+              <li>
+                <strong>Nicht erfüllt</strong> bedeutet: Der Punkt fehlt, passt nicht zur Aufgabe oder ist zu unverständlich.
+              </li>
+            </ul>
+            <p style={{ margin: 0 }}>
+              In der Ergebnisleiste zeigen aufklappbare Karten („Punkt 1“, „Punkt 2“, …) pro Leitpunkt Status, Satzzahl,
+              Sprachniveau und Kurzkommentar.
+            </p>
+
+            <Subheading>Eigener Aspekt</Subheading>
+            <p style={{ margin: 0 }}>
+              Ein eigener Aspekt ist eine zusätzliche sinnvolle Idee, die zur Aufgabe passt. Er darf nicht einfach den
+              Leitpunkt wiederholen. Er sollte die E-Mail besser machen.
+            </p>
+            <p style={{ margin: 0 }}>Gute eigene Aspekte können sein:</p>
+            <ul className="assessment-guide__list">
+              <li>eine konkrete Frist;</li>
+              <li>eine Bitte um Rückmeldung;</li>
+              <li>ein Vorschlag zur Lösung;</li>
+              <li>ein Hinweis auf eine Konsequenz;</li>
+              <li>eine höfliche Erwartung.</li>
+            </ul>
+            <p style={{ margin: 0 }}>
+              <strong>Beispiel:</strong> Ich bitte Sie, mir innerhalb einer Woche mitzuteilen, ob ich ein Ersatzgerät bekomme
+              oder den Kaufpreis zurückerhalte.
+            </p>
+
+            <Subheading>Wie verbessern Sie Kriterium I?</Subheading>
+            <p style={{ margin: 0 }}>Nutzen Sie für jeden Leitpunkt diese einfache Struktur:</p>
+            <ul className="assessment-guide__list">
+              <li>Was ist passiert?</li>
+              <li>Warum ist das wichtig?</li>
+              <li>Was erwarten oder wünschen Sie?</li>
+            </ul>
+            <p style={{ margin: 0 }}>
+              Wenn jeder Leitpunkt 2–3 sinnvolle Sätze bekommt, wird der Inhalt meistens deutlich stärker.
+            </p>
           </div>
         </Card>
       </section>
 
       <section id="criterion-ii" className="assessment-guide__anchor assessment-guide-section" tabIndex={-1}>
-        <Card title="Kriterium II — Kommunikative Gestaltung (Karte)">
-          <div className="stack stack--sm guide-prose">
-            <FieldBlock
-              title="Karte „Kommunikative Gestaltung“"
-              meaning={
-                <>
-                  Hier geht es nicht um einzelne Rechtschreibfehler, sondern um <strong>E-Mail-Tauglichkeit</strong>: Aufbau,
-                  Logik, Ton, Wortschatz, Abwechslung der Sätze.
-                </>
-              }
-              conclusion="Hohe Teilpunktzahl = der Text wirkt wie eine überzeugende, höfliche E-Mail; niedrige = Struktur oder Ton sind schwach oder unpassend."
-              improve="Lesen Sie eine echte E-Mail eines Dienstes als Vorbild: kurze Absätze, eine klare Bitte, höfliche Sie-Anrede, keine Umgangssprache."
-            />
-          </div>
-        </Card>
-      </section>
-
-      <section id="communication-fields" className="assessment-guide__anchor assessment-guide-section" tabIndex={-1}>
-        <Card title="Felder unter Kriterium II (Indikatoren & Skala)">
+        <Card title="Kriterium II: Kommunikative Gestaltung">
           <div className="stack stack--sm guide-prose">
             <p style={{ margin: 0 }}>
-              Unter der Überschrift zeigt die App eine Liste von <strong>Hinweisen mit deutscher Bezeichnung</strong>. Die
-              App nutzt englische Schlüsselwörter im Hintergrund; typische Labels in der Oberfläche sind z. B.:
+              Kriterium II bewertet, ob Ihr Text als E-Mail gut funktioniert. Hier geht es nicht primär um Grammatikfehler.
+              Es geht darum, ob der Text klar, logisch, höflich und passend aufgebaut ist.
+            </p>
+
+            <Subheading>E-Mail-Elemente</Subheading>
+            <p style={{ margin: 0 }}>Hier wird geprüft, ob der Text typische Elemente einer E-Mail enthält:</p>
+            <ul className="assessment-guide__list">
+              <li>Betreff;</li>
+              <li>Anrede;</li>
+              <li>Einleitung;</li>
+              <li>Hauptteil;</li>
+              <li>Schluss;</li>
+              <li>Grußformel.</li>
+            </ul>
+            <p style={{ margin: 0 }}>Für eine hohe Bewertung sollte die E-Mail vollständig und klar erkennbar sein.</p>
+
+            <Subheading>Struktur</Subheading>
+            <p style={{ margin: 0 }}>Struktur bedeutet: Der Text ist sinnvoll aufgebaut.</p>
+            <p style={{ margin: 0 }}>Eine gute Struktur sieht zum Beispiel so aus:</p>
+            <ul className="assessment-guide__list">
+              <li>Betreff</li>
+              <li>Anrede</li>
+              <li>Grund des Schreibens</li>
+              <li>Beschreibung des Problems</li>
+              <li>Erwartung oder Bitte</li>
+              <li>höflicher Schluss</li>
+              <li>Grußformel</li>
+            </ul>
+            <p style={{ margin: 0 }}>
+              Schwache Struktur bedeutet: Die Informationen stehen ungeordnet, wirken zufällig oder springen zwischen Themen.
+            </p>
+
+            <Subheading>Zusammenhang</Subheading>
+            <p style={{ margin: 0 }}>Zusammenhang bedeutet: Der Leser kann dem Gedankengang folgen.</p>
+            <p style={{ margin: 0 }}>
+              Ein Text mit gutem Zusammenhang hat einen roten Faden. Die Sätze passen logisch zusammen.
+            </p>
+            <p style={{ margin: 0 }}>
+              <strong>Schwach:</strong> Das Paket war kaputt. Ich habe einen Kopfhörer bestellt. Ich will mein Geld. Der Service
+              ist wichtig.
+            </p>
+            <p style={{ margin: 0 }}>
+              <strong>Besser:</strong> Ich habe bei Ihnen einen Kopfhörer bestellt. Leider kam das Paket beschädigt an, und das
+              Gerät funktioniert nicht richtig. Deshalb bitte ich Sie um eine schnelle Lösung.
+            </p>
+
+            <Subheading>Verknüpfungen</Subheading>
+            <p style={{ margin: 0 }}>Verknüpfungen sind sprachliche Brücken zwischen Sätzen und Ideen.</p>
+            <p style={{ margin: 0 }}>Nützliche Wörter sind zum Beispiel:</p>
+            <p style={{ margin: 0 }}>
+              außerdem, deshalb, trotzdem, jedoch, aus diesem Grund, zunächst, danach, weil, obwohl, damit, wenn
+            </p>
+            <p style={{ margin: 0 }}>
+              Sie müssen nicht in jedem Satz einen Konnektor verwenden. Aber ohne Verknüpfungen wirkt der Text schnell wie eine
+              Liste.
+            </p>
+
+            <Subheading>Register und Stil</Subheading>
+            <p style={{ margin: 0 }}>Register bedeutet: Der Ton passt zur Situation.</p>
+            <p style={{ margin: 0 }}>Bei einer formellen E-Mail sollte der Stil höflich und sachlich sein.</p>
+            <p style={{ margin: 0 }}>
+              <strong>Gut:</strong> Ich bitte Sie um eine zeitnahe Rückmeldung.
+            </p>
+            <p style={{ margin: 0 }}>
+              <strong>Zu direkt oder unpassend:</strong> Schicken Sie mir sofort mein Geld zurück.
+            </p>
+            <p style={{ margin: 0 }}>
+              Ein falsches oder sehr schwaches Register kann die Bewertung stark verschlechtern.
+            </p>
+
+            <Subheading>Wortschatz</Subheading>
+            <p style={{ margin: 0 }}>
+              Der Wortschatz zeigt, ob Sie passende und ausreichend präzise Wörter verwenden. Für B2 reicht es nicht, nur sehr
+              einfache Wörter zu benutzen.
+            </p>
+            <p style={{ margin: 0 }}>
+              <strong>Einfach:</strong> Das Ding ist kaputt.
+            </p>
+            <p style={{ margin: 0 }}>
+              <strong>Besser:</strong> Das Gerät wurde beschädigt geliefert und ist nicht funktionsfähig.
+            </p>
+            <p style={{ margin: 0 }}>
+              B2-Wortschatz bedeutet nicht, dass der Text kompliziert sein muss. Er soll genau, passend und natürlich klingen.
+            </p>
+
+            <Subheading>Satzvielfalt</Subheading>
+            <p style={{ margin: 0 }}>
+              Satzvielfalt bedeutet: Der Text besteht nicht nur aus sehr kurzen und ähnlichen Sätzen.
+            </p>
+            <p style={{ margin: 0 }}>
+              <strong>Schwach:</strong> Ich habe bestellt. Das Paket kam. Es war kaputt. Ich bin nicht zufrieden.
+            </p>
+            <p style={{ margin: 0 }}>
+              <strong>Besser:</strong> Ich habe letzte Woche einen Kopfhörer bestellt, der leider beschädigt angekommen ist. Da
+              das Gerät nicht richtig funktioniert, bitte ich Sie um eine schnelle Lösung.
+            </p>
+            <p style={{ margin: 0 }}>Gute Satzvielfalt entsteht durch:</p>
+            <ul className="assessment-guide__list">
+              <li>Nebensätze mit weil, dass, obwohl, wenn;</li>
+              <li>Infinitivkonstruktionen mit um … zu;</li>
+              <li>unterschiedliche Satzanfänge;</li>
+              <li>passende Konnektoren.</li>
+            </ul>
+            <p style={{ margin: 0 }}>
+              Der Text soll auf B2-Niveau bleiben. Er muss nicht künstlich kompliziert werden.
+            </p>
+
+            <Subheading>Skala in der App (Kriterium II)</Subheading>
+            <p style={{ margin: 0 }}>
+              Für die einzelnen Bereiche nutzt die App Stufen, die in der Oberfläche oft so erscheinen:
             </p>
             <ul className="assessment-guide__list">
               <li>
-                <strong>E-Mail-Elemente</strong> — Betreff, Anrede, Gruß, klare Anredeform usw.
+                <strong>sehr gut</strong> — vorbildlich für diesen Teil
               </li>
               <li>
-                <strong>Struktur</strong> — logischer Aufbau in Absätzen, erkennbare Teile (Einleitung – Hauptteil – Schluss).
+                <strong>gut</strong> — klar über dem Minimum
               </li>
               <li>
-                <strong>Zusammenhang</strong> — die Ideenfolge ist für den Leser nachvollziehbar.
+                <strong>akzeptabel</strong> — es funktioniert grundsätzlich, aber es fehlt noch Feinschliff oder Klarheit
               </li>
               <li>
-                <strong>Verknüpfungen</strong> — Konnektoren und Pronomen verbinden Sätze (deshalb, außerdem, trotzdem …).
+                <strong>schwach</strong> — deutliche Schwächen
               </li>
               <li>
-                <strong>Register und Stil</strong> — formell, höflich, zur Situation passend (kein Du zu einer Behörde).
-              </li>
-              <li>
-                <strong>Wortschatz</strong> — Niveau und Passung der Wortwahl.
-              </li>
-              <li>
-                <strong>Satzvielfalt</strong> — Wechsel zwischen kurzen und längeren Sätzen, nicht nur monotone Hauptsätze.
+                <strong>fehlt</strong> — ein wichtiger Teil fehlt (z. B. kein sinnvoller Betreff)
               </li>
             </ul>
-            <h4 className="assessment-guide__subsection-title">Bewertungsstufen (englisch → deutsch in der App)</h4>
-            <ul className="assessment-guide__list">
-              <li>
-                <strong>excellent</strong> → „sehr gut“: vorbildlich für diese Teilaufgabe.
-              </li>
-              <li>
-                <strong>good</strong> → „gut“: klar über dem Minimum.
-              </li>
-              <li>
-                <strong>acceptable</strong> → „akzeptabel“: es geht, aber genau hier lohnt Übung — oft fehlt Feinschliff
-                oder Klarheit.
-              </li>
-              <li>
-                <strong>weak</strong> → „schwach“: der Leser merkt deutliche Schwächen.
-              </li>
-              <li>
-                <strong>missing</strong> → „fehlt“: wichtiger Teil fehlt (z. B. kein sinnvoller Betreff).
-              </li>
-            </ul>
-            <FieldBlock
-              title="„Wortschatz“ mit Niveau B2 / B1+ / B1 / A2"
-              meaning={
-                <>
-                  Das ist eine <strong>globale Einschätzung</strong> des Wortschatzes in Ihrer E-Mail, nicht einzelne Wörter
-                  zählen.
-                </>
-              }
-              conclusion="A2/B1 signalisiert: für die erwartete B2-Aufgabe noch zu einfach oder zu unsicher."
-              improve="Themenwortschatz sammeln (Reklamation: Lieferung, Beschädigung, Ersatz, Kulanz …) und in Sätzen üben, nicht nur isoliert."
-            />
-            <FieldBlock
-              title="Wenn „Verknüpfungen“ oder „Satzvielfalt“ schwach sind"
-              meaning="Der Text wirkt holprig oder monoton; der Leser muss mehr raten."
-              conclusion="Das senkt Kriterium II, auch wenn Grammatik „okay“ wirkt."
-              improve="Pro Absatz mindestens einen Konnektor setzen; bewusst einen Nebensatz mit obwohl/weil/damit einbauen; Satzlängen wechseln."
-            />
+
+            <Subheading>Was bedeutet „akzeptabel“?</Subheading>
+            <p style={{ margin: 0 }}>
+              „Akzeptabel“ heißt nicht schlecht. Es bedeutet: Der Bereich funktioniert grundsätzlich, ist aber noch nicht stark
+              genug für eine hohe Bewertung.
+            </p>
+            <p style={{ margin: 0 }}>
+              Wenn mehrere Bereiche nur „akzeptabel“ oder „schwach“ sind, sinkt Kriterium II deutlich.
+            </p>
           </div>
         </Card>
       </section>
 
       <section id="criterion-iii" className="assessment-guide__anchor assessment-guide-section" tabIndex={-1}>
-        <Card title="Kriterium III — Formale Korrektheit (Karte)">
-          <div className="stack stack--sm guide-prose">
-            <FieldBlock
-              title="Karte „Formale Korrektheit“"
-              meaning="Hier werden sprachliche Teilbereiche und deren Einfluss aufs Verständnis betrachtet — zusammen mit der Gesamtnote des Kriteriums."
-              conclusion="Viele „schwach“ oder „problematisch“-Felder führen fast immer zu schlechteren Teilnoten — auch wenn der Inhalt gut gemeint ist."
-              improve="Erst häufige Fehlerarten angehen (Artikel, Verb an zweiter Stelle, Kommas bei Nebensätzen), dann Feinschliff."
-            />
-          </div>
-        </Card>
-      </section>
-
-      <section id="accuracy-fields" className="assessment-guide__anchor assessment-guide-section" tabIndex={-1}>
-        <Card title="Teilaspekte & Anzeige gut / ausreichend / schwach / problematisch">
+        <Card title="Kriterium III: Formale Korrektheit">
           <div className="stack stack--sm guide-prose">
             <p style={{ margin: 0 }}>
-              In der App werden technische Stufen (strong, adequate, weak, problematic) mit deutschen Kurzlabels
-              angezeigt:
+              Kriterium III bewertet die sprachliche Richtigkeit. Hier geht es um Fehler in Grammatik, Satzbau, Wortstellung,
+              Verbformen, Rechtschreibung und Zeichensetzung.
             </p>
+            <p style={{ margin: 0 }}>
+              Konkret <Link to="/assessment-guide#error-marking">markierte Stellen</Link> im Text sind Beispiele — nicht
+              zwangsläufig jeder Fehler.
+            </p>
+
+            <Subheading>Bewertungsstufen</Subheading>
+            <p style={{ margin: 0 }}>Die App verwendet kurze Einschätzungen (in der Anzeige z. B.):</p>
             <ul className="assessment-guide__list">
               <li>
-                <strong>strong</strong> → „gut“
+                <strong>gut</strong> — der Bereich ist sicher; Fehler kommen kaum vor oder stören nicht
               </li>
               <li>
-                <strong>adequate</strong> → „ausreichend“
+                <strong>ausreichend</strong> — es gibt Fehler, aber der Bereich ist insgesamt noch kontrolliert
               </li>
               <li>
-                <strong>weak</strong> → „schwach“
+                <strong>schwach</strong> — Fehler treten wiederholt auf und fallen deutlich auf
               </li>
               <li>
-                <strong>problematic</strong> → „problematisch“
+                <strong>problematisch</strong> — Fehler sind häufig oder schwer; sie können das Verständnis stören
               </li>
             </ul>
-            <FieldBlock
-              title="Grammatik"
-              meaning="Verbformen, Kasus, Satzstruktur — ob Sätze verständlich und regelkonform gebaut sind."
-              conclusion="„Problematisch“: Fehler stören oft den Sinn oder häufen sich stark."
-              improve="Satz für Satz langsam lesen; typische Muster notieren (z. B. Genitiv/Wechselpräpositionen)."
-            />
-            <FieldBlock
-              title="Satzbau (Syntax)"
-              meaning="Passt der Satzbau zur Absicht (Haupt- und Nebensätze, keine Sackgassen)?"
-              conclusion="Schwach = der Leser muss umstellen oder rät."
-              improve="Lange Sätze in zwei kürzere teilen; Prüfen, ob jedes Verb ein Subjekt hat."
-            />
-            <FieldBlock
-              title="Wortstellung"
-              meaning="Verb-Position in Aussage- und Nebensätzen, klare Reihenfolge der Satzteile."
-              conclusion="Häufige falsche Verbstellung senkt Verständlichkeit stark."
-              improve="Regel „Verb auf Position 2“ und „Verb am Ende im Nebensatz“ gezielt üben."
-            />
-            <FieldBlock
-              title="Verbformen"
-              meaning="Zeitform, Konjunktiv/Modalverben, Passiv falls verwendet — korrekt und passend?"
-              conclusion="Systematische Verbfehler wirken unsicher und können C oder D begünstigen."
-              improve="Liste der unregelmäßigen Verben, die Sie oft brauchen; eine Zeitform pro Absatz nicht wild mischen."
-            />
-            <FieldBlock
-              title="Kongruenz"
-              meaning="Artikel, Genus, Numerus, Adjektivendungen passen zusammen."
-              conclusion="Viele Kongruenzfehler machen den Text „holprig“ und weniger überzeugend."
-              improve="Substantive mit Artikel laut lernen; Adjektivendungen in einer Spalte üben (der/die/das + Adjektiv)."
-            />
-            <FieldBlock
-              title="Rechtschreibung"
-              meaning="Wörterbuchnahe Schreibweise; Tippfehler vs. echte Unsicherheit."
-              conclusion="Viele Fehler lenken ab, auch wenn der Inhalt stimmt."
-              improve="Kurz pause nach jedem Absatz: nur Rechtschreibung scannen; Browser-Rechtschreibprüfung nutzen, aber nicht blind vertrauen."
-            />
-            <FieldBlock
-              title="Zeichensetzung"
-              meaning="Kommas, Punkte, Doppelpunkt bei Anrede — helfen dem Leser, Sinngrenzen zu sehen."
-              conclusion="Fehlende Kommas bei Nebensätzen sind ein typischer B2-Schwachpunkt."
-              improve="Ein Merkmal: nach weil, dass, obwohl … kommt oft das Verb ans Satzende — Komma davor setzen."
-            />
-            <FieldBlock
-              title="Großschreibung"
-              meaning="Nomen und Satzanfänge groß; Eigennamen korrekt."
-              conclusion="Klein geschriebene Nomen wirken schnell „unsauber“ in formeller E-Mail."
-              improve="Beim Korrekturlesen nur nach Großbuchstaben am Wortanfang suchen (Nomen-Scan)."
-            />
-            <FieldBlock
-              title="Verständlichkeit"
-              meaning="Ob Fehler den Lesefluss oder sogar den Sinn trüben („comprehension“)."
-              conclusion="„Problematisch“ hier ist ein Warnsignal: Inhalt könnte falsch verstanden werden."
-              improve="Unklare Sätze umschreiben; Fachbegriffe nur nutzen, wenn sie zur Aufgabe passen und erklärt sind."
-            />
+
+            <Subheading>Grammatik</Subheading>
+            <p style={{ margin: 0 }}>Grammatik umfasst zum Beispiel:</p>
+            <ul className="assessment-guide__list">
+              <li>Artikel;</li>
+              <li>Kasus;</li>
+              <li>Präpositionen;</li>
+              <li>Verbformen;</li>
+              <li>Satzglieder.</li>
+            </ul>
+            <p style={{ margin: 0 }}>
+              Wenn Grammatik schwach ist, prüfen Sie zuerst wiederkehrende Muster. Oft sind es nicht zehn verschiedene
+              Probleme, sondern ein oder zwei Fehlerarten, die sich wiederholen.
+            </p>
+
+            <Subheading>Satzbau</Subheading>
+            <p style={{ margin: 0 }}>
+              Satzbau bedeutet: Sind die Sätze vollständig, logisch und grammatisch gebaut? Problematisch wird es, wenn Sätze
+              abbrechen, zu lang werden oder grammatisch nicht zusammenpassen. Besser ist oft: einen sehr langen Satz in zwei
+              klare Sätze teilen.
+            </p>
+
+            <Subheading>Wortstellung</Subheading>
+            <p style={{ margin: 0 }}>Wortstellung betrifft vor allem die Position des Verbs.</p>
+            <p style={{ margin: 0 }}>
+              <strong>Wichtige Regeln:</strong> Im Hauptsatz steht das konjugierte Verb meistens auf Position 2. Im Nebensatz
+              steht das konjugierte Verb am Ende.
+            </p>
+            <p style={{ margin: 0 }}>
+              <strong>Falsch:</strong> weil ich habe ein Problem — <strong>Richtig:</strong> weil ich ein Problem habe
+            </p>
+
+            <Subheading>Verbformen</Subheading>
+            <p style={{ margin: 0 }}>Hier geht es um Konjugation, Zeitformen, Modalverben, Partizipien, trennbare Verben.</p>
+            <p style={{ margin: 0 }}>
+              Wenn Verbformen schwach sind, üben Sie häufige Verben aus typischen TELC-Themen: bestellen, erhalten,
+              reklamieren, erwarten, bitten, mitteilen.
+            </p>
+
+            <Subheading>Kongruenz</Subheading>
+            <p style={{ margin: 0 }}>Kongruenz bedeutet: Wörter passen grammatisch zusammen.</p>
+            <p style={{ margin: 0 }}>
+              <strong>Falsch:</strong> ein Kopfhörer kaufen — <strong>Richtig:</strong> einen Kopfhörer kaufen
+            </p>
+
+            <Subheading>Rechtschreibung</Subheading>
+            <p style={{ margin: 0 }}>
+              Einzelne Tippfehler sind meist weniger schlimm. Viele wiederholte Rechtschreibfehler wirken aber unsicher und
+              erschweren das Lesen.
+            </p>
+
+            <Subheading>Zeichensetzung</Subheading>
+            <p style={{ margin: 0 }}>
+              Besonders wichtig sind Kommas bei Nebensätzen, z. B.: Ich schreibe Ihnen, weil ich ein Problem mit meiner Bestellung
+              habe.
+            </p>
+
+            <Subheading>Großschreibung</Subheading>
+            <p style={{ margin: 0 }}>
+              Im Deutschen werden Nomen, Satzanfänge und Eigennamen großgeschrieben. Häufige Fehler in diesem Bereich wirken in
+              einer formellen E-Mail schnell unprofessionell.
+            </p>
+
+            <Subheading>Verständlichkeit</Subheading>
+            <p style={{ margin: 0 }}>Verständlichkeit zeigt, ob die Fehler den Sinn stören.</p>
+            <p style={{ margin: 0 }}>
+              Wenn Verständlichkeit problematisch ist, sollte der nächste Schritt nicht sein, komplizierter zu schreiben.
+              Besser ist: kürzere Sätze, klare Reihenfolge, bekannte Wörter, eindeutige Bezüge.
+            </p>
           </div>
         </Card>
       </section>
 
       <section id="error-marking" className="assessment-guide__anchor assessment-guide-section" tabIndex={-1}>
         <span id="highlighted-errors" className="assessment-guide__sr-anchor" aria-hidden="true" />
-        <Card title="Markierte Fehler (in „Ihrer Antwort“ und in der Leiste)">
+        <Card title="Markierte Fehler">
           <div className="stack stack--sm guide-prose">
-            <FieldBlock
-              title="Was „markiert“ ist"
-              meaning={
-                <>
-                  Die App wählt <strong>konkrete kurze Textfragmente</strong> aus Ihrem Original und hebt sie farblich hervor.
-                  Das sind Beispiele, keine vollständige Fehlerliste.
-                </>
-              }
-              conclusion="Nicht jeder Fehler erscheint; die Liste ist begrenzt und priorisiert oft die auffälligsten Stellen."
-              improve="Vergleichen Sie jeden markierten Bereich mit der Erklärung und bauen Sie die Korrektur in eine neue Version ein."
-            />
-            <FieldBlock
-              title="„Fehler“ (Originalfragment)"
-              meaning="Genau der Ausschnitt aus Ihrem Text, an dem etwas nicht dem Ziel (meist Standarddeutsch in der Aufgabe) entspricht."
-              conclusion="Wenn das Fragment sehr lang ist, ist oft eine unsaubere Stelle mitten drin gemeint."
-              improve="Formulieren Sie die Stelle neu — kürzer und klarer ist oft besser."
-            />
-            <FieldBlock
-              title="„Korrektur“"
-              meaning="Ein Vorschlag, wie der Ausschnitt regelkonformer oder natürlicher klingen könnte."
-              conclusion="Es gibt manchmal mehrere richtige Lösungen; der Vorschlag ist eine Lernhilfe."
-              improve="Sagen Sie die Korrektur laut; wenn sie unnatürlich klingt, Wörterbuch oder Lehrer:in fragen."
-            />
-            <FieldBlock
-              title="„Erklärung“"
-              meaning="Kurze Regel oder Begründung (z. B. Kasus nach Verb, Zeitenfolge)."
-              conclusion="Hilft Ihnen, das Muster zu erkennen — nicht nur diese eine Stelle."
-              improve="Gleiche Regel an drei selbst gewählten neuen Sätzen üben."
-            />
-            <FieldBlock
-              title="„error_type“ / Fehlerart (z. B. Verbform, Kasus …)"
-              meaning="Eine kurze Kategorie, damit Sie Fehler sammeln können (z. B. Artikel/Kasus, Wortstellung, Großschreibung)."
-              conclusion="Wiederholt derselbe Typ? Dann gezielt diese Regel lernen, nicht „alles Grammatik“."
-              improve="Eigenes Fehler-Tagebuch: Spalten Typ, Beispiel, Korrektur, Regel-Link/Skript."
-            />
+            <p style={{ margin: 0 }}>
+              Die markierten Fehler sind konkrete Beispiele aus Ihrem Originaltext. Sie zeigen den fehlerhaften Ausschnitt,
+              eine mögliche Korrektur, den Fehlertyp und eine kurze Erklärung.
+            </p>
+            <p style={{ margin: 0 }}>
+              Die Liste enthält nicht unbedingt alle Fehler. Sie zeigt eine Auswahl wichtiger oder gut erkennbarer Probleme.
+            </p>
+            <Subheading>Wie nutzen Sie diese Fehler sinnvoll?</Subheading>
+            <p style={{ margin: 0 }}>Suchen Sie nach Mustern.</p>
+            <ul className="assessment-guide__list">
+              <li>Wenn häufig „Wortstellung“ erscheint, üben Sie Verbposition.</li>
+              <li>Wenn häufig „Kasus“ oder „Artikel“ erscheint, üben Sie Nomen mit Artikel und Fall.</li>
+              <li>Wenn häufig „Großschreibung“ erscheint, machen Sie am Ende einen eigenen Korrekturdurchgang nur für Großbuchstaben.</li>
+            </ul>
+            <p style={{ margin: 0 }}>
+              <strong>Ein guter Lernschritt ist:</strong> Fehler lesen — Korrektur verstehen — Regel notieren — drei neue eigene
+              Beispielsätze bilden.
+            </p>
           </div>
         </Card>
       </section>
 
       <section id="improved-text" className="assessment-guide__anchor assessment-guide-section" tabIndex={-1}>
-        <Card title="Verbesserte Version (Lernhilfe)">
+        <Card title="Verbesserte Version">
           <div className="stack stack--sm guide-prose">
-            <FieldBlock
-              title="Block „Verbesserte Version“"
-              meaning={
-                <>
-                  Ein Volltext-Vorschlag, der Ihre Aussagen in der Regel <strong>beibehalten</strong> soll, aber klarer und
-                  sprachlich sicherer formuliert.
-                </>
-              }
-              conclusion={
-                <>
-                  Diese Version ist <strong>nicht</strong> die offizielle Bewertungsgrundlage und ändert{" "}
-                  <strong>nicht</strong> Ihre Punkte nachträglich.
-                </>
-              }
-              improve="Vergleichen Sie Absatz für Absatz: Was wurde geglättet? Übernehmen Sie Wendungen, die Sie verstehen und wiederverwenden können."
-            />
-            <FieldBlock
-              title="Keine erfundenen Fakten"
-              meaning="Die KI soll keine neuen konkreten Daten (Datum, Betrag, Produktname …) erfinden, die nicht in Ihrer Aufgabe stehen."
-              conclusion="Wenn plötzlich Details auftauchen, die Sie nicht geschrieben haben, ignorieren Sie sie beim Lernen oder ersetzen Sie sie durch Ihre echten Angaben."
-              improve="Immer mit Ihrer Aufgabenstellung abgleichen; nur Fakten behalten, die Sie selbst gemeint haben."
-            />
+            <p style={{ margin: 0 }}>
+              Die verbesserte Version ist eine Lernhilfe. Sie zeigt, wie Ihr Text klarer, korrekter und besser strukturiert
+              klingen könnte. Sie ändert aber nicht nachträglich Ihre Bewertung.
+            </p>
+            <p style={{ margin: 0 }}>
+              <strong>Wichtig:</strong> Die verbesserte Version soll Ihre ursprüngliche Absicht erhalten. Wenn Sie dort
+              konkrete Fakten sehen, die Sie nicht gemeint haben, übernehmen Sie diese nicht.
+            </p>
+            <p style={{ margin: 0 }}>
+              <strong>Nutzen Sie die Version so:</strong> Vergleichen Sie Absatz für Absatz. Markieren Sie gute Wendungen.
+              Übernehmen Sie nur Formulierungen, die Sie verstehen. Schreiben Sie danach eine eigene zweite Version.
+            </p>
           </div>
         </Card>
       </section>
 
       <section id="good-letter" className="assessment-guide__anchor assessment-guide-section" tabIndex={-1}>
-        <Card title="Gute TELC-B2-E-Mail — Aufbau, Leitpunkte, Verknüpfungen">
+        <Card title="Gute TELC-B2-E-Mail">
           <div className="stack stack--sm guide-prose">
             <p style={{ margin: 0 }}>
-              Eine starke Prüfungs-E-Mail ist <strong>sachlich, höflich und vollständig</strong>. Typischer Aufbau:
+              Eine gute TELC-B2-E-Mail ist nicht perfekt und nicht übertrieben kompliziert. Sie ist vollständig, höflich,
+              logisch und verständlich.
             </p>
-            <ol className="assessment-guide__list assessment-guide__list--ordered">
-              <li>
-                <strong>Betreff</strong> — eine Zeile, die das Anliegen nennt.
-              </li>
-              <li>
-                <strong>Anrede</strong> — z. B. „Sehr geehrte Damen und Herren,“ oder konkreter Name, wenn in der Aufgabe
-                genannt.
-              </li>
-              <li>
-                <strong>Einleitung</strong> — wer Sie sind und warum Sie schreiben (1–3 Sätze).
-              </li>
-              <li>
-                <strong>Hauptteil</strong> — <strong>jeder Leitpunkt</strong> idealerweise mit <strong>2–3 Sätzen</strong>{" "}
-                ausführen (Sachverhalt, Begründung, Konsequenz).
-              </li>
-              <li>
-                <strong>Eigener Aspekt</strong> — wenn gefordert: eine sinnvolle eigene Idee oder Bitte, die zur Rolle passt.
-              </li>
-              <li>
-                <strong>Klare Bitte / Erwartung</strong> — was genau soll die Gegenstelle tun? (Termin, Ersatz, Rückruf …)
-              </li>
-              <li>
-                <strong>Schluss</strong> — ein höflicher Abschlussatz.
-              </li>
-              <li>
-                <strong>Grußformel und Name</strong>.
-              </li>
-            </ol>
-            <p style={{ margin: 0 }}>
-              <strong>Nützliche Verknüpfungen und Wendungen</strong> (sparsam, aber wirkungsvoll einsetzen):
-            </p>
+
+            <Subheading>Typischer Aufbau</Subheading>
             <ul className="assessment-guide__list">
               <li>
-                <em>Zunächst</em> möchte ich …
+                <strong>Betreff</strong> — kurz und konkret.
               </li>
               <li>
-                <em>Außerdem</em> …
+                <strong>Anrede</strong> — z. B.: Sehr geehrte Damen und Herren,
               </li>
               <li>
-                <em>Deshalb</em> / <em>aus diesem Grund</em> …
+                <strong>Einleitung</strong> — warum schreiben Sie?
               </li>
               <li>
-                <em>Trotzdem</em> / <em>jedoch</em> … (Kontrast)
+                <strong>Hauptteil</strong> — Leitpunkte bearbeiten; jeder wichtige Punkt sollte 2–3 sinnvolle Sätze bekommen.
               </li>
               <li>
-                <em>Ich bitte Sie</em> (höflich) um … / <em>Ich wäre Ihnen dankbar</em>, wenn …
+                <strong>Eigener Aspekt</strong> — wenn passend: zusätzliche Idee, Bitte oder Erwartung.
+              </li>
+              <li>
+                <strong>Klare Bitte oder Erwartung</strong> — was soll die andere Seite tun?
+              </li>
+              <li>
+                <strong>Schluss</strong> — höflich abschließen.
+              </li>
+              <li>
+                <strong>Grußformel</strong> — Mit freundlichen Grüßen, Name
               </li>
             </ul>
-            <p style={{ margin: 0 }}>
-              <strong>Kurzvorlage</strong> (Platzhalter anpassen):
-            </p>
-            <pre className="text-panel assessment-guide__template" role="region" aria-label="Muster-E-Mail">
-{`Betreff: [kurz Ihr Anliegen]
+
+            <Subheading>Nützliche Formulierungen</Subheading>
+            <ul className="assessment-guide__list">
+              <li>Ich wende mich an Sie, weil …</li>
+              <li>Ich möchte Sie darüber informieren, dass …</li>
+              <li>Leider musste ich feststellen, dass …</li>
+              <li>Aus diesem Grund bitte ich Sie um …</li>
+              <li>Ich wäre Ihnen dankbar, wenn …</li>
+              <li>Bitte teilen Sie mir mit, wie …</li>
+              <li>Ich hoffe auf eine schnelle Rückmeldung.</li>
+            </ul>
+
+            <Subheading>Kurzes Muster</Subheading>
+            <pre className="text-panel assessment-guide__template" role="region" aria-label="Muster-E-Mail B2">
+              {`Betreff: Beschwerde wegen beschädigter Lieferung
 
 Sehr geehrte Damen und Herren,
 
-ich wende mich an Sie, weil [Kernproblem in einem Satz].
+ich wende mich an Sie, weil ich mit meiner letzten Bestellung ein Problem habe. Das Paket ist beschädigt angekommen, und das bestellte Gerät funktioniert nicht richtig.
 
-Zunächst [Leitpunkt 1 ausführen, 2–3 Sätze].
-Außerdem [Leitpunkt 2 ausführen, 2–3 Sätze].
-[Optional: eigener sinnvoller Punkt / Vorschlag].
+Zunächst möchte ich erklären, dass ich den Kopfhörer beruflich und privat nutzen wollte. Leider ist dies im aktuellen Zustand nicht möglich, da nur eine Seite Ton wiedergibt. Außerdem war bereits die Verpackung deutlich beschädigt.
 
-Aus diesem Grund bitte ich Sie, [klare Bitte / Frist / Erwartung].
+Aus diesem Grund bitte ich Sie um eine schnelle Lösung. Ich wäre Ihnen dankbar, wenn Sie mir entweder ein Ersatzgerät schicken oder den Kaufpreis zurückerstatten könnten.
+
+Bitte teilen Sie mir mit, wie ich weiter vorgehen soll.
 
 Mit freundlichen Grüßen
-[Ihr Name]`}
+Max Müller`}
             </pre>
+
+            <Subheading>Checkliste vor dem Absenden</Subheading>
+            <ul className="assessment-guide__list">
+              <li>Habe ich alle Leitpunkte bearbeitet?</li>
+              <li>Hat jeder wichtige Leitpunkt mindestens zwei sinnvolle Sätze?</li>
+              <li>Ist klar, warum ich schreibe?</li>
+              <li>Ist meine Bitte oder Erwartung konkret?</li>
+              <li>Gibt es Betreff, Anrede und Grußformel?</li>
+              <li>Habe ich passende Verknüpfungen benutzt?</li>
+              <li>Ist der Stil höflich und formell?</li>
+              <li>Habe ich Verbposition, Artikel, Großschreibung und Kommas geprüft?</li>
+            </ul>
             <p style={{ margin: 0 }}>
-              <strong>Kurztipps:</strong> formelles „Sie“; keine reine Stichpunktliste als Prüfungstext; Konnektoren nicht
-              in jedem Satz wiederholen; am Ende einmal laut vorlesen — Ohr findet holprige Stellen oft schneller als das
-              Auge.
+              Eine starke B2-E-Mail muss nicht wie C1 klingen. Sie muss die Aufgabe vollständig, klar und höflich lösen.
             </p>
           </div>
         </Card>

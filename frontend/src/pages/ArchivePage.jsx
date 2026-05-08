@@ -129,8 +129,8 @@ export default function ArchivePage() {
 
   return (
     <div className="stack">
-      <h1 className="page-title">Archiv</h1>
-      <p className="page-subtitle">Aktive Sitzungen und Ihre Einreichungen.</p>
+      <h1 className="page-title">Einreichungsverlauf</h1>
+      <p className="page-subtitle">Aktive Sitzungen und Ihre gespeicherten Texte mit Auswertung.</p>
 
       {error ? (
         <div className="alert alert--error" role="alert">
