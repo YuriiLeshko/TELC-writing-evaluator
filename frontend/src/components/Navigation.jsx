@@ -1,6 +1,7 @@
 import { NavLink } from "react-router-dom";
 import {
   Archive,
+  BookOpen,
   House,
   Menu,
   PanelLeftClose,
@@ -14,14 +15,15 @@ import {
 } from "lucide-react";
 
 const topLinks = [
-  { to: "/", label: "Main", end: true, icon: House },
-  { to: "/training", label: "Training", icon: PencilLine, requiresConsent: true },
-  { to: "/archive", label: "Archive", icon: Archive, requiresConsent: true },
+  { to: "/", label: "Start", end: true, icon: House },
+  { to: "/assessment-guide", label: "Bewertungsleitfaden", icon: BookOpen },
+  { to: "/training", label: "Übungen", icon: PencilLine, requiresConsent: true },
+  { to: "/archive", label: "Verlauf", icon: Archive, requiresConsent: true },
 ];
 
 const bottomLinks = [
-  { to: "/profile", label: "Profile", icon: User },
-  { to: "/admin", label: "Admin", icon: Settings },
+  { to: "/profile", label: "Profil", icon: User },
+  { to: "/admin", label: "Verwaltung", icon: Settings },
 ];
 
 export default function Navigation({
@@ -101,11 +103,11 @@ export default function Navigation({
             type="button"
             className="sidebar__theme-toggle"
             onClick={onToggleTheme}
-            aria-label={theme === "light" ? "Dark theme aktivieren" : "Light theme aktivieren"}
-            title={theme === "light" ? "Dark mode" : "Light mode"}
+            aria-label={theme === "light" ? "Dunklen Modus aktivieren" : "Hellen Modus aktivieren"}
+            title={theme === "light" ? "Dunkler Modus" : "Heller Modus"}
           >
             {theme === "light" ? <Moon size={18} className="sidebar__icon" aria-hidden /> : <Sun size={18} className="sidebar__icon" aria-hidden />}
-            <span className="sidebar__label">{theme === "light" ? "Dark mode" : "Light mode"}</span>
+            <span className="sidebar__label">{theme === "light" ? "Dunkler Modus" : "Heller Modus"}</span>
           </button>
           {bottomLinks.map(renderLink)}
         </div>

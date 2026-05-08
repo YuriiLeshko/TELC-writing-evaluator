@@ -1093,6 +1093,22 @@ a.link-btn {
   line-height: 1.35;
 }
 
+.result-rail-kp-summary__line--with-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+}
+
+.metric-card__help--with-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
 .result-rail-data-list {
   margin: 0.2rem 0 0;
   padding-left: 0.95rem;
@@ -1737,4 +1753,250 @@ details.summary-block summary {
 
 .profile-danger-card {
   border-color: color-mix(in srgb, var(--danger) 45%, var(--border-strong) 55%);
+}
+
+/* ----- Assessment guide + inline help links ----- */
+
+.result-rail-card__head-with-info {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.1rem;
+  width: 100%;
+}
+
+.result-rail-card__head-with-info > .result-rail-card__head {
+  flex: 1;
+  min-width: 0;
+}
+
+.info-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.65rem;
+  height: 1.65rem;
+  margin-top: 0.4rem;
+  margin-right: 0.08rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 92%, transparent);
+  background: transparent;
+  color: var(--muted);
+  text-decoration: none !important;
+  opacity: 0.82;
+  transition: opacity 0.15s, color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.info-link:hover {
+  opacity: 1;
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border) 60%);
+  background: var(--accent);
+}
+
+.info-link:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.result-rail-card--active .info-link {
+  color: color-mix(in srgb, var(--sidebar-active-text) 88%, transparent);
+}
+
+.result-inline-info {
+  display: inline-flex;
+  vertical-align: middle;
+  align-items: center;
+  gap: 0.2rem;
+  margin-left: 0.2rem;
+}
+
+.summary-with-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  cursor: pointer;
+  list-style: none;
+}
+
+.summary-with-info::-webkit-details-marker {
+  display: none;
+}
+
+.assessment-guide__anchor {
+  scroll-margin-top: 1rem;
+}
+
+@media (max-width: 760px) {
+  .assessment-guide__anchor {
+    scroll-margin-top: 4.5rem;
+  }
+}
+
+.assessment-guide__toc {
+  display: grid;
+  gap: 0.35rem 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.assessment-guide__template {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  font-size: 0.88rem;
+  line-height: 1.52;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.page-back-link {
+  display: inline-block;
+  font-size: 0.92rem;
+  margin-bottom: 0.75rem;
+}
+
+.guide-prose {
+  font-size: 0.94rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.assessment-guide__field {
+  padding-top: 0.65rem;
+  margin-top: 0.65rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+}
+
+.assessment-guide__field:first-child {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.assessment-guide__field-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.assessment-guide__field-line {
+  margin: 0.2rem 0 0;
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.assessment-guide__field-line strong {
+  color: var(--text);
+}
+
+.assessment-guide__sr-anchor {
+  display: block;
+  height: 0;
+  width: 0;
+  overflow: hidden;
+  scroll-margin-top: 1rem;
+}
+
+.alert-inline-info {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 0.35rem;
+}
+
+/* ----- Assessment guide layout polish ----- */
+
+.assessment-guide-page {
+  max-width: min(52rem, 100%);
+  margin: 0 auto;
+  padding-bottom: 2.5rem;
+}
+
+.assessment-guide__hero {
+  padding-bottom: 1.15rem;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+}
+
+.assessment-guide__page-title {
+  letter-spacing: -0.02em;
+  line-height: 1.18;
+}
+
+.assessment-guide__lead {
+  max-width: 58ch;
+}
+
+.assessment-guide-section {
+  margin-top: 1.85rem;
+  padding: 0.35rem 0.85rem 0.35rem 1rem;
+  border-left: 3px solid color-mix(in srgb, var(--primary) 50%, var(--border) 50%);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--border) 40%, transparent);
+}
+
+[data-theme="dark"] .assessment-guide-section {
+  background: color-mix(in srgb, var(--surface) 75%, var(--background) 25%);
+  box-shadow: none;
+}
+
+.assessment-guide__toc-card {
+  border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
+}
+
+.assessment-guide__list {
+  margin: 0.4rem 0 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.assessment-guide__list--ordered {
+  margin-top: 0.55rem;
+}
+
+.assessment-guide__subsection-title {
+  margin: 1rem 0 0.4rem;
+  font-size: 0.96rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+
+.assessment-guide__code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.86em;
+  padding: 0.12em 0.4em;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--surface-muted) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  color: var(--text);
+}
+
+.assessment-guide__field-body {
+  display: inline;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.assessment-guide__field-body strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.assessment-guide__field-body code {
+  font-size: 0.92em;
+}
+
+.guide-prose .assessment-guide__list + p,
+.guide-prose p + p {
+  margin-top: 0.55rem;
 }

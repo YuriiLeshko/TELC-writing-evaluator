@@ -30,7 +30,7 @@ export default function HomePage() {
 
       {location.state?.disclaimerRequired && !disclaimerAccepted ? (
         <div className="alert alert--warn">
-          Bitte bestätigen Sie zuerst den Hinweis auf dieser Startseite, bevor Sie Training oder Archive öffnen.
+            Bitte bestätigen Sie zuerst den Hinweis auf dieser Startseite, bevor Sie Übungen oder Verlauf öffnen.
         </div>
       ) : null}
 

@@ -181,7 +181,7 @@ export default function TrainingPage() {
 
   return (
     <div className="stack">
-      <h1 className="page-title">Training</h1>
+      <h1 className="page-title">Übungen</h1>
       <p className="page-subtitle">
         Starten Sie eine neue Einheit, wählen Sie eine Aufgabe und schreiben Sie Ihren Text. Der Timer läuft ab
         Sitzungsbeginn (30 Minuten Zielspanne).

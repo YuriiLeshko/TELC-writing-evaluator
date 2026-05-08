@@ -264,7 +264,7 @@ export default function AdminPage() {
                         #{u.id} {u.email}
                       </strong>
                       <div className="admin-user-row__badges">
-                        <Badge variant={isAdmin ? "warning" : "neutral"}>{isAdmin ? "Admin" : "User"}</Badge>
+                        <Badge variant={isAdmin ? "warning" : "neutral"}>{isAdmin ? "Admin" : "Benutzer"}</Badge>
                         <Badge variant={u.is_active ? "success" : "danger"}>{u.is_active ? "Aktiv" : "Inaktiv"}</Badge>
                       </div>
                     </div>
@@ -399,7 +399,7 @@ export default function AdminPage() {
 
   return (
     <div className="stack">
-      <h1 className="page-title">Administration</h1>
+      <h1 className="page-title">Verwaltung</h1>
       <p className="page-subtitle">MVP-Formulare für Demo-Admin. Fehler vom Backend werden angezeigt.</p>
 
       <div className="admin-tabs">

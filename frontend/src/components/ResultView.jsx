@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PanelRightClose, PanelRightOpen, X } from "lucide-react";
 import ErrorHighlightedText from "./ErrorHighlightedText.jsx";
+import InfoLink from "./InfoLink.jsx";
 import { safeGet } from "../utils/safeGet.js";
 
 const RAIL_SECTION_IDS = ["rail-section-score", "rail-section-i", "rail-section-ii", "rail-section-iii", "rail-section-errors"];
@@ -565,6 +566,7 @@ export default function ResultView({ result, candidateText, selectedTask, submis
               id="rail-section-score"
               className={`result-rail-card ${activeSection === "rail-section-score" ? "result-rail-card--active" : ""}`}
             >
+            <div className="result-rail-card__head-with-info">
             <button
               type="button"
               className="result-rail-card__head"
@@ -575,6 +577,8 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                 {r.final_score ?? "—"}/{r.max_score ?? "—"}
               </span>
             </button>
+            <InfoLink sectionId="score-interpretation" title="Punkte, Endnote und Wortzahl im Ratgeber" />
+            </div>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
                 {overallAnalysisStatus === "partial" || overallAnalysisStatus === "failed" ? (
@@ -615,12 +619,15 @@ export default function ResultView({ result, candidateText, selectedTask, submis
             id="rail-section-i"
             className={`result-rail-card ${activeSection === "rail-section-i" ? "result-rail-card--active" : ""}`}
           >
+            <div className="result-rail-card__head-with-info">
             <button type="button" className="result-rail-card__head" onClick={() => onTileActivate("rail-section-i")}>
               <span className="result-rail-tile__title">Aufgabenerfüllung</span>
               <span className={`result-rail-tile__value ${criterionIScoreStatusClass}`}>
                 {hasCriterionIScore ? `${criterionIScaledPoints} / ${criterionIMaxScaledPoints}` : "— / —"}
               </span>
             </button>
+            <InfoLink sectionId="criterion-i" title="Kriterium I: Aufgabenerfüllung im Ratgeber" />
+            </div>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
                 {keyPointsAnalysisStatus === "failed" ? (
@@ -632,10 +639,14 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                 ) : null}
                 <div className="result-rail-kp-summary">
                   <p className="result-rail-kp-summary__line">
-                    <strong>Erfüllte Punkte:</strong> {keyPointSummary?.fulfilledCount ?? "—"}
+                    <span>
+                      <strong>Erfüllte Punkte:</strong> {keyPointSummary?.fulfilledCount ?? "—"}
+                    </span>
                   </p>
                   <p className="result-rail-kp-summary__line">
-                    <strong>Sprachniveau:</strong> {keyPointSummary?.overallLevel ?? "—"}
+                    <span>
+                      <strong>Sprachniveau:</strong> {keyPointSummary?.overallLevel ?? "—"}
+                    </span>
                   </p>
                 </div>
                 <p style={{ margin: "0.35rem 0 0", color: "var(--muted)", fontSize: "0.82rem", lineHeight: 1.35 }}>
@@ -678,12 +689,15 @@ export default function ResultView({ result, candidateText, selectedTask, submis
             id="rail-section-ii"
             className={`result-rail-card ${activeSection === "rail-section-ii" ? "result-rail-card--active" : ""}`}
           >
+            <div className="result-rail-card__head-with-info">
             <button type="button" className="result-rail-card__head" onClick={() => onTileActivate("rail-section-ii")}>
               <span className="result-rail-tile__title">Kommunikative Gestaltung</span>
               <span className={`result-rail-tile__value ${criterionIIScoreStatusClass}`}>
                 {hasCriterionIIScore ? `${criterionIIScaledPoints} / ${criterionIIMaxScaledPoints}` : "— / —"}
               </span>
             </button>
+            <InfoLink sectionId="criterion-ii" title="Kriterium II: Kommunikative Gestaltung im Ratgeber" />
+            </div>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
                 <p className="metric-card__help" style={{ margin: "0 0 0.35rem" }}>
@@ -718,6 +732,7 @@ export default function ResultView({ result, candidateText, selectedTask, submis
             id="rail-section-iii"
             className={`result-rail-card ${activeSection === "rail-section-iii" ? "result-rail-card--active" : ""}`}
           >
+            <div className="result-rail-card__head-with-info">
             <button
               type="button"
               className="result-rail-card__head"
@@ -728,6 +743,8 @@ export default function ResultView({ result, candidateText, selectedTask, submis
                 {hasCriterionIIIScore ? `${criterionIIIScaledPoints} / ${criterionIIIMaxScaledPoints}` : "— / —"}
               </span>
             </button>
+            <InfoLink sectionId="criterion-iii" title="Kriterium III: Formale Korrektheit im Ratgeber" />
+            </div>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
                 <p className="metric-card__help" style={{ margin: "0 0 0.35rem" }}>
@@ -761,6 +778,7 @@ export default function ResultView({ result, candidateText, selectedTask, submis
             id="rail-section-errors"
             className={`result-rail-card ${activeSection === "rail-section-errors" ? "result-rail-card--active" : ""}`}
           >
+            <div className="result-rail-card__head-with-info">
             <button
               type="button"
               className="result-rail-card__head"
@@ -769,6 +787,8 @@ export default function ResultView({ result, candidateText, selectedTask, submis
               <span className="result-rail-tile__title">Markierte Fehler</span>
               <span className="result-rail-tile__value">{errorCount}</span>
             </button>
+            <InfoLink sectionId="error-marking" title="Markierte Fehler im Ratgeber" />
+            </div>
             {railBodyVisible ? (
               <div className="result-rail-card__body">
                 {highlightedErrorItems.length ? (
