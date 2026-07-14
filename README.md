@@ -1,185 +1,118 @@
 # TELC Writing Evaluator
 
-A web app for practicing TELC B2–style writing tasks with AI-assisted feedback (OpenRouter). It is a training aid, not an official TELC product or examiner.
+**Easily scalable MVP** for TELC B2–style German writing practice: seed a task bank, run a criterion-aligned evaluation pipeline via OpenRouter, show scores + feedback in a React SPA. Swap models, grow tasks/users, or harden auth without rewriting the core loop.
 
-## User workflow
-
-1. **Home** — Read what the tool does and the disclaimer (no official link to TELC; AI results may differ from real exam marking). Accept the disclaimer to unlock training areas (stored in the browser).
-2. **Training** — Start a **task session**: the app loads a paired **information** task and **complaint** task. Choose one, optionally use the **timer**, write your text in German, then submit.
-3. **Evaluation** — The backend runs the evaluation pipeline (relevance, key points, communication, accuracy, scoring, improvement text) via an LLM. The UI shows progress, then redirects to **Result** with scores, criterion feedback, highlighted issues, and a suggested improved version.
-4. **Archive** — Browse past submissions for the current demo user (again requires the accepted disclaimer).
-5. **Profile** — View usage counters and account metadata exposed by the API.
-6. **Admin** — UI for admin-only API actions (users, activate/deactivate, counters; CRUD for info and complaint tasks). In the MVP, the backend resolves an admin identity from seed data; see `docs/api_contract.md` and `backend/routers/admin.py`.
-
-**Stack:** backend — Python, FastAPI, SQLite, SQLAlchemy; frontend — React (Vite), Tailwind. The HTTP API contract is documented in [`docs/api_contract.md`](docs/api_contract.md).
+> Training aid — not official TELC marking. Live: [app](https://telc-writing-evaluator-9tee.onrender.com) · [API](https://telc-writing-evaluator.onrender.com/docs)
 
 ---
 
-## Deployed (production)
+## What is TELC?
 
-| Service | URL                                              |
-| ------- |--------------------------------------------------|
-| Frontend | https://telc-writing-evaluator-9tee.onrender.com |
-| Backend API | https://telc-writing-evaluator.onrender.com/docs |
+**TELC** (*The European Language Certificates*) is a widely used system of standardized language exams aligned with the CEFR. In German, **TELC Deutsch B2** includes a **written expression** part (*Schriftlicher Ausdruck*): the candidate writes one formal-style text — typically an **email asking for information** or a **complaint** — from a short prompt with fixed content points (*Leitpunkte*).
 
-After you add the URLs, confirm the frontend was built with `VITE_API_BASE_URL` pointing at the backend’s **HTTPS** URL (see **Render** below).
+Examiners do **not** give a single “gut/schlecht” mark. They score three criteria separately (bands **A / B / C / D** → 5 / 3 / 1 / 0 points), then combine them:
+
+**Final score = (I + II + III) × 3** · max **45**
+
+Full rubric we implement: [`task_examples&criteria/criteria.md`](task_examples&criteria/criteria.md).
+
+### The three criteria
+
+| # | Name | What it measures |
+| - | ---- | ---------------- |
+| **I** | **Task Achievement** (*Aufgabenbewältigung*) | Did the writer cover the required key points, develop them adequately, at roughly B2 level? Wrong topic → usually all D; wrong situation → I = D, II/III still scored. |
+| **II** | **Communicative Design** (*Kommunikative Gestaltung*) | Structure of the email, coherence/cohesion, register (formal vs informal), sentence variety — is it readable as a real message to the intended recipient? |
+| **III** | **Formal Accuracy** (*Formale Richtigkeit*) | Grammar, syntax, spelling, punctuation, etc. — how correct is the German, and does error load hurt comprehension? |
+
+Pre-check before I–III: **relevance** (topic + communicative situation). If the text misses the topic entirely, grading short-circuits to D/D/D.
 
 ---
 
-## Local development
+## Value
 
-Set everything up on your machine: backend API, frontend dev server, and (optionally) automated tests with coverage.
+| Need | What this MVP delivers |
+| ---- | ---------------------- |
+| Repeatable exam practice | Paired info + complaint tasks, timer, archive |
+| Criterion-shaped feedback | Same I / II / III logic as above, not a vague “AI grade” |
+| Cheap iteration | JSON task seed, demo auth, SQLite — grow when needed |
+| Reliable LLM use | Structured evidence in, rule-based scores out |
 
-### Prerequisites
+Auth is demo-fixed today (`user@example.com` / `admin@example.com`); evaluation and API are separated so JWT or another DB can slot in later.
 
-- Python 3.11+ (recommended)
-- Node.js 18+ and npm
+---
 
-### 1. Python virtual environment
+## Evaluation workflow
 
-From the repository root:
+```
+submitted text
+    │
+    ▼
+① Relevance (topic / situation)     ← topic miss → D/D/D, stop
+    │
+    ▼
+② Key points        → Criterion I   ┐
+③ Communication     → Criterion II  ├─ LLM extractors (②–④ concurrent after ①)
+④ Accuracy          → Criterion III ┘
+    │
+    ▼
+⑤ Deterministic scoring             ← A/B/C/D → points; Final = (I+II+III)×3
+    │
+    ▼
+⑥ Improved text (optional LLM) + structured result JSON
+```
+
+---
+
+## LLM + anti-hallucination (Pydantic)
+
+Models are **not** asked for a final grade. They only fill **typed evidence** validated by Pydantic; Python assigns A/B/C/D and the final score.
+
+```
+LLM JSON  →  Pydantic.model_validate(...)  →  deterministic scoring.py
+```
+
+| Control | How |
+| ------- | --- |
+| **Schema as contract** | Each checker maps to a model (`RelevanceCheckResult`, `KeyPointCheckResult`, …) with `extra="forbid"`, `Literal[...]` enums, field validators |
+| **Prompts from schemas** | `model_to_prompt_schema()` prints the same Pydantic shape into the prompt — one source of truth |
+| **Hard reject** | `model_validate` on every response; invalid/extra fields fail (retries / schema-repair hint where needed) |
+| **Scores offline** | Grades and final formula live in `scoring.py`, not in model prose |
+| **Low temperature** | Extractors typically `temperature=0.0` |
+
+---
+
+## What’s in the product
+
+- **Training** — start session, pick info or complaint (~20 each, seeded), write, submit  
+- **Result** — score (max 45), criterion cards, highlights, suggested rewrite  
+- **Archive / Profile / Admin** — history, counters, task CRUD (demo admin)  
+- **Assessment guide** — in-app rubric explanation  
+
+---
+
+## Layout
+
+```
+backend/evaluation/   # pipeline, checks, scoring, prompts, Pydantic schemas
+backend/routers/      # sessions, submissions, users, admin
+backend/seed_tasks/   # JSON task bank
+frontend/src/         # React SPA (pages + result UI)
+docs/                 # local setup, testing, deploy, API contract
+```
+
+Stack: FastAPI · SQLAlchemy/SQLite · React/Vite · OpenRouter.
+
+---
+
+## Docs & quick start
+
+[Local](docs/local-development.md) · [Testing](docs/testing.md) · [Deploy](docs/deployment.md) · [API](docs/api_contract.md) · [Triage](TRIAGE.md)
 
 ```bash
-cd /path/to/TELC-writing-evaluator
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+python -m venv .venv && source .venv/bin/activate
 pip install -r backend/requirements.txt
-```
-
-For **tests and coverage** (section 5), also install dev tools:
-
-```bash
-pip install -r requirements-dev.txt
-```
-
-### 2. Backend environment variables
-
-Create a `.env` file in the **repository root** (the same directory from which you run `uvicorn` and `pytest`):
-
-```env
-OPENROUTER_API_KEY=your_openrouter_key
-MODEL_NAME=model_id e.g. openai/gpt-4o-mini
-FALLBACK_MODEL_NAME=fallback_model_id
-```
-
-Without these, LLM-based evaluation calls will not work. Tests set safe dummy values via `conftest.py`, so you can run the suite even before adding a real key.
-
-### 3. Run the backend
-
-With the venv activated:
-
-```bash
+# .env: OPENROUTER_API_KEY, MODEL_NAME, FALLBACK_MODEL_NAME
 PYTHONPATH=. uvicorn backend.main:app --reload
+
+cd frontend && npm install && npm run dev
 ```
-
-- API: [http://127.0.0.1:8000](http://127.0.0.1:8000)  
-- Health check: [http://127.0.0.1:8000/health](http://127.0.0.1:8000/health)  
-- SQLite: `telc_evaluator.db` in the process working directory. On startup the app creates tables; demo users and the task bank from JSON are loaded idempotently (see `backend/seed.py`, `backend/seed_tasks/`).
-
-The seed creates `user@example.com` and `admin@example.com`. In the current MVP, most endpoints use a **fixed** demo user (`user@example.com`) without a full session/JWT flow — see `backend/routers/users.py` and `docs/api_contract.md`.
-
-### 4. Run the frontend
-
-In a **second** terminal (venv not required for the UI):
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-By default the UI calls the API at `http://127.0.0.1:8000`. If the backend runs elsewhere, copy `frontend/.env.example` to `frontend/.env` and set:
-
-```env
-VITE_API_BASE_URL=http://127.0.0.1:8000
-```
-
-Restart `npm run dev` after changing `.env`.
-
-### 5. Backend tests and coverage
-
-From the repository root, with the venv activated and dev dependencies installed (`requirements-dev.txt`):
-
-**Run all backend tests:**
-
-```bash
-PYTHONPATH=. pytest backend/tests
-```
-
-**Coverage summary in the terminal** (overall % per file and missing lines in the table):
-
-```bash
-PYTHONPATH=. pytest backend/tests --cov=backend --cov-report=term-missing
-```
-
-**Coverage with HTML report** (same as above, plus browseable line coverage — open `htmlcov/index.html`):
-
-```bash
-PYTHONPATH=. pytest backend/tests \
-  --cov=backend \
-  --cov-report=term-missing \
-  --cov-report=html
-```
-
-**Machine-readable coverage (e.g. for CI):**
-
-```bash
-PYTHONPATH=. pytest backend/tests --cov=backend --cov-report=xml
-```
-
-This writes `coverage.xml` in the repo root (also ignored by git via `.gitignore` patterns where applicable).
-
-Coverage artifacts (`htmlcov/`, `.coverage`, `coverage.xml`) are covered by `.gitignore` where listed.
-
----
-
-## Deploying on Render
-
-Typical setup: two services — a **Web Service** (FastAPI) and a **Static Site** (Vite build).
-
-### Backend (Web Service)
-
-- **Root Directory:** leave empty (repo root) if the repo root already contains `backend/`.
-- **Runtime:** Python.
-- **Build Command:**  
-  `pip install -r backend/requirements.txt`
-- **Start Command:**  
-  `PYTHONPATH=. uvicorn backend.main:app --host 0.0.0.0 --port $PORT`
-
-**Environment (Render → Environment):**
-
-| Key | Value |
-| --- | ----- |
-| `OPENROUTER_API_KEY` | your OpenRouter secret |
-| `MODEL_NAME` | e.g. `openai/gpt-oss-120b:free` |
-| `FALLBACK_MODEL_NAME` | fallback model id |
-| `CORS_ORIGINS` | comma-separated **exact** frontend origins (scheme + host, no trailing slash), e.g. `https://telc-writing-evaluator-9tee.onrender.com` |
-
-The API always allows local Vite (`http://localhost:5173`, `http://127.0.0.1:5173`). For a deployed static site, set **`CORS_ORIGINS`** on the **backend** service to that site’s public URL, or the browser will block `fetch` with a CORS error.
-
-**SQLite on Render:** the instance filesystem is **ephemeral** — data may be lost after redeploys. For durable data, attach a **Persistent Disk** or move to an external database when you need it.
-
-### Frontend (Static Site)
-
-**Important:** `package.json` lives in `frontend/`, not the repo root. If **Root Directory** is left blank, the build fails with `ENOENT ... package.json` (npm looks in `/opt/render/project/src/`).
-
-Use **one** of these setups:
-
-| Setting | Value A (recommended) | Value B (repo root as cwd) |
-| --- | --- | --- |
-| **Root Directory** | `frontend` | *(empty)* |
-| **Build Command** | `npm install && npm run build` | `cd frontend && npm install && npm run build` |
-| **Publish Directory** | `dist` | `frontend/dist` |
-
-In the Render dashboard: open your static site → **Settings** → set **Root Directory** to `frontend` (and publish `dist`) → **Save Changes** → **Manual Deploy** → **Clear build cache & deploy**.
-
-**Build-time environment:** `VITE_*` variables are inlined when `npm run build` runs. Set at least:
-
-| Key | Value |
-| --- | ----- |
-| `VITE_API_BASE_URL` | full HTTPS URL of your Render backend, e.g. `https://your-api.onrender.com` |
-
-Trigger a **new deploy** of the static site after changing `VITE_API_BASE_URL`.
-
----
-

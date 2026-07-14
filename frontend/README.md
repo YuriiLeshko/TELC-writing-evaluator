@@ -1,36 +1,32 @@
 # TELC Writing Evaluator — React Frontend
 
-Vite + React (JavaScript) SPA. Communicates with the FastAPI backend only via HTTP, following `docs/api_contract.md`.
+Vite + React (JavaScript) SPA. Talks to the FastAPI backend over HTTP; shapes are defined in [`docs/api_contract.md`](../docs/api_contract.md).
 
-## Lokale Entwicklung
+## Quick start
 
-**Backend:**
+Full setup (venv, `.env`, both servers): [`docs/local-development.md`](../docs/local-development.md).
 
 ```bash
+# API (repo root, venv on)
 PYTHONPATH=. uvicorn backend.main:app --reload
-```
 
-**Frontend:**
-
-```bash
+# UI
 cd frontend
 npm install
-cp .env.example .env
+cp .env.example .env   # set VITE_API_BASE_URL if needed
 npm run dev
 ```
 
-Vite läuft standardmäßig unter `http://127.0.0.1:5173`. Die API-URL setzen Sie in `.env` über `VITE_API_BASE_URL` (siehe `.env.example`).
+Vite defaults to `http://127.0.0.1:5173`.
 
-## Render Deployment
+## Scripts
 
-- **Build Command:** `npm install && npm run build`
-- **Publish Directory:** `dist`
-- **Environment:** `VITE_API_BASE_URL=https://your-backend-url.onrender.com`
+| Command | Description |
+| ------- | ----------- |
+| `npm run dev` | Dev server |
+| `npm run build` | Production build |
+| `npm run preview` | Preview production build |
 
-## Skripte
+## Deploy
 
-| Befehl        | Beschreibung        |
-| ------------- | ------------------- |
-| `npm run dev` | Entwicklungsserver  |
-| `npm run build` | Produktions-Build |
-| `npm run preview` | Vorschau des Builds |
+Render static-site settings: [`docs/deployment.md`](../docs/deployment.md).
