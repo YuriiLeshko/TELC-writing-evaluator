@@ -62,9 +62,3 @@ In the Render dashboard: Static Site → **Settings** → **Root Directory** = `
 | `VITE_API_BASE_URL` | full HTTPS URL of your Render backend, e.g. `https://your-api.onrender.com` |
 
 Trigger a **new deploy** of the static site after changing `VITE_API_BASE_URL`.
-
----
-
-## Related pitfalls
-
-See [TRIAGE.md](../TRIAGE.md) for recurring CORS, `PYTHONPATH`, seed, and Render build issues.

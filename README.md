@@ -1,8 +1,22 @@
 # TELC Writing Evaluator
 
+[![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Pydantic](https://img.shields.io/badge/Pydantic-E92063?style=flat&logo=pydantic&logoColor=white)](https://docs.pydantic.dev/)
+[![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-D71F00?style=flat&logo=sqlalchemy&logoColor=white)](https://www.sqlalchemy.org/)
+[![SQLite](https://img.shields.io/badge/SQLite-003B57?style=flat&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
+[![React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-646CFF?style=flat&logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![OpenRouter](https://img.shields.io/badge/OpenRouter-0A0A0A?style=flat&logoColor=white)](https://openrouter.ai/)
+[![Render](https://img.shields.io/badge/Render-46E3B7?style=flat&logo=render&logoColor=black)](https://render.com/)
+
 **Easily scalable MVP** for TELC B2–style German writing practice: seed a task bank, run a criterion-aligned evaluation pipeline via OpenRouter, show scores + feedback in a React SPA. Swap models, grow tasks/users, or harden auth without rewriting the core loop.
 
-> Training aid — not official TELC marking. Live: [app](https://telc-writing-evaluator-9tee.onrender.com) · [API](https://telc-writing-evaluator.onrender.com/docs)
+> Training aid — not official TELC marking.
+
+**Demo:** https://telc-writing-evaluator-9tee.onrender.com  
+**API docs:** https://telc-writing-evaluator.onrender.com/docs
 
 ---
 
@@ -100,13 +114,11 @@ frontend/src/         # React SPA (pages + result UI)
 docs/                 # local setup, testing, deploy, API contract
 ```
 
-Stack: FastAPI · SQLAlchemy/SQLite · React/Vite · OpenRouter.
-
 ---
 
 ## Docs & quick start
 
-[Local](docs/local-development.md) · [Testing](docs/testing.md) · [Deploy](docs/deployment.md) · [API](docs/api_contract.md) · [Triage](TRIAGE.md)
+[Local](docs/local-development.md) · [Testing](docs/testing.md) · [Deploy](docs/deployment.md) · [API](docs/api_contract.md)
 
 ```bash
 python -m venv .venv && source .venv/bin/activate
